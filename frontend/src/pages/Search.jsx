@@ -10,15 +10,18 @@ const parsePageParam = (value) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
 }
 
+const VALID_TYPES = ['movie', 'series', 'anime']
+const parseTypeParam = (value) => {
+  return VALID_TYPES.includes(value) ? value : 'movie'
+}
+
 const Search = () => {
   const { profile } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
-  const [type, setType] = useState('movie')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [totalPages, setTotalPages] = useState(1)
-  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')))
   const [addingMovie, setAddingMovie] = useState(null)
   const [userMovies, setUserMovies] = useState([])
   const [sortDate, setSortDate] = useState(null) // null, 'asc', 'desc'
@@ -27,6 +30,25 @@ const Search = () => {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
   const debounceTimer = useRef(null)
   const genreDropdownRef = useRef(null)
+
+  // URL é a fonte de verdade para `type` e `currentPage`
+  const type = parseTypeParam(searchParams.get('type'))
+  const currentPage = parsePageParam(searchParams.get('page'))
+
+  const setType = (newType) => {
+    const next = new URLSearchParams(searchParams)
+    if (newType === 'movie') next.delete('type')
+    else next.set('type', newType)
+    next.delete('page') // muda de tipo → volta pra página 1
+    setSearchParams(next)
+  }
+
+  const setCurrentPage = (newPage) => {
+    const next = new URLSearchParams(searchParams)
+    if (newPage === 1) next.delete('page')
+    else next.set('page', String(newPage))
+    setSearchParams(next)
+  }
 
   // Fecha o dropdown ao clicar fora
   useEffect(() => {
@@ -65,37 +87,13 @@ const Search = () => {
     setSelectedGenres([])
   }, [type])
 
-  // Reseta para página 1 apenas quando query ou tipo realmente mudam
+  // Reseta página quando query muda (mudança de tipo já reseta dentro do setType)
   const prevQueryRef = useRef(query)
-  const prevTypeRef = useRef(type)
   useEffect(() => {
-    if (prevQueryRef.current === query && prevTypeRef.current === type) return
+    if (prevQueryRef.current === query) return
     prevQueryRef.current = query
-    prevTypeRef.current = type
-    setCurrentPage(1)
-  }, [query, type])
-
-  // Sincroniza currentPage → URL (?page=N)
-  useEffect(() => {
-    const urlPage = parsePageParam(searchParams.get('page'))
-    if (urlPage === currentPage) return
-
-    const next = new URLSearchParams(searchParams)
-    if (currentPage === 1) {
-      next.delete('page')
-    } else {
-      next.set('page', String(currentPage))
-    }
-    setSearchParams(next, { replace: false })
-  }, [currentPage])
-
-  // Sincroniza URL → currentPage (suporta voltar/avançar do navegador)
-  useEffect(() => {
-    const urlPage = parsePageParam(searchParams.get('page'))
-    if (urlPage !== currentPage) {
-      setCurrentPage(urlPage)
-    }
-  }, [searchParams])
+    if (currentPage !== 1) setCurrentPage(1)
+  }, [query])
 
   // Busca automática com debounce ou carrega populares
   useEffect(() => {
@@ -531,7 +529,7 @@ const Search = () => {
           </div>
         )}
 
-        {!loading && totalPages > 1 && (
+        {!loading && (
           <div className="pagination">
             <button
               onClick={() => goToPage(1)}

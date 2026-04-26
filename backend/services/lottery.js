@@ -7,9 +7,11 @@ const PRIORITY_WEIGHTS = {
   LOW: 1,
 }
 
-const fetchUnwatchedMovies = async (profileId) => {
+// Sorteia entre TODOS os filmes da lista (assistidos e não-assistidos).
+// Futuro: respeitar uma preferência do usuário pra excluir assistidos (ver BACKLOG).
+const fetchEligibleMovies = async (profileId) => {
   return prisma.movie.findMany({
-    where: { addedById: profileId, watched: false },
+    where: { addedById: profileId },
     include: {
       addedBy: { select: { id: true, name: true } },
     },
@@ -32,9 +34,9 @@ const pickRandom = (pool) => {
 }
 
 export const drawMovie = async (profileId) => {
-  const unwatched = await fetchUnwatchedMovies(profileId)
-  if (unwatched.length === 0) return null
+  const eligible = await fetchEligibleMovies(profileId)
+  if (eligible.length === 0) return null
 
-  const pool = buildWeightedPool(unwatched)
+  const pool = buildWeightedPool(eligible)
   return pickRandom(pool)
 }

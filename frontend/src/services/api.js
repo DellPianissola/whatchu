@@ -91,6 +91,7 @@ export const getMe = () => api.get('/auth/me')
 export const getProfiles = () => api.get('/profiles')
 export const createProfile = (data) => api.post('/profiles', data)
 export const updateProfile = (id, data) => api.put('/profiles', data)
+export const markOnboarded = () => api.post('/profiles/onboarded')
 
 // External APIs
 const buildExtParams = ({ page, sortBy, genres } = {}) => {

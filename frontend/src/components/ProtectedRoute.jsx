@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth()
+const ProtectedRoute = ({ children, requireOnboarding = true }) => {
+  const { isAuthenticated, loading, profile } = useAuth()
 
   if (loading) {
     return (
@@ -23,8 +23,13 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />
   }
 
+  // Onboarding pendente → força o usuário pra rota /onboarding.
+  // A própria rota /onboarding usa requireOnboarding={false} pra não loopar.
+  if (requireOnboarding && profile && !profile.onboardedAt) {
+    return <Navigate to="/onboarding" replace />
+  }
+
   return children
 }
 
 export default ProtectedRoute
-

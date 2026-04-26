@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMovies, drawMovie } from '../services/api.js'
+import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import './Home.css'
 
 const Home = () => {
+  const { toast } = useNotify()
   const [isLoaded, setIsLoaded] = useState(false)
   const [stats, setStats] = useState({ movies: 0, series: 0, animes: 0 })
   const [selectedMovie, setSelectedMovie] = useState(null)
@@ -41,9 +43,9 @@ const Home = () => {
       setSelectedMovie(response.data.movie)
     } catch (error) {
       if (error.response?.status === 404) {
-        alert('Você não tem filmes não assistidos na sua lista!')
+        toast.info('Sua lista está vazia — adicione filmes, séries ou animes pra começar')
       } else {
-        alert('Erro ao sortear filme. Tente novamente.')
+        toast.error('Erro ao sortear filme. Tente novamente.')
       }
     } finally {
       setIsDrawing(false)
@@ -79,7 +81,7 @@ const Home = () => {
 
           {/* Action Buttons */}
           <div className="action-buttons-main">
-            <button 
+            <button
               className="btn btn-primary btn-draw"
               onClick={handleDraw}
               disabled={isDrawing}
@@ -87,7 +89,7 @@ const Home = () => {
               <span className="btn-icon">🎲</span>
               <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Sortear'}</span>
             </button>
-            <button 
+            <button
               className="btn btn-secondary btn-list"
               onClick={() => navigate('/list')}
             >

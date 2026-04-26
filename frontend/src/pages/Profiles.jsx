@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getProfiles, createProfile, updateProfile } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useNotify } from '../contexts/NotificationContext.jsx'
 import './Profiles.css'
 
 const Profiles = () => {
   const { profile, updateProfile: updateAuthProfile } = useAuth()
+  const { toast } = useNotify()
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ name: '' })
@@ -31,9 +33,10 @@ const Profiles = () => {
         updateAuthProfile(response.data.profile)
       }
       setShowForm(false)
+      toast.success('Perfil salvo com sucesso')
     } catch (error) {
       console.error('Erro ao salvar perfil:', error)
-      alert(error.response?.data?.error || 'Erro ao salvar perfil')
+      toast.error(error.response?.data?.error || 'Erro ao salvar perfil')
     } finally {
       setLoading(false)
     }

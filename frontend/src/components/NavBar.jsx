@@ -24,6 +24,11 @@ const NavBar = () => {
     return null
   }
 
+  // Não mostra navbar no onboarding (usuário não deve navegar pra fora)
+  if (location.pathname === '/onboarding') {
+    return null
+  }
+
   return (
     <nav className="navbar">
       <Link to="/" className="nav-logo">

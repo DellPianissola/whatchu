@@ -127,5 +127,41 @@ router.put('/', async (req, res) => {
   }
 })
 
+// POST /api/profiles/onboarded - Marca o onboarding como concluído (idempotente)
+router.post('/onboarded', async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    const existingProfile = await prisma.profile.findUnique({
+      where: { userId },
+    })
+
+    if (!existingProfile) {
+      return res.status(404).json({ error: 'Perfil não encontrado' })
+    }
+
+    // Idempotente: se já tem onboardedAt, não sobrescreve
+    if (existingProfile.onboardedAt) {
+      return res.json({
+        message: 'Onboarding já estava concluído',
+        profile: existingProfile,
+      })
+    }
+
+    const profile = await prisma.profile.update({
+      where: { userId },
+      data: { onboardedAt: new Date() },
+    })
+
+    res.json({
+      message: 'Onboarding concluído',
+      profile,
+    })
+  } catch (error) {
+    console.error('Erro ao marcar onboarding:', error)
+    res.status(500).json({ error: 'Erro ao marcar onboarding' })
+  }
+})
+
 export default router
 

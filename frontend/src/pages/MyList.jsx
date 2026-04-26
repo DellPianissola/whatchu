@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMovies, deleteMovie, updateMovie } from '../services/api.js'
+import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import './MyList.css'
 
 const MyList = () => {
   const navigate = useNavigate()
+  const { toast } = useNotify()
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState({
@@ -39,9 +41,10 @@ const MyList = () => {
     try {
       await deleteMovie(id)
       loadMovies()
+      toast.success('Filme removido da lista')
     } catch (error) {
       console.error('Erro ao remover filme:', error)
-      alert('Erro ao remover filme')
+      toast.error('Erro ao remover filme')
     }
   }
 

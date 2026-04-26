@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { searchExternal, createMovie, getMovies, deleteMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import './Search.css'
 
@@ -34,8 +35,12 @@ const splitSort = (sortBy) => {
   return { sortDate: null, sortRating: null }
 }
 
-const Search = () => {
+const ONBOARDING_TARGET = 3
+
+const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const { profile } = useAuth()
+  const { toast } = useNotify()
+  const isOnboarding = mode === 'onboarding'
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -245,7 +250,7 @@ const Search = () => {
 
   const handleAddMovie = async (movie) => {
     if (!profile) {
-      alert('Perfil não encontrado!')
+      toast.error('Perfil não encontrado!')
       return
     }
 
@@ -264,9 +269,10 @@ const Search = () => {
         try {
           await deleteMovie(userMovie.id)
           setUserMovies(userMovies.filter(m => m.id !== userMovie.id))
+          toast.success(`"${movie.title}" removido da lista`)
         } catch (error) {
           console.error('Erro ao remover filme:', error)
-          alert(error.response?.data?.error || 'Erro ao remover filme')
+          toast.error(error.response?.data?.error || 'Erro ao remover filme')
         } finally {
           setAddingMovie(null)
         }
@@ -302,9 +308,10 @@ const Search = () => {
 
       const response = await createMovie(movieData)
       setUserMovies([...userMovies, response.data.movie])
+      toast.success(`"${movie.title}" adicionado à lista`)
     } catch (error) {
       console.error('Erro ao adicionar filme:', error)
-      alert(error.response?.data?.error || 'Erro ao adicionar filme')
+      toast.error(error.response?.data?.error || 'Erro ao adicionar filme')
     } finally {
       setAddingMovie(null)
     }
@@ -370,8 +377,48 @@ const Search = () => {
     return ''
   }
 
+  // Cálculos do modo onboarding
+  const onboardingCount = userMovies.length
+  const onboardingProgress = Math.min(onboardingCount, ONBOARDING_TARGET)
+  const onboardingComplete = onboardingCount >= ONBOARDING_TARGET
+  const onboardingRemaining = Math.max(ONBOARDING_TARGET - onboardingCount, 0)
+
   return (
-    <div className="search-page">
+    <div className={`search-page ${isOnboarding ? 'search-page-onboarding' : ''}`}>
+      {isOnboarding && (
+        <div className="onboarding-header">
+          <div className="onboarding-header-content">
+            <div className="onboarding-header-text">
+              <h2>Bem-vindo!</h2>
+              <p>
+                Adicione pelo menos {ONBOARDING_TARGET} filmes, séries ou animes pra
+                ativar o sorteio e começar a usar o app.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="onboarding-skip-link"
+              onClick={() => onSkip?.()}
+            >
+              Pular por agora
+            </button>
+          </div>
+          <div className="onboarding-progress">
+            <div className="onboarding-progress-text">
+              {onboardingComplete
+                ? `Pronto! ${onboardingCount} ${onboardingCount === 1 ? 'item adicionado' : 'itens adicionados'}`
+                : `${onboardingProgress} de ${ONBOARDING_TARGET} ${onboardingProgress === 1 ? 'adicionado' : 'adicionados'}`}
+            </div>
+            <div className="onboarding-progress-bar">
+              <div
+                className="onboarding-progress-fill"
+                style={{ width: `${(onboardingProgress / ONBOARDING_TARGET) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="search-container">
         <form onSubmit={handleSearch} className="search-form">
           <div className="search-header">
@@ -604,6 +651,21 @@ const Search = () => {
           </p>
         )}
       </div>
+
+      {isOnboarding && (
+        <div className="onboarding-footer">
+          <button
+            type="button"
+            className={`onboarding-cta ${onboardingComplete ? 'onboarding-cta-ready' : ''}`}
+            onClick={() => onComplete?.()}
+            disabled={!onboardingComplete}
+          >
+            {onboardingComplete
+              ? 'Continuar →'
+              : `Adicione mais ${onboardingRemaining} ${onboardingRemaining === 1 ? 'item' : 'itens'}`}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -26,16 +26,17 @@ model User {
 }
 
 model Profile {
-  id        String   @id @default(uuid())
-  name      String
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  id           String    @id @default(uuid())
+  name         String
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  onboardedAt  DateTime? // null = onboarding pendente; setado ao concluir ou skipar
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
   // Relacionamentos
   movies    Movie[]
-  
+
   @@map("profiles")
 }
 

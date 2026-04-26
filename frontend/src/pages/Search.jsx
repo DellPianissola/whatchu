@@ -1,23 +1,30 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { searchExternal, createMovie, getMovies, deleteMovie, getPopularMovies, getPopularSeries, getPopularAnimes } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import './Search.css'
 
+const parsePageParam = (value) => {
+  const parsed = parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
 const Search = () => {
   const { profile } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('movie')
   const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState({ movies: [], series: [], animes: [] })
+  const [results, setResults] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')))
   const [addingMovie, setAddingMovie] = useState(null)
   const [userMovies, setUserMovies] = useState([])
   const [sortDate, setSortDate] = useState(null) // null, 'asc', 'desc'
   const [sortRating, setSortRating] = useState(null) // null, 'asc', 'desc'
   const [selectedGenres, setSelectedGenres] = useState([])
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 18
   const debounceTimer = useRef(null)
   const genreDropdownRef = useRef(null)
 
@@ -58,10 +65,37 @@ const Search = () => {
     setSelectedGenres([])
   }, [type])
 
-  // Reseta página quando filtros mudarem
+  // Reseta para página 1 apenas quando query ou tipo realmente mudam
+  const prevQueryRef = useRef(query)
+  const prevTypeRef = useRef(type)
   useEffect(() => {
+    if (prevQueryRef.current === query && prevTypeRef.current === type) return
+    prevQueryRef.current = query
+    prevTypeRef.current = type
     setCurrentPage(1)
-  }, [query, type, selectedGenres, sortDate, sortRating])
+  }, [query, type])
+
+  // Sincroniza currentPage → URL (?page=N)
+  useEffect(() => {
+    const urlPage = parsePageParam(searchParams.get('page'))
+    if (urlPage === currentPage) return
+
+    const next = new URLSearchParams(searchParams)
+    if (currentPage === 1) {
+      next.delete('page')
+    } else {
+      next.set('page', String(currentPage))
+    }
+    setSearchParams(next, { replace: false })
+  }, [currentPage])
+
+  // Sincroniza URL → currentPage (suporta voltar/avançar do navegador)
+  useEffect(() => {
+    const urlPage = parsePageParam(searchParams.get('page'))
+    if (urlPage !== currentPage) {
+      setCurrentPage(urlPage)
+    }
+  }, [searchParams])
 
   // Busca automática com debounce ou carrega populares
   useEffect(() => {
@@ -69,54 +103,66 @@ const Search = () => {
       clearTimeout(debounceTimer.current)
     }
 
-    if (!query.trim()) {
-      // Quando não há query, carrega os populares do tipo selecionado
-      setLoading(true)
-      const loadPopular = async () => {
-        try {
-          let results = { movies: [], series: [], animes: [] }
-          
-          if (type === 'movie') {
-            const response = await getPopularMovies(1)
-            results.movies = response.data.results || []
-          } else if (type === 'series') {
-            const response = await getPopularSeries(1)
-            results.series = response.data.results || []
-          } else if (type === 'anime') {
-            const response = await getPopularAnimes(1)
-            results.animes = response.data.results || []
-          }
-          
-          setResults(results)
-        } catch (error) {
-          console.error('Erro ao carregar conteúdo popular:', error)
-        } finally {
-          setLoading(false)
-        }
-      }
-      
-      loadPopular()
-      return
-    }
-
-    debounceTimer.current = setTimeout(async () => {
+    const doFetch = async () => {
       setLoading(true)
       try {
-        const response = await searchExternal(query, type)
-        setResults(response.data.results)
-      } catch (error) {
-        console.error('Erro ao buscar:', error)
+        if (!query.trim()) {
+          await loadPopular(currentPage)
+        } else {
+          await loadSearch(query, type, currentPage)
+        }
       } finally {
         setLoading(false)
       }
-    }, 500) // 500ms de delay
+    }
+
+    if (!query.trim()) {
+      // Popular: sem debounce
+      doFetch()
+    } else {
+      // Busca: debounce de 500ms
+      debounceTimer.current = setTimeout(doFetch, 500)
+    }
 
     return () => {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }
     }
-  }, [query, type])
+  }, [query, type, currentPage])
+
+  const loadPopular = async (page) => {
+    try {
+      let response
+
+      if (type === 'movie') {
+        response = await getPopularMovies(page)
+      } else if (type === 'series') {
+        response = await getPopularSeries(page)
+      } else {
+        response = await getPopularAnimes(page)
+      }
+
+      setResults(response.data.results || [])
+      setTotalPages(response.data.totalPages || 1)
+    } catch (error) {
+      console.error('Erro ao carregar conteúdo popular:', error)
+      setResults([])
+      setTotalPages(1)
+    }
+  }
+
+  const loadSearch = async (q, searchType, page) => {
+    try {
+      const response = await searchExternal(q, searchType, page)
+      setResults(response.data.results || [])
+      setTotalPages(response.data.totalPages || 1)
+    } catch (error) {
+      console.error('Erro ao buscar:', error)
+      setResults([])
+      setTotalPages(1)
+    }
+  }
 
   const handleSearch = async (e) => {
     e.preventDefault()
@@ -205,11 +251,10 @@ const Search = () => {
   }
 
   // Extrai gêneros únicos dos resultados
-  const allResults = [...results.movies, ...results.series, ...results.animes]
-  const allGenres = [...new Set(allResults.flatMap(item => item.genres || []))].sort()
+  const allGenres = [...new Set(results.flatMap(item => item.genres || []))].sort()
 
   // Filtra e ordena os resultados
-  const filteredAndSortedResults = allResults
+  const filteredAndSortedResults = results
     .filter(item => {
       // Filtro por gêneros
       if (selectedGenres.length > 0) {
@@ -248,12 +293,6 @@ const Search = () => {
       return result
     })
 
-  // Calcula paginação
-  const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedResults = filteredAndSortedResults.slice(startIndex, endIndex)
-
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
@@ -289,6 +328,29 @@ const Search = () => {
       if (prev === 'desc') return 'asc'
       return null
     })
+  }
+
+  const buildPageList = (current, total) => {
+    const WINDOW_SIZE = 5
+
+    if (total <= WINDOW_SIZE) {
+      return Array.from({ length: total }, (_, i) => i + 1)
+    }
+
+    // Janela deslizante de 5 páginas centralizada na atual (com clamp nas bordas)
+    let start = current - Math.floor(WINDOW_SIZE / 2)
+    let end   = start + WINDOW_SIZE - 1
+
+    if (start < 1) {
+      start = 1
+      end = WINDOW_SIZE
+    }
+    if (end > total) {
+      end = total
+      start = total - WINDOW_SIZE + 1
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }
 
   const getSortIcon = (sortState) => {
@@ -388,7 +450,7 @@ const Search = () => {
 
         {loading && (
           <div className="results-grid">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="result-card skeleton-card">
                 <div className="result-poster-container">
                   <div className="skeleton-poster"></div>
@@ -409,9 +471,9 @@ const Search = () => {
           </div>
         )}
 
-        {!loading && paginatedResults.length > 0 && (
+        {!loading && filteredAndSortedResults.length > 0 && (
           <div className="results-grid">
-            {paginatedResults.map((item) => {
+            {filteredAndSortedResults.map((item) => {
               const genresText = item.genres && item.genres.length > 0 
                 ? item.genres.join(', ') 
                 : 'Sem gênero'
@@ -469,46 +531,52 @@ const Search = () => {
           </div>
         )}
 
-        {!loading && filteredAndSortedResults.length > 0 && totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <div className="pagination">
+            <button
+              onClick={() => goToPage(1)}
+              disabled={currentPage === 1}
+              className="pagination-btn"
+            >
+              « Início
+            </button>
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
               className="pagination-btn"
             >
-              ← Anterior
+              ‹ Anterior
             </button>
-            
+
             <div className="pagination-pages">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                // Mostra primeira página, última página, página atual e páginas adjacentes
-                if (
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                ) {
-                  return (
+              {buildPageList(currentPage, totalPages).map((entry, idx) =>
+                entry === '...'
+                  ? <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
+                  : (
                     <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                      key={entry}
+                      onClick={() => goToPage(entry)}
+                      className={`pagination-page ${currentPage === entry ? 'active' : ''}`}
                     >
-                      {page}
+                      {entry}
                     </button>
                   )
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="pagination-ellipsis">...</span>
-                }
-                return null
-              })}
+              )}
             </div>
-            
+
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="pagination-btn"
             >
-              Próxima →
+              Próximo ›
+            </button>
+            <button
+              onClick={() => goToPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="pagination-btn"
+            >
+              Último »
             </button>
           </div>
         )}

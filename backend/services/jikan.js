@@ -9,11 +9,14 @@ class JikanService {
         params: {
           q: query,
           page,
-          limit: 25,
+          limit: 20,
         },
       })
 
-      return this.formatResults(response.data.data)
+      return {
+        results: this.formatResults(response.data.data),
+        totalPages: response.data.pagination?.last_visible_page || 1,
+      }
     } catch (error) {
       console.error('Erro ao buscar no Jikan:', error.message)
       throw new Error(`Erro ao buscar no Jikan: ${error.message}`)
@@ -25,11 +28,14 @@ class JikanService {
       const response = await axios.get(`${JIKAN_BASE_URL}/top/anime`, {
         params: {
           page,
-          limit: 25,
+          limit: 20,
         },
       })
 
-      return this.formatResults(response.data.data)
+      return {
+        results: this.formatResults(response.data.data),
+        totalPages: response.data.pagination?.last_visible_page || 1,
+      }
     } catch (error) {
       console.error('Erro ao buscar animes populares:', error.message)
       throw new Error(`Erro ao buscar animes populares: ${error.message}`)

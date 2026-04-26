@@ -13,25 +13,33 @@ router.get('/search', async (req, res) => {
       return res.status(400).json({ error: 'Parâmetro "q" (query) é obrigatório' })
     }
 
-    const results = {
-      movies: [],
-      series: [],
-      animes: [],
-    }
+    let results = []
+    let totalPages = 1
 
-    if (!type || type === 'movie' || type === 'series') {
+    if (type === 'anime') {
+      const jikanData = await jikanService.search(q, page)
+      results = jikanData.results
+      totalPages = jikanData.totalPages
+    } else if (type === 'movie') {
+      const tmdbData = await tmdbService.search(q, 'movie', page)
+      results = tmdbData.results
+      totalPages = tmdbData.totalPages
+    } else if (type === 'series') {
+      const tmdbData = await tmdbService.search(q, 'tv', page)
+      results = tmdbData.results
+      totalPages = tmdbData.totalPages
+    } else {
+      // sem type: busca multi no TMDB + Jikan
       try {
-        const tmdbResults = await tmdbService.search(q, 'multi', page)
-        results.movies = tmdbResults.filter(r => r.type === 'MOVIE')
-        results.series = tmdbResults.filter(r => r.type === 'SERIES')
+        const tmdbData = await tmdbService.search(q, 'multi', page)
+        results = [...results, ...tmdbData.results]
+        totalPages = tmdbData.totalPages
       } catch (error) {
         console.error('Erro ao buscar no TMDB:', error.message)
       }
-    }
-
-    if (!type || type === 'anime') {
       try {
-        results.animes = await jikanService.search(q, page)
+        const jikanData = await jikanService.search(q, page)
+        results = [...results, ...jikanData.results]
       } catch (error) {
         console.error('Erro ao buscar no Jikan:', error.message)
       }
@@ -41,6 +49,7 @@ router.get('/search', async (req, res) => {
       query: q,
       type: type || 'all',
       page: parseInt(page),
+      totalPages,
       results,
     })
   } catch (error) {
@@ -52,10 +61,11 @@ router.get('/search', async (req, res) => {
 router.get('/movies', async (req, res) => {
   try {
     const { page = 1 } = req.query
-    const movies = await tmdbService.getPopularMovies(page)
+    const { results, totalPages } = await tmdbService.getPopularMovies(page)
     res.json({
       page: parseInt(page),
-      results: movies,
+      totalPages,
+      results,
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -66,10 +76,11 @@ router.get('/movies', async (req, res) => {
 router.get('/series', async (req, res) => {
   try {
     const { page = 1 } = req.query
-    const series = await tmdbService.getPopularSeries(page)
+    const { results, totalPages } = await tmdbService.getPopularSeries(page)
     res.json({
       page: parseInt(page),
-      results: series,
+      totalPages,
+      results,
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -80,10 +91,11 @@ router.get('/series', async (req, res) => {
 router.get('/animes', async (req, res) => {
   try {
     const { page = 1 } = req.query
-    const animes = await jikanService.getPopularAnimes(page)
+    const { results, totalPages } = await jikanService.getPopularAnimes(page)
     res.json({
       page: parseInt(page),
-      results: animes,
+      totalPages,
+      results,
     })
   } catch (error) {
     res.status(500).json({ error: error.message })

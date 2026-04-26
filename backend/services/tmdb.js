@@ -60,11 +60,11 @@ class TMDBService {
     }
 
     try {
-      const endpoint = type === 'multi' 
-        ? '/search/multi' 
-        : type === 'movie' 
-        ? '/search/movie' 
-        : '/search/tv'
+      const endpoint = type === 'movie'
+        ? '/search/movie'
+        : type === 'tv'
+        ? '/search/tv'
+        : '/search/multi'
 
       const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
         params: {
@@ -75,7 +75,13 @@ class TMDBService {
         },
       })
 
-      return await this.formatResults(response.data.results, type)
+      const results = await this.formatResults(response.data.results, type)
+
+      return {
+        results,
+        totalPages: Math.min(response.data.total_pages || 1, 500),
+        totalResults: response.data.total_results || 0,
+      }
     } catch (error) {
       console.error('Erro ao buscar no TMDB:', error.message)
       throw new Error(`Erro ao buscar no TMDB: ${error.message}`)
@@ -96,7 +102,13 @@ class TMDBService {
         },
       })
 
-      return await this.formatResults(response.data.results, 'movie')
+      const results = await this.formatResults(response.data.results, 'movie')
+
+      return {
+        results,
+        totalPages: Math.min(response.data.total_pages || 1, 500),
+        totalResults: response.data.total_results || 0,
+      }
     } catch (error) {
       console.error('Erro ao buscar filmes populares:', error.message)
       throw new Error(`Erro ao buscar filmes populares: ${error.message}`)
@@ -117,7 +129,13 @@ class TMDBService {
         },
       })
 
-      return await this.formatResults(response.data.results, 'tv')
+      const results = await this.formatResults(response.data.results, 'tv')
+
+      return {
+        results,
+        totalPages: Math.min(response.data.total_pages || 1, 500),
+        totalResults: response.data.total_results || 0,
+      }
     } catch (error) {
       console.error('Erro ao buscar séries populares:', error.message)
       throw new Error(`Erro ao buscar séries populares: ${error.message}`)

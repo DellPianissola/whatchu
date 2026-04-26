@@ -61,6 +61,27 @@ services:
     networks:
       - app-network
 
+  # Container exclusivo pro banco de testes. Só sobe com --profile test.
+  # Porta diferente (5433) pra não colidir com o postgres de dev.
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: what-watch-next-db-test
+    profiles: [test]
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=whatwatchnext
+      - POSTGRES_PASSWORD=whatwatchnext
+      - POSTGRES_DB=whatwatchnext_test
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatwatchnext"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
 volumes:
   postgres_data:
 

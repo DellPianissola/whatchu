@@ -2,8 +2,13 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    // Onde procurar testes
-    include: ['tests/**/*.test.js'],
+    // Testes unitários (lib, middleware, external com mocks).
+    // Testes de serviço com DB real ficam em vitest.integration.config.js.
+    include: [
+      'tests/lib/**/*.test.js',
+      'tests/middleware/**/*.test.js',
+      'tests/services/external.test.js',
+    ],
 
     // Ambiente Node — não DOM
     environment: 'node',

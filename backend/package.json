@@ -12,7 +12,11 @@
     "prisma:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.js",
+    "test:integration:coverage": "vitest run --config vitest.integration.config.js --coverage",
+    "test:all": "npm test && npm run test:integration",
+    "test:db": "docker compose --profile test up postgres-test -d"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",

@@ -6,3 +6,6 @@ node_modules/
 # Prisma
 prisma/migrations/
 
+# Coverage
+coverage/
+

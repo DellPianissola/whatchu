@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { searchExternal, createMovie, getMovies, deleteMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres } from '../services/api.js'
+import { searchExternal, createMovie, getMovies, deleteMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres, getMovieDetails, getSeriesDetails, getAnimeDetails } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
@@ -38,6 +38,15 @@ const splitSort = (sortBy) => {
 
 const ONBOARDING_TARGET = 3
 
+// Cache de sessão: evita re-fetch ao reabrir o mesmo item
+const detailsCache = new Map()
+
+const trailerUrl = (trailer) => {
+  if (!trailer) return null
+  if (trailer.startsWith('http')) return trailer
+  return `https://www.youtube.com/watch?v=${trailer}`
+}
+
 const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const { profile } = useAuth()
   const { toast } = useNotify()
@@ -52,6 +61,8 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const [availableGenres, setAvailableGenres] = useState([])
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
   const [expandedItem, setExpandedItem] = useState(null)
+  const [richDetails, setRichDetails] = useState(null)
+  const [richDetailsLoading, setRichDetailsLoading] = useState(false)
   const debounceTimer = useRef(null)
   const genreDropdownRef = useRef(null)
 
@@ -101,6 +112,46 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       else next.set('genres', arr.join(','))
     }, { resetPage: true })
   }
+
+  // Busca detalhes ricos (diretor, elenco, trailer, etc.) quando o modal abre
+  useEffect(() => {
+    if (!expandedItem?.externalId) {
+      setRichDetails(null)
+      return
+    }
+
+    const cacheKey = `${expandedItem.type}:${expandedItem.externalId}`
+    if (detailsCache.has(cacheKey)) {
+      setRichDetails(detailsCache.get(cacheKey))
+      setRichDetailsLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setRichDetails(null)
+    setRichDetailsLoading(true)
+
+    const fetchDetails = async () => {
+      try {
+        let response
+        if (expandedItem.type === 'MOVIE') response = await getMovieDetails(expandedItem.externalId)
+        else if (expandedItem.type === 'SERIES') response = await getSeriesDetails(expandedItem.externalId)
+        else response = await getAnimeDetails(expandedItem.externalId)
+
+        if (!cancelled) {
+          detailsCache.set(cacheKey, response.data)
+          setRichDetails(response.data)
+        }
+      } catch (error) {
+        if (!cancelled) console.error('Erro ao carregar detalhes:', error)
+      } finally {
+        if (!cancelled) setRichDetailsLoading(false)
+      }
+    }
+
+    fetchDetails()
+    return () => { cancelled = true }
+  }, [expandedItem?.externalId, expandedItem?.type])
 
   // Fecha modal ao pressionar ESC; trava scroll do body enquanto aberto
   useEffect(() => {
@@ -661,18 +712,78 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
                   </span>
                 </div>
                 <div className="card-modal-meta">
-                  {expandedItem.year && <span>📅 {expandedItem.year}</span>}
-                  {expandedItem.rating && <span>⭐ {expandedItem.rating}</span>}
-                  {expandedItem.duration && <span>⏱ {expandedItem.duration} min</span>}
+                  <span>📅 {expandedItem.year || 'Sem data'}</span>
+                  <span>⭐ {expandedItem.rating || 'Sem nota'}</span>
+                  {(richDetails?.duration || expandedItem.duration) && (
+                    <span>⏱ {richDetails?.duration || expandedItem.duration} min</span>
+                  )}
                 </div>
-                {expandedItem.genres && expandedItem.genres.length > 0 && (
-                  <div className="card-modal-genres">
-                    🎭 {expandedItem.genres.join(', ')}
-                  </div>
-                )}
+                <div className="card-modal-genres">
+                  🎭 {expandedItem.genres?.length > 0 ? expandedItem.genres.join(', ') : 'Sem gênero'}
+                </div>
                 <p className="card-modal-description">
                   {expandedItem.description || 'Sem sinopse disponível.'}
                 </p>
+
+                {richDetailsLoading && (
+                  <div className="card-modal-rich-skeleton">
+                    <div className="skeleton-meta" style={{ width: '70%' }}></div>
+                    <div className="skeleton-meta" style={{ width: '90%' }}></div>
+                    <div className="skeleton-meta" style={{ width: '50%' }}></div>
+                  </div>
+                )}
+
+                {!richDetailsLoading && richDetails && (
+                  <div className="card-modal-rich-details">
+                    {richDetails.director && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Direção</span>
+                        <span>{richDetails.director}</span>
+                      </div>
+                    )}
+                    {richDetails.cast?.length > 0 && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Elenco</span>
+                        <span>{richDetails.cast.join(', ')}</span>
+                      </div>
+                    )}
+                    {richDetails.seasons && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Temporadas</span>
+                        <span>{richDetails.seasons}</span>
+                      </div>
+                    )}
+                    {richDetails.episodes && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Episódios</span>
+                        <span>{richDetails.episodes}</span>
+                      </div>
+                    )}
+                    {richDetails.studios?.length > 0 && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Estúdio</span>
+                        <span>{richDetails.studios.join(', ')}</span>
+                      </div>
+                    )}
+                    {richDetails.status && (
+                      <div className="card-modal-detail-row">
+                        <span className="card-modal-detail-label">Status</span>
+                        <span>{richDetails.status}</span>
+                      </div>
+                    )}
+                    {trailerUrl(richDetails.trailer) && (
+                      <a
+                        href={trailerUrl(richDetails.trailer)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-trailer"
+                      >
+                        ▶ Ver Trailer
+                      </a>
+                    )}
+                  </div>
+                )}
+
                 <div className="card-modal-actions">
                   <button
                     onClick={() => handleAddMovie(expandedItem)}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import WatchuLogo from '../components/WatchuLogo.jsx'
 import './Login.css'
 
 const Login = () => {
@@ -32,7 +33,10 @@ const Login = () => {
       <div className="login-container">
         <div className="login-card">
           <div className="login-header">
-            <h1>🎬 What Watch Next</h1>
+            <div className="auth-brand">
+              <WatchuLogo size={44} />
+              <h1>What<span className="auth-chu">chu</span></h1>
+            </div>
             <p>Entre na sua conta</p>
           </div>
 

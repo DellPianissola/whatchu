@@ -11,11 +11,22 @@
 }
 
 .nav-logo {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   text-decoration: none;
-  background: var(--gradient-1);
+}
+
+.nav-brand-text {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--primary);
+}
+
+.nav-brand-chu {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

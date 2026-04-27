@@ -84,34 +84,43 @@
   margin-bottom: 1rem;
 }
 
-.logo-icon {
-  font-size: 4rem;
-  animation: pulse 2s infinite;
+.logo > svg {
+  animation: pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.4));
 }
 
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.4));
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.5));
   }
 }
 
 .logo-text {
+  font-family: 'Fredoka', sans-serif;
   font-size: 3.5rem;
-  background: var(--gradient-1);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--primary);
+}
+
+.logo-chu {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: 800;
-  letter-spacing: -0.02em;
 }
 
 .tagline {
-  font-size: 1.25rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.2rem;
   color: var(--text-muted);
-  font-weight: 300;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 /* Main Card */

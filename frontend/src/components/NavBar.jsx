@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import WatchuLogo from './WatchuLogo.jsx'
 import './NavBar.css'
 
 const NavBar = () => {
@@ -32,7 +33,8 @@ const NavBar = () => {
   return (
     <nav className="navbar">
       <Link to="/" className="nav-logo">
-        🎬 What Watch Next
+        <WatchuLogo size={32} />
+        <span className="nav-brand-text">What<span className="nav-brand-chu">chu</span></span>
       </Link>
       <div className="nav-links">
         <Link to="/" className={isActive('/') ? 'active' : ''}>

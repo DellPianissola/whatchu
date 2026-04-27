@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getMovies, drawMovie } from '../services/api.js'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
+import WatchuLogo from '../components/WatchuLogo.jsx'
 import './Home.css'
 
 const Home = () => {
@@ -66,10 +67,10 @@ const Home = () => {
         {/* Header */}
         <header className="home-header">
           <div className="logo">
-            <span className="logo-icon">🎬</span>
-            <h1 className="logo-text">What Watch Next</h1>
+            <WatchuLogo size={72} />
+            <h1 className="logo-text">What<span className="logo-chu">chu</span></h1>
           </div>
-          <p className="tagline">Escolha o que assistir juntos</p>
+          <p className="tagline">O que assistir hoje?</p>
         </header>
 
         {/* Main Card */}

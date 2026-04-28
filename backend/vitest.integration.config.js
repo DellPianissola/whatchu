@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config'
 
 // URL do banco de testes (postgres-test do docker-compose --profile test)
 const TEST_DATABASE_URL =
-  'postgresql://whatwatchnext:whatwatchnext@localhost:5433/whatwatchnext_test'
+  'postgresql://whatchu:whatchu@localhost:5433/whatchu_test'
 
 export default defineConfig({
   test: {

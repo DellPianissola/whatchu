@@ -1,7 +1,7 @@
 {
-  "name": "what-watch-next-backend",
+  "name": "whatchu-backend",
   "version": "1.0.0",
-  "description": "Backend API para What Watch Next",
+  "description": "Backend API para Whatchu",
   "main": "server.js",
   "type": "module",
   "scripts": {

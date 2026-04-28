@@ -1,7 +1,7 @@
 {
-  "name": "what-watch-next",
+  "name": "whatchu",
   "version": "1.0.0",
-  "description": "Aplicação para escolher filmes, séries e animes para assistir em casal",
+  "description": "Plataforma multi-usuário para escolher filmes, séries e animes para assistir juntos",
   "scripts": {
     "up": "docker compose up",
     "up:build": "docker compose up --build",

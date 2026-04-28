@@ -24,7 +24,7 @@ app.use(express.json())
 // Swagger Documentation
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'What Watch Next API - Documentação',
+  customSiteTitle: 'Whatchu API - Documentação',
 }))
 
 // Connect to PostgreSQL

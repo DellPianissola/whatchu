@@ -14,7 +14,7 @@ const __dirname  = path.dirname(__filename)
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..')
 
 const TEST_DATABASE_URL =
-  'postgresql://whatwatchnext:whatwatchnext@localhost:5433/whatwatchnext_test'
+  'postgresql://whatchu:whatchu@localhost:5433/whatchu_test'
 
 export async function setup() {
   console.log('\n⏳ Sincronizando schema Prisma no banco de testes...')

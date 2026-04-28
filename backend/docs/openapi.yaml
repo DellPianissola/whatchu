@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
-  title: What Watch Next API
+  title: Whatchu API
   version: 1.0.0
-  description: API para gerenciar filmes, séries e animes para assistir em casal
+  description: API para gerenciar filmes, séries e animes para assistir juntos
   contact:
-    name: What Watch Next
+    name: Whatchu
     email: dell.pianissola@outlook.com
 
 servers:
@@ -30,7 +30,7 @@ paths:
                     example: ok
                   message:
                     type: string
-                    example: What Watch Next API is running
+                    example: Whatchu API is running
 
   /movies:
     get:

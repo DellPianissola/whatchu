@@ -1,18 +1,26 @@
-FROM node:18-alpine
+# Stage 1 — build
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copia arquivos de dependências
 COPY package*.json ./
-
-# Instala dependências
 RUN npm install
 
-# Copia o resto dos arquivos
 COPY . .
+RUN npm run build
 
-EXPOSE 3000
+# Stage 2 — serve com nginx
+FROM nginx:alpine
 
-# Comando para desenvolvimento com hot reload
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+# Remove config padrão do nginx
+RUN rm /etc/nginx/conf.d/default.conf
 
+# Config customizada pra SPA (fallback pro index.html em qualquer rota)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copia o build gerado pelo stage anterior
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

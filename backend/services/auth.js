@@ -18,7 +18,7 @@ const generateTokens = (userId, username) => {
   )
   const refreshToken = jwt.sign(
     { userId, type: 'refresh' },
-    process.env.JWT_SECRET,
+    process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: '30d' }
   )
   return { accessToken, refreshToken }
@@ -31,14 +31,14 @@ const validateRegistrationInput = ({ email, username, password }) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ValidationError('Email inválido')
   }
-  if (password.length < 6) {
-    throw new ValidationError('Senha deve ter no mínimo 6 caracteres')
+  if (password.length < 8) {
+    throw new ValidationError('Senha deve ter no mínimo 8 caracteres')
   }
 }
 
 const decodeRefreshToken = (refreshToken) => {
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET)
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
     if (decoded.type !== 'refresh') {
       throw new UnauthorizedError('Refresh token inválido')
     }

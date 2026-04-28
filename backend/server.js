@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 import dotenv from 'dotenv'
 import swaggerUi from 'swagger-ui-express'
 import swaggerSpec from './config/swagger.js'
@@ -16,23 +18,42 @@ dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 5000
+const IS_PROD = process.env.NODE_ENV === 'production'
 
-// Middleware
-app.use(cors())
+// Segurança — headers HTTP
+app.use(helmet())
+
+// CORS — restrito à origem configurada em produção
+app.use(cors({
+  origin: IS_PROD ? process.env.CORS_ORIGIN : '*',
+  credentials: true,
+}))
+
 app.use(express.json())
 
-// Swagger Documentation
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Whatchu API - Documentação',
-}))
+// Rate limiting nas rotas de autenticação (brute force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20,                   // máx 20 tentativas por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
+})
+
+// Swagger — apenas em desenvolvimento
+if (!IS_PROD) {
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Whatchu API - Documentação',
+  }))
+}
 
 // Connect to PostgreSQL
 connectDB()
 
 // Public Routes (não requerem autenticação)
 app.use('/api', indexRoutes)
-app.use('/api/auth', authRoutes)
+app.use('/api/auth', authLimiter, authRoutes)
 
 // Protected Routes (requerem autenticação)
 app.use('/api/movies', authenticateToken, moviesRoutes)
@@ -46,6 +67,5 @@ app.use(errorHandler)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📡 API available at http://localhost:${PORT}/api`)
-  console.log(`📚 Documentation available at http://localhost:${PORT}/docs`)
+  if (!IS_PROD) console.log(`📚 Documentation available at http://localhost:${PORT}/docs`)
 })
-

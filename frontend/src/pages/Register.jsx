@@ -7,6 +7,7 @@ import './Register.css'
 const Register = () => {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
+  const [birthDate, setBirthDate] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -19,8 +20,8 @@ const Register = () => {
     setError('')
 
     // Validações
-    if (password.length < 6) {
-      setError('A senha deve ter no mínimo 6 caracteres')
+    if (password.length < 8) {
+      setError('A senha deve ter no mínimo 8 caracteres')
       return
     }
 
@@ -31,7 +32,7 @@ const Register = () => {
 
     setLoading(true)
 
-    const result = await register(email, username, password)
+    const result = await register(email, username, password, birthDate || null)
 
     if (result.success) {
       navigate('/')
@@ -85,6 +86,18 @@ const Register = () => {
             </div>
 
             <div className="form-group">
+              <label htmlFor="birthDate">Data de nascimento</label>
+              <input
+                id="birthDate"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                disabled={loading}
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="password">Senha</label>
               <input
                 id="password"
@@ -94,9 +107,9 @@ const Register = () => {
                 placeholder="••••••••"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
-              <small className="form-hint">Mínimo de 6 caracteres</small>
+              <small className="form-hint">Mínimo de 8 caracteres</small>
             </div>
 
             <div className="form-group">
@@ -109,7 +122,7 @@ const Register = () => {
                 placeholder="••••••••"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
             </div>
 

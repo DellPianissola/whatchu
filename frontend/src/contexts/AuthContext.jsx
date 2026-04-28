@@ -74,9 +74,9 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const register = async (email, username, password) => {
+  const register = async (email, username, password, birthDate) => {
     try {
-      const response = await api.post('/auth/register', { email, username, password })
+      const response = await api.post('/auth/register', { email, username, password, birthDate: birthDate || null })
       const { user, profile, accessToken, refreshToken } = response.data
       setUser(user)
       setProfile(profile)

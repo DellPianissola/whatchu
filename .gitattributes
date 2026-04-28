@@ -1,0 +1,5 @@
+# Força LF em scripts shell para funcionar no Linux/Docker
+*.sh text eol=lf
+
+# Padrão para demais arquivos de texto
+* text=auto

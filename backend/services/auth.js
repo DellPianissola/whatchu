@@ -24,7 +24,7 @@ const generateTokens = (userId, username) => {
   return { accessToken, refreshToken }
 }
 
-const validateRegistrationInput = ({ email, username, password }) => {
+const validateRegistrationInput = ({ email, username, password, birthDate }) => {
   if (!email || !username || !password) {
     throw new ValidationError('Email, nome de usuário e senha são obrigatórios')
   }
@@ -33,6 +33,15 @@ const validateRegistrationInput = ({ email, username, password }) => {
   }
   if (password.length < 8) {
     throw new ValidationError('Senha deve ter no mínimo 8 caracteres')
+  }
+  if (birthDate) {
+    const date = new Date(birthDate)
+    if (isNaN(date.getTime())) {
+      throw new ValidationError('Data de nascimento inválida')
+    }
+    if (date > new Date()) {
+      throw new ValidationError('Data de nascimento não pode ser no futuro')
+    }
   }
 }
 
@@ -54,14 +63,15 @@ const PUBLIC_USER_FIELDS = {
   id: true,
   email: true,
   username: true,
+  birthDate: true,
   isAdmin: true,
   createdAt: true,
 }
 
 // ─── Operações públicas (chamadas pelas rotas) ──────────────────────────────
 
-export const registerUser = async ({ email, username, password }) => {
-  validateRegistrationInput({ email, username, password })
+export const registerUser = async ({ email, username, password, birthDate }) => {
+  validateRegistrationInput({ email, username, password, birthDate })
 
   const existing = await prisma.user.findUnique({ where: { username } })
   if (existing) {
@@ -71,7 +81,12 @@ export const registerUser = async ({ email, username, password }) => {
   const hashedPassword = await bcrypt.hash(password, 10)
 
   const user = await prisma.user.create({
-    data: { email, username, password: hashedPassword },
+    data: {
+      email,
+      username,
+      password: hashedPassword,
+      birthDate: birthDate ? new Date(birthDate) : null,
+    },
     select: PUBLIC_USER_FIELDS,
   })
 

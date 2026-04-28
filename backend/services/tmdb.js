@@ -152,6 +152,7 @@ class TMDBService {
           query,
           page,
           language: 'pt-BR',
+          include_adult: false,
         },
       })
 
@@ -179,6 +180,7 @@ class TMDBService {
           api_key: this.apiKey,
           page,
           language: 'pt-BR',
+          include_adult: false,
         },
       })
 
@@ -206,6 +208,7 @@ class TMDBService {
           api_key: this.apiKey,
           page,
           language: 'pt-BR',
+          include_adult: false,
         },
       })
 

@@ -56,6 +56,7 @@ class JikanService {
       limit: 20,
       order_by,
       sort,
+      sfw: true,
     }
 
     if (q && q.trim()) params.q = q

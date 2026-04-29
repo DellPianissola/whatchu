@@ -125,20 +125,22 @@
 .main-card {
   background: var(--surface);
   border-radius: 24px;
-  padding: 2.5rem;
+  padding: 0;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   display: grid;
-  grid-template-columns: 1fr 200px;
-  gap: 2rem;
-  align-items: start;
+  grid-template-columns: 1fr 240px;
+  gap: 0;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .card-left {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding: 2.5rem;
 }
 
 .card-header {
@@ -157,8 +159,11 @@
 /* ── Coluna direita ──────────────────────────────── */
 
 .card-right {
-  position: sticky;
-  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d14;
+  border-left: 1px solid rgba(168, 85, 247, 0.15);
+  position: relative;
 }
 
 /* Resultado do sorteio */
@@ -167,6 +172,8 @@
   flex-direction: column;
   gap: 0.75rem;
   animation: slideIn 0.4s ease-out;
+  flex: 1;
+  padding: 1.5rem;
 }
 
 .draw-result-top {
@@ -244,26 +251,23 @@
 
 .draw-placeholder {
   width: 100%;
-  aspect-ratio: 2/3;
-  border-radius: 14px;
-  background: #0d0d14;
-  border: 1px solid rgba(168, 85, 247, 0.15);
+  flex: 1;
+  min-height: 340px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
   position: relative;
   overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 1.25rem;
 }
 
-/* Anéis concêntricos — centro */
+/* Anéis concêntricos — centrados no ph-top */
 .geo-ring {
   position: absolute;
   border-radius: 50%;
   border: 1.5px solid;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -55%);
+  transform: translate(-50%, -50%);
 }
 
 .geo-ring--1 {
@@ -348,13 +352,17 @@
 }
 
 .placeholder-hint {
-  position: relative;
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
   font-size: 0.72rem;
   font-weight: 600;
   color: rgba(168, 85, 247, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  white-space: nowrap;
 }
 
 /* Animação ao sortear */
@@ -368,8 +376,8 @@
 }
 
 @keyframes spin-ring {
-  from { transform: translate(-50%, -55%) rotate(0deg); }
-  to   { transform: translate(-50%, -55%) rotate(360deg); }
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* ── Stats ───────────────────────────────────────── */
@@ -764,14 +772,24 @@
 
   .main-card {
     grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .card-left {
     padding: 1.75rem 1.25rem;
   }
 
   /* Em mobile a coluna direita aparece acima dos controles */
-  .card-right { order: -1; }
+  .card-right {
+    order: -1;
+    border-left: none;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+  }
 
   .draw-placeholder {
-    aspect-ratio: 16/7;
+    min-height: 200px;
+    flex: unset;
+    height: 200px;
   }
 
   .geo-ring--1 { width: 80px; height: 80px; }

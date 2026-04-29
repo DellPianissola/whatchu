@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { getMovies, drawMovie } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -27,7 +26,6 @@ const Home = () => {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
   const [ignoreWatched, setIgnoreWatched] = useState(false)
   const genreDropdownRef = useRef(null)
-  const navigate = useNavigate()
 
   useEffect(() => {
     setIsLoaded(true)
@@ -234,9 +232,6 @@ const Home = () => {
                   {selectedMovie.description && (
                     <p className="draw-description">{selectedMovie.description}</p>
                   )}
-                  <button className="btn-watch-now" onClick={() => navigate('/list')}>
-                    Ver na Lista
-                  </button>
                 </div>
               </div>
             ) : (

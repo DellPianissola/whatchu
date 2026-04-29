@@ -12,10 +12,23 @@ export const createUser = async (overrides = {}) => {
   const username = overrides.username ?? 'testuser'
   return prisma.user.create({
     data: {
-      email:    overrides.email    ?? `${username}@test.com`,
+      email:         overrides.email         ?? `${username}@test.com`,
       username,
-      password: await bcrypt.hash(overrides.password ?? 'senha123', 4),
-      isAdmin:  overrides.isAdmin  ?? false,
+      password:      await bcrypt.hash(overrides.password ?? 'senha123', 4),
+      isAdmin:       overrides.isAdmin       ?? false,
+      emailVerified: overrides.emailVerified ?? false,
+      birthDate:     overrides.birthDate     ?? null,
+    },
+  })
+}
+
+export const createVerificationToken = async (userId, overrides = {}) => {
+  return prisma.verificationToken.create({
+    data: {
+      userId,
+      token:     overrides.token     ?? `test-token-${Math.random().toString(36).slice(2)}`,
+      type:      overrides.type      ?? 'EMAIL_VERIFICATION',
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
     },
   })
 }

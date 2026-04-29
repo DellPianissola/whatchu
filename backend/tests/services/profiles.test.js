@@ -5,14 +5,16 @@ import {
   createProfile,
   updateProfile,
   markOnboarded,
+  changeEmail,
+  setAdultContentPreference,
 } from '../../services/profiles.js'
-import { truncateAll } from '../helpers/db.js'
+import { truncateAll, prisma } from '../helpers/db.js'
 import {
   createUser,
   createProfile as createProfileFactory,
   createMovie,
 } from '../helpers/factories.js'
-import { NotFoundError, ConflictError } from '../../lib/httpErrors.js'
+import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../../lib/httpErrors.js'
 
 describe('profiles service', () => {
   beforeEach(() => truncateAll())
@@ -92,6 +94,32 @@ describe('profiles service', () => {
       expect(updated.name).toBe('Original')
     })
 
+    it('ignora campo username mesmo que esteja no payload', async () => {
+      const user = await createUser({ username: 'username_original' })
+      await createProfileFactory(user.id)
+      await updateProfile(user.id, { username: 'username_novo' })
+      const unchanged = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(unchanged.username).toBe('username_original')
+    })
+
+    it('atualiza birthDate quando fornecida no payload', async () => {
+      const user = await createUser()
+      await createProfileFactory(user.id)
+      const newDate = new Date('1995-06-15')
+      const updated = await updateProfile(user.id, { birthDate: newDate })
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(dbUser.birthDate?.toISOString()).toBe(newDate.toISOString())
+      // updateProfile retorna o profile; birthDate fica no user — só verifica que não lançou
+      expect(updated).toBeDefined()
+    })
+
+    it('lança ValidationError para birthDate no futuro', async () => {
+      const user = await createUser()
+      await createProfileFactory(user.id)
+      const future = new Date(Date.now() + 86_400_000)
+      await expect(updateProfile(user.id, { birthDate: future })).rejects.toThrow(ValidationError)
+    })
+
     it('lança NotFoundError se não tem perfil', async () => {
       const user = await createUser()
       await expect(updateProfile(user.id, { name: 'x' })).rejects.toThrow(NotFoundError)
@@ -121,6 +149,93 @@ describe('profiles service', () => {
     it('lança NotFoundError se não tem perfil', async () => {
       const user = await createUser()
       await expect(markOnboarded(user.id)).rejects.toThrow(NotFoundError)
+    })
+  })
+
+  // ─── changeEmail ──────────────────────────────────────────────────────────
+
+  describe('changeEmail', () => {
+    it('atualiza o email, marca emailVerified = false e cria token EMAIL_CHANGE', async () => {
+      const user = await createUser({ email: 'antigo@t.com', emailVerified: true })
+      await createProfileFactory(user.id)
+      await changeEmail(user.id, 'novo@t.com')
+      const updated = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(updated.email).toBe('novo@t.com')
+      expect(updated.emailVerified).toBe(false)
+      const token = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'EMAIL_CHANGE' },
+      })
+      expect(token).not.toBeNull()
+    })
+
+    it('lança ValidationError ao tentar mudar para o mesmo email atual', async () => {
+      const user = await createUser({ email: 'mesmo@t.com' })
+      await createProfileFactory(user.id)
+      await expect(changeEmail(user.id, 'mesmo@t.com')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para email com formato inválido', async () => {
+      const user = await createUser()
+      await createProfileFactory(user.id)
+      await expect(changeEmail(user.id, 'nao-e-um-email')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança NotFoundError para userId inexistente', async () => {
+      await expect(
+        changeEmail('00000000-0000-0000-0000-000000000000', 'x@y.com')
+      ).rejects.toThrow(NotFoundError)
+    })
+  })
+
+  // ─── setAdultContentPreference ────────────────────────────────────────────
+
+  describe('setAdultContentPreference', () => {
+    const adultBirthDate = () => {
+      const d = new Date()
+      d.setFullYear(d.getFullYear() - 20)
+      return d
+    }
+    const minorBirthDate = () => {
+      const d = new Date()
+      d.setFullYear(d.getFullYear() - 16)
+      return d
+    }
+
+    it('ativa a opção para usuário maior de 18 com email verificado', async () => {
+      const user = await createUser({ birthDate: adultBirthDate(), emailVerified: true })
+      await createProfileFactory(user.id)
+      const updated = await setAdultContentPreference(user.id, true)
+      expect(updated.allowAdultContent).toBe(true)
+    })
+
+    it('desativa a opção sem exigir verificações (só define como false)', async () => {
+      const user = await createUser({ birthDate: adultBirthDate(), emailVerified: true })
+      await createProfileFactory(user.id, { allowAdultContent: true })
+      const updated = await setAdultContentPreference(user.id, false)
+      expect(updated.allowAdultContent).toBe(false)
+    })
+
+    it('lança ForbiddenError para menor de 18', async () => {
+      const user = await createUser({ birthDate: minorBirthDate(), emailVerified: true })
+      await createProfileFactory(user.id)
+      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(ForbiddenError)
+    })
+
+    it('lança ForbiddenError quando birthDate não está definido', async () => {
+      const user = await createUser({ birthDate: null, emailVerified: true })
+      await createProfileFactory(user.id)
+      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(ForbiddenError)
+    })
+
+    it('lança ForbiddenError quando email não está verificado', async () => {
+      const user = await createUser({ birthDate: adultBirthDate(), emailVerified: false })
+      await createProfileFactory(user.id)
+      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(ForbiddenError)
+    })
+
+    it('lança NotFoundError quando não tem perfil', async () => {
+      const user = await createUser({ birthDate: adultBirthDate(), emailVerified: true })
+      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(NotFoundError)
     })
   })
 })

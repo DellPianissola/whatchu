@@ -1,17 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import bcrypt from 'bcrypt'
 import {
   registerUser,
   loginUser,
   getMe,
   refreshTokens,
+  verifyEmail,
+  resendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
 } from '../../services/auth.js'
-import { truncateAll } from '../helpers/db.js'
-import { createUser as createUserFactory } from '../helpers/factories.js'
+import { truncateAll, prisma } from '../helpers/db.js'
+import {
+  createUser as createUserFactory,
+  createVerificationToken,
+} from '../helpers/factories.js'
 import {
   ValidationError,
   ConflictError,
   UnauthorizedError,
   NotFoundError,
+  ForbiddenError,
 } from '../../lib/httpErrors.js'
 
 describe('auth service', () => {
@@ -134,6 +143,195 @@ describe('auth service', () => {
         email: 'at@t.com', username: 'atuser', password: 'senha123',
       })
       await expect(refreshTokens(accessToken)).rejects.toThrow(UnauthorizedError)
+    })
+  })
+
+  // ─── registerUser (email verification) ───────────────────────────────────
+
+  describe('registerUser — verificação de email', () => {
+    it('cria VerificationToken do tipo EMAIL_VERIFICATION ao registrar', async () => {
+      const { user } = await registerUser({
+        email: 'reg@verify.com', username: 'regverify', password: 'senha123',
+      })
+      const token = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      expect(token).not.toBeNull()
+      expect(token.expiresAt.getTime()).toBeGreaterThan(Date.now())
+    })
+
+    it('registra usuário com emailVerified = false por padrão', async () => {
+      const { user } = await registerUser({
+        email: 'unverified@t.com', username: 'unverifieduser', password: 'senha123',
+      })
+      expect(user.emailVerified).toBe(false)
+    })
+  })
+
+  // ─── verifyEmail ──────────────────────────────────────────────────────────
+
+  describe('verifyEmail', () => {
+    it('marca emailVerified = true e remove o token', async () => {
+      const { user } = await registerUser({
+        email: 'vmail@t.com', username: 'verifyok', password: 'senha123',
+      })
+      const tokenRecord = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      await verifyEmail(tokenRecord.token)
+      const updated = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(updated.emailVerified).toBe(true)
+      const deletedToken = await prisma.verificationToken.findUnique({
+        where: { token: tokenRecord.token },
+      })
+      expect(deletedToken).toBeNull()
+    })
+
+    it('lança ValidationError para token inexistente', async () => {
+      await expect(verifyEmail('token-que-nao-existe')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para token expirado', async () => {
+      const user = await createUserFactory({ username: 'expiredverify' })
+      await createVerificationToken(user.id, {
+        token: 'expired-verify-token',
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: new Date(Date.now() - 1000),
+      })
+      await expect(verifyEmail('expired-verify-token')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para token de tipo errado (ex: PASSWORD_RESET)', async () => {
+      const user = await createUserFactory({ username: 'wrongtypeverify' })
+      await createVerificationToken(user.id, {
+        token: 'wrong-type-verify-token',
+        type: 'PASSWORD_RESET',
+      })
+      await expect(verifyEmail('wrong-type-verify-token')).rejects.toThrow(ValidationError)
+    })
+  })
+
+  // ─── resendVerificationEmail ──────────────────────────────────────────────
+
+  describe('resendVerificationEmail', () => {
+    it('cria novo token e invalida o anterior', async () => {
+      const { user } = await registerUser({
+        email: 'resend@t.com', username: 'resenduser', password: 'senha123',
+      })
+      const first = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      await resendVerificationEmail(user.id)
+      const tokens = await prisma.verificationToken.findMany({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      expect(tokens).toHaveLength(1)
+      expect(tokens[0].token).not.toBe(first.token)
+    })
+
+    it('lança ValidationError se o email já está verificado', async () => {
+      const user = await createUserFactory({ username: 'alreadyverified', emailVerified: true })
+      await expect(resendVerificationEmail(user.id)).rejects.toThrow(ValidationError)
+    })
+
+    it('lança NotFoundError para userId inexistente', async () => {
+      await expect(
+        resendVerificationEmail('00000000-0000-0000-0000-000000000000')
+      ).rejects.toThrow(NotFoundError)
+    })
+  })
+
+  // ─── requestPasswordReset ─────────────────────────────────────────────────
+
+  describe('requestPasswordReset', () => {
+    it('cria token PASSWORD_RESET quando o email está verificado', async () => {
+      const user = await createUserFactory({
+        username: 'resetok', email: 'resetok@t.com', emailVerified: true,
+      })
+      await requestPasswordReset('resetok@t.com')
+      const token = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'PASSWORD_RESET' },
+      })
+      expect(token).not.toBeNull()
+    })
+
+    it('lança ForbiddenError quando o email não está verificado', async () => {
+      await createUserFactory({
+        username: 'resetunverified', email: 'unv@t.com', emailVerified: false,
+      })
+      await expect(requestPasswordReset('unv@t.com')).rejects.toThrow(ForbiddenError)
+    })
+
+    it('retorna silenciosamente para email inexistente (anti-enumeração)', async () => {
+      await expect(
+        requestPasswordReset('naoexiste@t.com')
+      ).resolves.toBeUndefined()
+      const count = await prisma.verificationToken.count()
+      expect(count).toBe(0)
+    })
+
+    it('substitui token anterior se já existe um pendente', async () => {
+      const user = await createUserFactory({
+        username: 'resettwice', email: 'twice@t.com', emailVerified: true,
+      })
+      await requestPasswordReset('twice@t.com')
+      await requestPasswordReset('twice@t.com')
+      const tokens = await prisma.verificationToken.findMany({
+        where: { userId: user.id, type: 'PASSWORD_RESET' },
+      })
+      expect(tokens).toHaveLength(1)
+    })
+  })
+
+  // ─── resetPassword ────────────────────────────────────────────────────────
+
+  describe('resetPassword', () => {
+    it('altera a senha e remove o token', async () => {
+      const user = await createUserFactory({ username: 'resetpw', emailVerified: true })
+      await createVerificationToken(user.id, {
+        token: 'valid-reset-token',
+        type: 'PASSWORD_RESET',
+      })
+      await resetPassword('valid-reset-token', 'novaSenha456')
+      const updated = await prisma.user.findUnique({ where: { id: user.id } })
+      const passwordChanged = await bcrypt.compare('novaSenha456', updated.password)
+      expect(passwordChanged).toBe(true)
+      const token = await prisma.verificationToken.findUnique({
+        where: { token: 'valid-reset-token' },
+      })
+      expect(token).toBeNull()
+    })
+
+    it('lança ValidationError para token inexistente', async () => {
+      await expect(resetPassword('nao-existe', 'novaSenha456')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para token expirado', async () => {
+      const user = await createUserFactory({ username: 'expiredreset' })
+      await createVerificationToken(user.id, {
+        token: 'expired-reset-token',
+        type: 'PASSWORD_RESET',
+        expiresAt: new Date(Date.now() - 1000),
+      })
+      await expect(resetPassword('expired-reset-token', 'novaSenha456')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para token de tipo errado (ex: EMAIL_VERIFICATION)', async () => {
+      const user = await createUserFactory({ username: 'wrongtypereset' })
+      await createVerificationToken(user.id, {
+        token: 'wrong-type-reset-token',
+        type: 'EMAIL_VERIFICATION',
+      })
+      await expect(resetPassword('wrong-type-reset-token', 'novaSenha456')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError para nova senha fraca (menos de 8 caracteres)', async () => {
+      const user = await createUserFactory({ username: 'weakpw', emailVerified: true })
+      await createVerificationToken(user.id, {
+        token: 'weak-pw-token',
+        type: 'PASSWORD_RESET',
+      })
+      await expect(resetPassword('weak-pw-token', '123')).rejects.toThrow(ValidationError)
     })
   })
 })

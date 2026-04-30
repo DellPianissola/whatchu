@@ -507,29 +507,6 @@
   flex-wrap: wrap;
 }
 
-.draw-type-pill {
-  padding: 0.35rem 1rem;
-  border-radius: 99px;
-  border: 1.5px solid var(--surface-light);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.draw-type-pill.active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(168, 85, 247, 0.1);
-}
-
-.draw-type-pill:not(.active):hover {
-  border-color: var(--text-muted);
-  color: var(--text);
-}
-
 /* Dropdown de gênero */
 .genre-filter-wrapper {
   position: relative;

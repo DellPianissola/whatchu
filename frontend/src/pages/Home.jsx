@@ -6,15 +6,9 @@ import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import WatchuLogo from '../components/WatchuLogo.jsx'
 import CardModal from '../components/CardModal.jsx'
+import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import './Home.css'
-
-const TYPE_OPTIONS = [
-  { value: '',       label: 'Todos'  },
-  { value: 'MOVIE',  label: 'Filme'  },
-  { value: 'SERIES', label: 'Série'  },
-  { value: 'ANIME',  label: 'Anime'  },
-]
 
 const Home = () => {
   const { profile } = useAuth()
@@ -25,7 +19,7 @@ const Home = () => {
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [filterType, setFilterType] = useState('')
+  const [filterTypes, setFilterTypes] = useState(ALL_TYPES)
   const [filterGenres, setFilterGenres] = useState([])
   const [availableGenres, setAvailableGenres] = useState([])
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
@@ -81,7 +75,7 @@ const Home = () => {
     setSelectedMovie(null)
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
-      // TODO (backend): passar { type: filterType, ignoreWatched, genres: filterGenres }
+      // TODO (backend): passar { types: filterTypes, ignoreWatched, genres: filterGenres }
       const response = await drawMovie()
       setSelectedMovie(response.data.movie)
     } catch (error) {
@@ -160,19 +154,11 @@ const Home = () => {
 
             <div className="draw-filters">
               <div className="draw-filter-row">
-                {TYPE_OPTIONS.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    className={`draw-type-pill ${filterType === value ? 'active' : ''}`}
-                    onClick={() => setFilterType(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
+                <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
                 {availableGenres.length > 0 && (
                   <div className="genre-filter-wrapper" ref={genreDropdownRef}>
                     <button
-                      className={`draw-type-pill genre-pill ${filterGenres.length > 0 ? 'active' : ''}`}
+                      className={`filter-pill genre-pill ${filterGenres.length > 0 ? 'active' : ''}`}
                       onClick={() => setShowGenreDropdown(v => !v)}
                     >
                       Gênero {filterGenres.length > 0 ? `(${filterGenres.length})` : '▾'}
@@ -269,7 +255,7 @@ const Home = () => {
                     </span>
                     {selectedMovie.year && <span className="draw-meta-item">📅 {selectedMovie.year}</span>}
                     {selectedMovie.rating && <span className="draw-meta-item">⭐ {selectedMovie.rating}</span>}
-                    {selectedMovie.duration && <span className="draw-meta-item">⏱ {formatDuration(selectedMovie.duration)}</span>}
+                    {selectedMovie.type === 'MOVIE' && selectedMovie.duration && <span className="draw-meta-item">⏱ {formatDuration(selectedMovie.duration)}</span>}
                   </div>
                   <h4 className="draw-result-title">{selectedMovie.title}</h4>
                   {selectedMovie.genres?.length > 0 && (

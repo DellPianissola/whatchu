@@ -47,6 +47,13 @@
   gap: 1rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-pills-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .filter-select {

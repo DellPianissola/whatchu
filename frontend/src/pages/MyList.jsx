@@ -4,6 +4,7 @@ import { getMovies, deleteMovie, updateMovie } from '../services/api.js'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import CardModal from '../components/CardModal.jsx'
+import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import './MyList.css'
 
@@ -12,7 +13,7 @@ const MyList = () => {
   const { toast } = useNotify()
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState({ type: '', watched: '' })
+  const [filter, setFilter] = useState({ types: ALL_TYPES, watched: '' })
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [priorityDropdownId, setPriorityDropdownId] = useState(null)
   const priorityDropdownRef = useRef(null)
@@ -36,13 +37,12 @@ const MyList = () => {
 
   useEffect(() => {
     loadMovies()
-  }, [filter])
+  }, [filter.watched])
 
   const loadMovies = async () => {
     setLoading(true)
     try {
       const params = {}
-      if (filter.type) params.type = filter.type
       if (filter.watched !== '') params.watched = filter.watched
       const response = await getMovies(params)
       setMovies(response.data.movies)
@@ -52,6 +52,12 @@ const MyList = () => {
       setLoading(false)
     }
   }
+
+  // Filtro por tipo é client-side: backend ainda só aceita 1 type, mas multi-seleção
+  // funciona bem em memória pra uma watchlist (escala pessoal)
+  const visibleMovies = filter.types.length === ALL_TYPES.length
+    ? movies
+    : movies.filter(m => filter.types.includes(m.type))
 
   const handleDelete = async (id) => {
     if (!confirm('Tem certeza que deseja remover este item?')) return
@@ -115,9 +121,9 @@ const MyList = () => {
   }
 
   const moviesByCategory = {
-    movies: movies.filter(m => m.type === 'MOVIE'),
-    series: movies.filter(m => m.type === 'SERIES'),
-    animes: movies.filter(m => m.type === 'ANIME'),
+    movies: visibleMovies.filter(m => m.type === 'MOVIE'),
+    series: visibleMovies.filter(m => m.type === 'SERIES'),
+    animes: visibleMovies.filter(m => m.type === 'ANIME'),
   }
 
   const renderMovieCard = (movie) => {
@@ -223,16 +229,12 @@ const MyList = () => {
         </div>
 
         <div className="filters">
-          <select
-            value={filter.type}
-            onChange={(e) => setFilter({ ...filter, type: e.target.value })}
-            className="filter-select"
-          >
-            <option value="">Todos os tipos</option>
-            <option value="MOVIE">Filmes</option>
-            <option value="SERIES">Séries</option>
-            <option value="ANIME">Animes</option>
-          </select>
+          <div className="filter-pills-row">
+            <TypeFilterPills
+              value={filter.types}
+              onChange={(types) => setFilter({ ...filter, types })}
+            />
+          </div>
 
           <select
             value={filter.watched}
@@ -247,9 +249,9 @@ const MyList = () => {
 
         {loading ? (
           <div className="loading">Carregando...</div>
-        ) : movies.length === 0 ? (
+        ) : visibleMovies.length === 0 ? (
           <div className="empty-state">
-            {filter.type || filter.watched ? (
+            {filter.types.length < ALL_TYPES.length || filter.watched ? (
               <p>
                 {filter.watched === 'true'
                   ? 'Você ainda não marcou nenhum item como assistido.'

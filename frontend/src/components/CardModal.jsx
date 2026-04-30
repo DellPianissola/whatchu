@@ -65,7 +65,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, onClose, actions }) 
             <div className="card-modal-meta">
               <span>📅 {item.year || 'Sem data'}</span>
               <span>⭐ {item.rating || 'Sem nota'}</span>
-              {duration && <span>⏱ {formatDuration(duration)}</span>}
+              {item.type === 'MOVIE' && duration && <span>⏱ {formatDuration(duration)}</span>}
             </div>
 
             <div className="card-modal-genres">

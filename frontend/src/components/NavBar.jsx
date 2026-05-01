@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useTheme } from '../hooks/useTheme.js'
 import WatchuLogo from './WatchuLogo.jsx'
 import './NavBar.css'
 
@@ -7,6 +8,7 @@ const NavBar = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated, user, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   const isActive = (path) => location.pathname === path
 
@@ -41,6 +43,15 @@ const NavBar = () => {
           📋 Minha Lista
         </Link>
         <div className="nav-user">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="btn-theme-toggle"
+            title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
           <Link to="/profiles" className="nav-username-link">
             {user?.username}
           </Link>

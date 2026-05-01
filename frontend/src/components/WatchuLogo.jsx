@@ -14,21 +14,21 @@ const WatchuLogo = ({ size = 40 }) => {
     >
       <defs>
         <linearGradient id="wl-grad-side" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#c084fc" />
-          <stop offset="100%" stopColor="#7c3aed" />
+          <stop offset="0%" stopColor="var(--primary-light)" />
+          <stop offset="100%" stopColor="var(--primary-dark)" />
         </linearGradient>
         <linearGradient id="wl-grad-arc" x1="40" y1="0" x2="141" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="#a855f7" />
-          <stop offset="55%"  stopColor="#c084fc" />
-          <stop offset="100%" stopColor="#f59e0b" />
+          <stop offset="0%"   stopColor="var(--primary)" />
+          <stop offset="55%"  stopColor="var(--primary-light)" />
+          <stop offset="100%" stopColor="var(--secondary)" />
         </linearGradient>
         <linearGradient id="wl-grad-center" x1="76" y1="22" x2="108" y2="54" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="#a855f7" />
-          <stop offset="100%" stopColor="#f59e0b" />
+          <stop offset="0%"   stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--secondary)" />
         </linearGradient>
         <linearGradient id="wl-grad-play" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-          <stop offset="0%"   stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%"   stopColor="var(--warning)" />
+          <stop offset="100%" stopColor="var(--secondary-dark)" />
         </linearGradient>
       </defs>
 

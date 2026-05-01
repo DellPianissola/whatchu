@@ -35,7 +35,7 @@ const Home = () => {
     { value: 'URGENT', label: PRIORITY_LABEL.URGENT },
   ]
 
-  const { richDetails, richDetailsLoading } = useRichDetails(modalOpen ? selectedMovie : null)
+  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(modalOpen ? selectedMovie : null)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -278,6 +278,7 @@ const Home = () => {
           item={selectedMovie}
           richDetails={richDetails}
           richDetailsLoading={richDetailsLoading}
+          richDetailsError={richDetailsError}
           onClose={() => setModalOpen(false)}
           actions={null}
         />

@@ -6,7 +6,7 @@
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(var(--shadow-rgb), 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,7 +21,7 @@
   padding: 2rem;
   max-width: 460px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(var(--shadow-rgb), 0.5);
   animation: modal-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -65,7 +65,7 @@
 
 .onboarding-modal-primary {
   background: var(--danger);
-  color: white;
+  color: var(--text-on-media);
 }
 
 .onboarding-modal-primary:hover {

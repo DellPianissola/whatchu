@@ -4,7 +4,7 @@ import { trailerUrl } from '../utils/detailsCache.js'
 import { TYPE_LABEL, formatDuration } from '../utils/content.js'
 import './CardModal.css'
 
-const CardModal = ({ item, richDetails, richDetailsLoading, onClose, actions }) => {
+const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions }) => {
   // ESC fecha o modal; body fica sem scroll enquanto aberto
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -61,6 +61,14 @@ const CardModal = ({ item, richDetails, richDetailsLoading, onClose, actions }) 
                 <div className="skeleton-meta" style={{ width: '70%' }}></div>
                 <div className="skeleton-meta" style={{ width: '90%' }}></div>
                 <div className="skeleton-meta" style={{ width: '50%' }}></div>
+              </div>
+            )}
+
+            {/* Falha na API externa: dados internos (sinopse, gêneros, etc.) já
+                aparecem acima — esta nota substitui apenas o bloco de extras. */}
+            {!richDetailsLoading && richDetailsError && (
+              <div className="card-modal-rich-error" role="status">
+                ⚠ {richDetailsError}
               </div>
             )}
 

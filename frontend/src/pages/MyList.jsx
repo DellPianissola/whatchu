@@ -23,7 +23,7 @@ const MyList = () => {
   // expandedItem derivado do array — reage automaticamente a toggles e deletes
   const expandedItem = movies.find(m => m.id === expandedItemId) ?? null
 
-  const { richDetails, richDetailsLoading } = useRichDetails(expandedItem)
+  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
 
   useEffect(() => {
     if (!priorityDropdownId) return
@@ -285,6 +285,7 @@ const MyList = () => {
           item={expandedItem}
           richDetails={richDetails}
           richDetailsLoading={richDetailsLoading}
+          richDetailsError={richDetailsError}
           onClose={() => setExpandedItemId(null)}
           actions={
             <div className="modal-actions-stack">

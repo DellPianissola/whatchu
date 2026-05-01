@@ -1,7 +1,7 @@
 .card-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(var(--shadow-rgb), 0.75);
   z-index: 200;
   display: flex;
   align-items: center;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 64px rgba(var(--shadow-rgb), 0.6);
 }
 
 .card-modal-close {
@@ -149,6 +149,19 @@
   border-top: 1px solid var(--surface-light);
 }
 
+/* Aviso inline quando a API externa (TMDB/Jikan) falha em carregar os
+   detalhes ricos. O resto do modal (sinopse, meta básico) segue visível. */
+.card-modal-rich-error {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.375rem;
+  background: rgba(var(--secondary-rgb), 0.1);
+  border: 1px solid rgba(var(--secondary-rgb), 0.35);
+  color: var(--warning);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
 .card-modal-detail-row {
   display: flex;
   gap: 0.75rem;
@@ -239,19 +252,19 @@
   opacity: 0.45;
 }
 
-.priority-pill--low    { border-color: #6b7280; color: #6b7280; }
-.priority-pill--medium { border-color: #3b82f6; color: #3b82f6; }
-.priority-pill--high   { border-color: #f59e0b; color: #f59e0b; }
-.priority-pill--urgent { border-color: #ef4444; color: #ef4444; }
+.priority-pill--low    { border-color: var(--priority-low);    color: var(--priority-low); }
+.priority-pill--medium { border-color: var(--priority-medium); color: var(--priority-medium); }
+.priority-pill--high   { border-color: var(--priority-high);   color: var(--priority-high); }
+.priority-pill--urgent { border-color: var(--priority-urgent); color: var(--priority-urgent); }
 
 .priority-pill--active {
   opacity: 1;
 }
 
-.priority-pill--low.priority-pill--active    { background: rgba(107, 114, 128, 0.15); }
-.priority-pill--medium.priority-pill--active { background: rgba(59, 130, 246, 0.15); }
-.priority-pill--high.priority-pill--active   { background: rgba(245, 158, 11, 0.15); }
-.priority-pill--urgent.priority-pill--active { background: rgba(239, 68, 68, 0.15); }
+.priority-pill--low.priority-pill--active    { background: rgba(var(--priority-low-rgb), 0.15); }
+.priority-pill--medium.priority-pill--active { background: rgba(var(--priority-medium-rgb), 0.15); }
+.priority-pill--high.priority-pill--active   { background: rgba(var(--priority-high-rgb), 0.15); }
+.priority-pill--urgent.priority-pill--active { background: rgba(var(--priority-urgent-rgb), 0.15); }
 
 .priority-pill:not(.priority-pill--active):hover {
   opacity: 0.75;

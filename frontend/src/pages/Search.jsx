@@ -54,7 +54,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const [userMovies, setUserMovies] = useState([])
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
-  const { richDetails, richDetailsLoading } = useRichDetails(expandedItem)
+  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
   const debounceTimer = useRef(null)
 
   // URL é fonte de verdade — type/page/sortBy/genres nunca em useState
@@ -192,6 +192,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       console.error('Erro ao carregar conteúdo popular:', error)
       setResults([])
       setTotalPages(1)
+      notifyExternalError(error, type)
     }
   }
 
@@ -208,6 +209,25 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       console.error('Erro ao buscar:', error)
       setResults([])
       setTotalPages(1)
+      notifyExternalError(error, searchType)
+    }
+  }
+
+  // Traduz erro de chamada às APIs externas (TMDB/Jikan) em mensagem pro usuário.
+  // Backend marca falhas de upstream com code UPSTREAM_RATE_LIMIT (503) ou
+  // UPSTREAM_DOWN (502) — diferenciando "API externa fora" de bug nosso (500).
+  const notifyExternalError = (error, searchType) => {
+    const source = searchType === 'anime' ? 'MyAnimeList' : 'TMDB'
+    const code   = error.response?.data?.code
+
+    if (!error.response) {
+      toast.error('Sem conexão com o servidor. Tenta de novo em alguns segundos.')
+    } else if (code === 'UPSTREAM_RATE_LIMIT') {
+      toast.error(`${source} está limitando as requisições. Aguarda um momento e tenta de novo.`)
+    } else if (code === 'UPSTREAM_DOWN') {
+      toast.error(`${source} está fora do ar agora. Tenta de novo daqui a pouco.`)
+    } else {
+      toast.error('Erro ao buscar conteúdo. Tenta de novo.')
     }
   }
 
@@ -579,6 +599,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
           item={expandedItem}
           richDetails={richDetails}
           richDetailsLoading={richDetailsLoading}
+          richDetailsError={richDetailsError}
           onClose={() => setExpandedItem(null)}
           actions={
             <button

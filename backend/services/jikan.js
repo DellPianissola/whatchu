@@ -1,6 +1,8 @@
 import axios from 'axios'
+import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
 
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
+const toUpstreamError = makeUpstreamErrorFactory('JIKAN')
 
 class JikanService {
   constructor() {
@@ -20,7 +22,7 @@ class JikanService {
       }
       return this._genreCache
     } catch (error) {
-      console.error('Erro ao carregar gêneros do Jikan:', error.message)
+      console.error('Erro ao carregar gêneros do Jikan:', describeAxiosError(error))
       return {}
     }
   }
@@ -75,8 +77,8 @@ class JikanService {
     try {
       return await this._queryAnime({ q: query, page, ...opts })
     } catch (error) {
-      console.error('Erro ao buscar no Jikan:', error.message)
-      throw new Error(`Erro ao buscar no Jikan: ${error.message}`)
+      console.error('Erro ao buscar no Jikan:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar no Jikan')
     }
   }
 
@@ -84,8 +86,8 @@ class JikanService {
     try {
       return await this._queryAnime({ page, ...opts })
     } catch (error) {
-      console.error('Erro ao buscar animes populares:', error.message)
-      throw new Error(`Erro ao buscar animes populares: ${error.message}`)
+      console.error('Erro ao buscar animes populares:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar animes populares')
     }
   }
 
@@ -95,8 +97,8 @@ class JikanService {
 
       return this.formatAnimeDetails(response.data.data)
     } catch (error) {
-      console.error('Erro ao buscar detalhes do anime:', error.message)
-      throw new Error(`Erro ao buscar detalhes do anime: ${error.message}`)
+      console.error('Erro ao buscar detalhes do anime:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar detalhes do anime')
     }
   }
 

@@ -13,7 +13,7 @@
 .filter-pill.active {
   border-color: var(--primary);
   color: var(--primary);
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .filter-pill:not(.active):hover {
@@ -22,7 +22,7 @@
 }
 
 .filter-pill.active:hover {
-  background: rgba(168, 85, 247, 0.18);
-  border-color: rgba(168, 85, 247, 0.7);
+  background: rgba(var(--primary-rgb), 0.18);
+  border-color: rgba(var(--primary-rgb), 0.7);
   opacity: 0.85;
 }

@@ -29,8 +29,8 @@
   border-radius: 50%;
   opacity: 0;
   animation: float-up linear infinite;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.2) 60%, transparent 100%);
-  box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.4);
+  background: radial-gradient(circle, rgba(var(--secondary-rgb), 0.9) 0%, rgba(var(--secondary-rgb), 0.2) 60%, transparent 100%);
+  box-shadow: 0 0 6px 2px rgba(var(--secondary-rgb), 0.4);
 }
 
 .glow-dot-1  { width: 4px;  height: 4px;  left: 4%;  animation-duration: 12s;  animation-delay: 0s;   }
@@ -94,12 +94,12 @@
 
 .logo > svg {
   animation: pulse 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.4));
+  filter: drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.4));
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.4)); }
-  50%       { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.5)); }
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.4)); }
+  50%       { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(var(--secondary-rgb), 0.5)); }
 }
 
 .logo-text {
@@ -111,7 +111,7 @@
 }
 
 .logo-chu {
-  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  background: var(--gradient-cta);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -131,8 +131,8 @@
   background: var(--surface);
   border-radius: 24px;
   padding: 0;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(var(--shadow-rgb), 0.3);
+  border: 1px solid rgba(var(--media-rgb), 0.1);
   backdrop-filter: blur(10px);
   display: grid;
   grid-template-columns: 1fr 480px;
@@ -173,8 +173,8 @@
 .card-right {
   display: flex;
   flex-direction: column;
-  background: #0d0d14;
-  border-left: 1px solid rgba(168, 85, 247, 0.15);
+  background: var(--surface-deep);
+  border-left: 1px solid rgba(var(--primary-rgb), 0.15);
   position: relative;
 }
 
@@ -222,7 +222,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 22%);
+  background: linear-gradient(to bottom, rgba(var(--shadow-rgb), 0.6) 0%, transparent 22%);
   pointer-events: none;
   z-index: 1;
 }
@@ -239,8 +239,8 @@
 .draw-result-label {
   font-size: 0.82rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  color: var(--text-on-media);
+  text-shadow: 0 1px 4px rgba(var(--shadow-rgb), 0.6);
 }
 
 /* Info sobreposta no rodapé — painel glass para legibilidade independente do poster */
@@ -252,10 +252,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  background: rgba(10, 8, 20, 0.72);
+  background: rgba(var(--shadow-rgb), 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--media-rgb), 0.08);
 }
 
 .draw-result-meta {
@@ -269,7 +269,7 @@
   display: inline-block;
   padding: 0.2rem 0.6rem;
   background: var(--primary);
-  color: white;
+  color: var(--text-on-media);
   border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 700;
@@ -279,11 +279,11 @@
 
 .draw-meta-item {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(var(--media-rgb), 0.75);
 }
 
 .draw-result-title {
-  color: #ffffff;
+  color: var(--text-on-media);
   font-size: 1.35rem;
   font-weight: 700;
   margin: 0;
@@ -292,14 +292,14 @@
 
 .draw-result-genres {
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--media-rgb), 0.5);
   margin: 0;
   line-height: 1.4;
 }
 
 .draw-result-description {
   font-size: 0.83rem;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--media-rgb), 0.72);
   line-height: 1.55;
   margin: 0.25rem 0 0;
   max-height: calc(3 * 0.83rem * 1.55);
@@ -315,12 +315,12 @@
 }
 
 .draw-result-description::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(var(--media-rgb), 0.25);
   border-radius: 4px;
 }
 
 .draw-result-description::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(var(--media-rgb), 0.45);
 }
 
 /* ── Placeholder geométrico ──────────────────────── */
@@ -348,16 +348,16 @@
 
 .geo-ring--1 {
   width: 110px; height: 110px;
-  border-color: rgba(168, 85, 247, 0.35);
+  border-color: rgba(var(--primary-rgb), 0.35);
 }
 .geo-ring--2 {
   width: 72px; height: 72px;
-  border-color: rgba(168, 85, 247, 0.55);
+  border-color: rgba(var(--primary-rgb), 0.55);
 }
 .geo-ring--3 {
   width: 36px; height: 36px;
-  border-color: rgba(245, 158, 11, 0.7);
-  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(var(--secondary-rgb), 0.7);
+  background: rgba(var(--secondary-rgb), 0.08);
 }
 
 /* Triângulos */
@@ -370,7 +370,7 @@
 .geo-triangle--1 {
   border-left: 22px solid transparent;
   border-right: 22px solid transparent;
-  border-bottom: 38px solid rgba(168, 85, 247, 0.2);
+  border-bottom: 38px solid rgba(var(--primary-rgb), 0.2);
   top: 12%;
   right: 14%;
 }
@@ -378,7 +378,7 @@
 .geo-triangle--2 {
   border-left: 14px solid transparent;
   border-right: 14px solid transparent;
-  border-top: 24px solid rgba(245, 158, 11, 0.18);
+  border-top: 24px solid rgba(var(--secondary-rgb), 0.18);
   bottom: 28%;
   left: 10%;
 }
@@ -393,7 +393,7 @@
 
 .geo-bar--1 {
   width: 55px;
-  background: rgba(168, 85, 247, 0.3);
+  background: rgba(var(--primary-rgb), 0.3);
   top: 22%;
   left: 8%;
   transform: rotate(32deg);
@@ -401,7 +401,7 @@
 
 .geo-bar--2 {
   width: 38px;
-  background: rgba(245, 158, 11, 0.25);
+  background: rgba(var(--secondary-rgb), 0.25);
   bottom: 22%;
   right: 10%;
   transform: rotate(-20deg);
@@ -415,14 +415,14 @@
 
 .geo-dot--1 {
   width: 8px; height: 8px;
-  background: rgba(245, 158, 11, 0.5);
+  background: rgba(var(--secondary-rgb), 0.5);
   top: 15%;
   left: 18%;
 }
 
 .geo-dot--2 {
   width: 5px; height: 5px;
-  background: rgba(168, 85, 247, 0.6);
+  background: rgba(var(--primary-rgb), 0.6);
   bottom: 32%;
   right: 18%;
 }
@@ -435,7 +435,7 @@
   z-index: 1;
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(168, 85, 247, 0.75);
+  color: rgba(var(--primary-rgb), 0.75);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -543,7 +543,7 @@
 }
 
 .draw-toggle-input:checked + .draw-toggle-track {
-  background: rgba(168, 85, 247, 0.3);
+  background: rgba(var(--primary-rgb), 0.3);
 }
 
 .draw-toggle-input:checked + .draw-toggle-track::after {
@@ -589,7 +589,7 @@
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--media-rgb), 0.15);
   transform: translate(-50%, -50%);
   transition: width 0.5s, height 0.5s;
 }
@@ -601,13 +601,13 @@
 
 .btn-primary {
   background: var(--gradient-1);
-  color: white;
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+  color: var(--text-on-media);
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.6);
 }
 
 .btn-primary:disabled {
@@ -624,9 +624,9 @@
 }
 
 .btn-ghost:hover {
-  border-color: #fbbf24;
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.06);
+  border-color: var(--warning);
+  color: var(--warning);
+  background: rgba(var(--warning-rgb), 0.06);
   transform: translateY(-1px);
 }
 
@@ -709,9 +709,9 @@
 }
 
 .btn-close-draw {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--shadow-rgb), 0.4);
+  border: 1px solid rgba(var(--media-rgb), 0.15);
+  color: rgba(var(--media-rgb), 0.8);
   font-size: 1rem;
   cursor: pointer;
   width: 32px;
@@ -726,8 +726,8 @@
 }
 
 .btn-close-draw:hover {
-  background: rgba(0, 0, 0, 0.65);
-  color: white;
+  background: rgba(var(--shadow-rgb), 0.65);
+  color: var(--text-on-media);
 }
 
 /* ── Responsivo ──────────────────────────────────── */
@@ -748,7 +748,7 @@
 
   .card-right {
     border-left: none;
-    border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.15);
   }
 
   .draw-placeholder {

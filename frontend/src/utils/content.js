@@ -5,10 +5,10 @@ export const TYPE_LABEL = {
 }
 
 export const PRIORITY_COLOR = {
-  URGENT: '#ef4444',
-  HIGH:   '#f59e0b',
-  MEDIUM: '#3b82f6',
-  LOW:    '#6b7280',
+  URGENT: 'var(--priority-urgent)',
+  HIGH:   'var(--priority-high)',
+  MEDIUM: 'var(--priority-medium)',
+  LOW:    'var(--priority-low)',
 }
 
 export const PRIORITY_LABEL = {

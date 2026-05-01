@@ -1,7 +1,9 @@
 import axios from 'axios'
+import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
+const toUpstreamError = makeUpstreamErrorFactory('TMDB')
 
 class TMDBService {
   constructor() {
@@ -39,7 +41,9 @@ class TMDBService {
 
       return this.genreCache[type]
     } catch (error) {
-      console.error('Erro ao buscar gêneros:', error.message)
+      // Genres falha em silêncio (cache vazio) — search ainda funciona,
+      // só sem nomes de gêneros nos resultados.
+      console.error('Erro ao buscar gêneros:', describeAxiosError(error))
       return {}
     }
   }
@@ -129,8 +133,8 @@ class TMDBService {
         totalResults: response.data.total_results || 0,
       }
     } catch (error) {
-      console.error('Erro no discover do TMDB:', error.message)
-      throw new Error(`Erro no discover do TMDB: ${error.message}`)
+      console.error('Erro no discover do TMDB:', describeAxiosError(error))
+      throw toUpstreamError(error, 'discover do TMDB')
     }
   }
 
@@ -164,8 +168,8 @@ class TMDBService {
         totalResults: response.data.total_results || 0,
       }
     } catch (error) {
-      console.error('Erro ao buscar no TMDB:', error.message)
-      throw new Error(`Erro ao buscar no TMDB: ${error.message}`)
+      console.error('Erro ao buscar no TMDB:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar no TMDB')
     }
   }
 
@@ -192,8 +196,8 @@ class TMDBService {
         totalResults: response.data.total_results || 0,
       }
     } catch (error) {
-      console.error('Erro ao buscar filmes populares:', error.message)
-      throw new Error(`Erro ao buscar filmes populares: ${error.message}`)
+      console.error('Erro ao buscar filmes populares:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar filmes populares')
     }
   }
 
@@ -220,8 +224,8 @@ class TMDBService {
         totalResults: response.data.total_results || 0,
       }
     } catch (error) {
-      console.error('Erro ao buscar séries populares:', error.message)
-      throw new Error(`Erro ao buscar séries populares: ${error.message}`)
+      console.error('Erro ao buscar séries populares:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar séries populares')
     }
   }
 
@@ -241,8 +245,8 @@ class TMDBService {
 
       return this.formatMovieDetails(response.data)
     } catch (error) {
-      console.error('Erro ao buscar detalhes do filme:', error.message)
-      throw new Error(`Erro ao buscar detalhes do filme: ${error.message}`)
+      console.error('Erro ao buscar detalhes do filme:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar detalhes do filme')
     }
   }
 
@@ -262,8 +266,8 @@ class TMDBService {
 
       return this.formatSeriesDetails(response.data)
     } catch (error) {
-      console.error('Erro ao buscar detalhes da série:', error.message)
-      throw new Error(`Erro ao buscar detalhes da série: ${error.message}`)
+      console.error('Erro ao buscar detalhes da série:', describeAxiosError(error))
+      throw toUpstreamError(error, 'buscar detalhes da série')
     }
   }
 

@@ -1,5 +1,5 @@
 import { prisma } from '../config/database.js'
-import { drawMovie as drawFromLottery } from './lottery.js'
+import { drawMovie as drawFromLottery } from './lottery/index.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
 import { toIntOrNull } from '../lib/parsers.js'
 import {
@@ -202,8 +202,6 @@ export const deleteMovie = async (userId, movieId) => {
 
   await prisma.movie.delete({ where: { id: movieId } })
 }
-
-const VALID_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
 
 // Normaliza filtros vindos do client. Tipos inválidos lançam ValidationError;
 // gêneros são strings livres (TMDB/Jikan retornam nomes em pt-BR/en).

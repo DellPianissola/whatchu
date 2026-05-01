@@ -1,7 +1,11 @@
 import { defineConfig } from 'vitest/config'
 
-// URL do banco de testes (postgres-test do docker-compose --profile test)
+// URL do banco de testes. Default aponta pro postgres-test exposto em localhost:5433
+// (workflow dev do host). Quando rodando dentro da network do docker compose,
+// o service backend-test sobrescreve via env TEST_DATABASE_URL apontando pra
+// postgres-test:5432.
 const TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL ||
   'postgresql://whatchu:whatchu@localhost:5433/whatchu_test'
 
 export default defineConfig({
@@ -36,7 +40,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
       include: [
-        'services/lottery.js',
+        'services/lottery/**',
         'services/profiles.js',
         'services/auth.js',
         'services/movies.js',

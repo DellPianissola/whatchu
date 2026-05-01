@@ -14,6 +14,7 @@ const __dirname  = path.dirname(__filename)
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..')
 
 const TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL ||
   'postgresql://whatchu:whatchu@localhost:5433/whatchu_test'
 
 export async function setup() {

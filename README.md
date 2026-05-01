@@ -151,7 +151,28 @@ cd frontend && npm install && npm run dev  # porta 5173
 
 ## Testes (backend)
 
-### Unitários — sem banco, com mocks
+### Tudo via Docker — comando único
+
+Sobe o banco de testes, roda unit + integração e sai. Exit code do container
+reflete o resultado dos testes (útil pra CI). Não precisa ter Node instalado no host.
+
+```bash
+docker compose --profile test run --rm backend-test
+```
+
+Limpar só os containers de teste (sem mexer no dev):
+
+```bash
+docker compose --profile test rm -sfv postgres-test backend-test
+```
+
+> ⚠️ **Não** use `docker compose --profile test down -v` — o `--profile` adiciona
+> serviços, não restringe, então `down` derruba TUDO (dev incluso) e `-v` apaga
+> os volumes do dev (`postgres_data`, `minio_data`).
+
+### Localmente (sem Docker pros testes)
+
+#### Unitários — sem banco, com mocks
 
 ```bash
 cd backend
@@ -159,10 +180,10 @@ npm test
 npm run test:coverage
 ```
 
-### Integração — banco PostgreSQL real isolado
+#### Integração — banco PostgreSQL real isolado
 
 ```bash
-# 1. Sobe o banco de testes via Docker (porta 5433, não interfere no de dev)
+# 1. Sobe só o banco de testes via Docker (porta 5433, não interfere no de dev)
 docker compose --profile test up postgres-test -d
 
 # 2. Roda os testes
@@ -171,7 +192,7 @@ npm run test:integration
 npm run test:integration:coverage
 ```
 
-### Tudo de uma vez
+#### Tudo de uma vez
 
 ```bash
 npm run test:all

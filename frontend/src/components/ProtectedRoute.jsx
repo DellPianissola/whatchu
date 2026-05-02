@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import Footer from './Footer.jsx'
 
 const ProtectedRoute = ({ children, requireOnboarding = true }) => {
   const { isAuthenticated, loading, profile } = useAuth()
@@ -29,7 +30,12 @@ const ProtectedRoute = ({ children, requireOnboarding = true }) => {
     return <Navigate to="/onboarding" replace />
   }
 
-  return children
+  return (
+    <div className="protected-shell">
+      <div className="protected-content">{children}</div>
+      <Footer />
+    </div>
+  )
 }
 
 export default ProtectedRoute

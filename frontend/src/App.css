@@ -2,3 +2,15 @@
   min-height: 100vh;
   width: 100%;
 }
+
+/* Shell de rotas protegidas: empurra o Footer pro fim do viewport
+   mesmo em páginas com pouco conteúdo. NavBar é sticky e fica fora daqui. */
+.protected-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px);
+}
+
+.protected-content {
+  flex: 1;
+}

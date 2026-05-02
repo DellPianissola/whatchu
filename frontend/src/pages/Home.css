@@ -1,16 +1,11 @@
 .home {
   min-height: calc(100vh - 3.75rem);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.25rem 2rem 4rem;
-  scrollbar-width: none;
-}
-
-.home::-webkit-scrollbar {
-  display: none;
 }
 
 /* ── Cinema Background ───────────────────────────── */

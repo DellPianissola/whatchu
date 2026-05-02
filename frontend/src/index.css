@@ -112,6 +112,30 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Scrollbar global ────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-light) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-light);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

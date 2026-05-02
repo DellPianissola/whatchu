@@ -84,30 +84,10 @@
   flex-direction: column;
   gap: 0.15rem;
 
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-light) transparent;
 }
 
 .dropdown-menu-left  { left: 0; }
 .dropdown-menu-right { right: 0; }
-
-/* Scrollbar igual ao CardModal */
-.dropdown-menu::-webkit-scrollbar {
-  width: 4px;
-}
-
-.dropdown-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dropdown-menu::-webkit-scrollbar-thumb {
-  background: var(--surface-light);
-  border-radius: 4px;
-}
-
-.dropdown-menu::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
 
 /* ── Option ── */
 .dropdown-option {

@@ -268,27 +268,6 @@
   opacity: 0.75;
 }
 
-/* ── Scrollbar ── */
-.card-modal-description::-webkit-scrollbar,
-.card-modal-info::-webkit-scrollbar {
-  width: 4px;
-}
-
-.card-modal-description::-webkit-scrollbar-track,
-.card-modal-info::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.card-modal-description::-webkit-scrollbar-thumb,
-.card-modal-info::-webkit-scrollbar-thumb {
-  background: var(--surface-light);
-  border-radius: 4px;
-}
-
-.card-modal-description::-webkit-scrollbar-thumb:hover,
-.card-modal-info::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
 
 /* ── Mobile ── */
 @media (max-width: 640px) {

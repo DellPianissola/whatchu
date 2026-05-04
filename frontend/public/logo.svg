@@ -1,112 +1,217 @@
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="100%" viewBox="0 0 160 112" enable-background="new 0 0 160 112" xml:space="preserve">
-  <defs>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   width="131.14754"
+   viewBox="0 0 131.14754 99.378296"
+   enable-background="new 0 0 160 112"
+   xml:space="preserve"
+   sodipodi:docname="logo.svg"
+   height="99.378296"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+   id="namedview15"
+   pagecolor="#505050"
+   bordercolor="#eeeeee"
+   borderopacity="1"
+   inkscape:showpageshadow="0"
+   inkscape:pageopacity="0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#505050"
+   inkscape:zoom="3.6026786"
+   inkscape:cx="-3.8859975"
+   inkscape:cy="51.211896"
+   inkscape:window-width="1920"
+   inkscape:window-height="1009"
+   inkscape:window-x="-8"
+   inkscape:window-y="-8"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_1" />
+  <defs
+   id="defs9">
     <!-- Roxo vertical: pessoas laterais -->
-    <linearGradient id="grad-side" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#7c3aed"/>
+    <linearGradient
+   id="grad-side"
+   x1="0"
+   y1="0"
+   x2="0"
+   y2="1"
+   gradientUnits="objectBoundingBox">
+      <stop
+   offset="0%"
+   stop-color="#c084fc"
+   id="stop1" />
+      <stop
+   offset="100%"
+   stop-color="#7c3aed"
+   id="stop2" />
     </linearGradient>
 
     <!-- Roxo→âmbar horizontal: arco central (flui da esquerda pra direita) -->
-    <linearGradient id="grad-arc" x1="40" y1="0" x2="141" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#a855f7"/>
-      <stop offset="55%"  stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
+    <linearGradient
+   id="grad-arc"
+   x1="40"
+   y1="0"
+   x2="141"
+   y2="0"
+   gradientUnits="userSpaceOnUse"
+   gradientTransform="translate(-25.449508,-12.14277)">
+      <stop
+   offset="0%"
+   stop-color="#a855f7"
+   id="stop3" />
+      <stop
+   offset="55%"
+   stop-color="#c084fc"
+   id="stop4" />
+      <stop
+   offset="100%"
+   stop-color="#f59e0b"
+   id="stop5" />
     </linearGradient>
 
     <!-- Roxo→âmbar diagonal: cabeça central (elemento de destaque) -->
-    <linearGradient id="grad-center-head" x1="76" y1="22" x2="108" y2="54" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
+    <linearGradient
+   id="grad-center-head"
+   x1="76"
+   y1="22"
+   x2="108"
+   y2="54"
+   gradientUnits="userSpaceOnUse"
+   gradientTransform="translate(-25.449508,-12.14277)">
+      <stop
+   offset="0%"
+   stop-color="#a855f7"
+   id="stop6" />
+      <stop
+   offset="100%"
+   stop-color="#f59e0b"
+   id="stop7" />
     </linearGradient>
 
     <!-- Âmbar vertical: botão play -->
-    <linearGradient id="grad-play" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%"   stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#d97706"/>
+    <linearGradient
+   id="grad-play"
+   x1="87.720869"
+   y1="79.006719"
+   x2="87.720869"
+   y2="104.17702"
+   gradientUnits="userSpaceOnUse"
+   gradientTransform="matrix(0.93414657,0,0,1.0704958,-25.449508,-12.14277)">
+      <stop
+   offset="0%"
+   stop-color="#fbbf24"
+   id="stop8" />
+      <stop
+   offset="100%"
+   stop-color="#d97706"
+   id="stop9" />
     </linearGradient>
-  </defs>
+  <linearGradient
+   inkscape:collect="always"
+   xlink:href="#grad-side"
+   id="linearGradient15"
+   gradientUnits="userSpaceOnUse"
+   x1="26.127032"
+   y1="42.077325"
+   x2="26.127032"
+   y2="86.029244"
+   gradientTransform="matrix(0.97406806,0,0,1.0266223,-25.449508,-12.14277)" /><linearGradient
+   inkscape:collect="always"
+   xlink:href="#grad-side"
+   id="linearGradient16"
+   gradientUnits="userSpaceOnUse"
+   x1="117.27996"
+   y1="41.975469"
+   x2="117.27996"
+   y2="85.844528"
+   gradientTransform="matrix(0.97175303,0,0,1.0290681,-25.449508,-12.14277)" /><linearGradient
+   inkscape:collect="always"
+   xlink:href="#grad-side"
+   id="linearGradient17"
+   gradientUnits="userSpaceOnUse"
+   x1="32.443899"
+   y1="12.221387"
+   x2="32.443899"
+   y2="41.031466"
+   gradientTransform="matrix(1.0020956,0,0,0.99790878,-25.449508,-12.14277)" /><linearGradient
+   inkscape:collect="always"
+   xlink:href="#grad-side"
+   id="linearGradient18"
+   gradientUnits="userSpaceOnUse"
+   x1="121.66096"
+   y1="12.060851"
+   x2="121.66096"
+   y2="40.761417"
+   gradientTransform="matrix(0.99325373,0,0,1.0067921,-25.449508,-12.14277)" /></defs>
 
   <!-- Arco inferior — gradiente roxo→âmbar horizontal -->
-  <path fill="url(#grad-arc)" opacity="1.000000" stroke="none"
-    d="
-M84.457298,77.473610
-	C71.167480,80.645203 61.836185,88.567398 55.113056,99.616859
-	C52.529697,103.862610 50.060738,103.679634 46.766888,100.987221
-	C45.093288,99.619209 43.362667,98.309357 41.790901,96.831665
-	C40.254547,95.387268 39.375313,93.718056 40.612103,91.526009
-	C49.296028,76.134872 60.561279,63.586163 78.273430,58.712551
-	C101.367447,52.358086 118.850883,62.315708 133.797104,78.726471
-	C136.570450,81.771584 138.609589,85.481766 141.021057,88.861115
-	C143.518784,92.361351 142.914780,95.317909 139.553314,97.846733
-	C139.288956,98.045609 139.078857,98.315422 138.820236,98.523232
-	C131.198853,104.647293 131.183441,104.656982 125.648125,96.603188
-	C117.442154,84.663620 106.208244,77.787094 91.731590,76.539017
-	C89.485214,76.345352 87.156425,77.107658 84.457298,77.473610
-z"/>
+  <path
+   fill="url(#grad-arc)"
+   opacity="1"
+   stroke="none"
+   d="M 59.00779,65.33084 C 45.717972,68.502433 36.386677,76.424628 29.663548,87.474089 27.080189,91.71984 24.61123,91.53686 21.31738,88.84445 19.64378,87.476439 17.913159,86.166587 16.341393,84.688895 14.805039,83.244498 13.925805,81.575286 15.162595,79.383239 23.84652,63.992102 35.111771,51.443393 52.823922,46.569781 c 23.09402,-6.354465 40.57745,3.603157 55.523668,20.01392 2.77335,3.045113 4.81249,6.755295 7.22396,10.134644 2.49772,3.500236 1.89372,6.456794 -1.46775,8.985618 -0.26435,0.198876 -0.47445,0.468689 -0.73307,0.676499 -7.62139,6.124058 -7.6368,6.133748 -13.17212,-1.920044 C 91.992642,72.52085 80.758732,65.644324 66.282082,64.396247 64.035706,64.202582 61.706917,64.964888 59.00779,65.33084 Z"
+   id="path9"
+   style="fill:url(#grad-arc)" />
 
   <!-- Corpo/silhueta pessoa esquerda — roxo -->
-  <path fill="url(#grad-side)" opacity="1.000000" stroke="none"
-    d="
-M36.952194,45.666946
-	C48.253155,40.631252 60.724468,43.520283 66.831116,52.302074
-	C68.755226,55.069080 69.141182,57.213409 65.435234,59.050179
-	C53.933624,64.750687 45.347279,73.658096 38.516064,84.367447
-	C35.081528,89.751785 34.196609,89.567886 30.370600,84.222298
-	C22.895103,73.777771 23.072382,52.779167 36.952194,45.666946
-z"/>
+  <path
+   fill="url(#grad-side)"
+   opacity="1"
+   stroke="none"
+   d="m 11.502686,33.524176 c 11.300961,-5.035694 23.772274,-2.146663 29.878922,6.635128 1.92411,2.767006 2.310066,4.911335 -1.395882,6.748105 -11.50161,5.700508 -20.087955,14.607917 -26.91917,25.317268 -3.4345358,5.384338 -4.3194548,5.200439 -8.1454638,-0.145149 -7.475497,-10.444527 -7.298218,-31.443131 6.5815938,-38.555352 z"
+   id="path10"
+   style="fill:url(#linearGradient15)" />
 
   <!-- Corpo/silhueta pessoa direita — roxo -->
-  <path fill="url(#grad-side)" opacity="1.000000" stroke="none"
-    d="
-M117.764366,49.803173
-	C129.377258,39.047512 147.740707,41.848579 154.570709,55.112873
-	C158.703812,63.139622 156.187286,80.634117 149.982071,87.154686
-	C148.229553,88.996262 146.859390,88.609871 145.655197,86.562111
-	C138.587708,74.543839 129.030472,65.272308 116.529320,58.820320
-	C110.866135,55.897480 116.120087,52.902935 117.764366,49.803173
-z"/>
+  <path
+   fill="url(#grad-side)"
+   opacity="1"
+   stroke="none"
+   d="m 92.314862,37.660403 c 11.612888,-10.755661 29.976338,-7.954594 36.806338,5.3097 4.1331,8.026749 1.61658,25.521244 -4.58864,32.041813 -1.75252,1.841576 -3.12268,1.455185 -4.32687,-0.592575 C 113.1382,62.401069 103.58096,53.129538 91.079812,46.67755 c -5.66318,-2.92284 -0.40923,-5.917385 1.23505,-9.017147 z"
+   id="path11"
+   style="fill:url(#linearGradient16)" />
 
   <!-- Cabeça pessoa central — gradiente roxo→âmbar (destaque) -->
-  <path fill="url(#grad-center-head)" opacity="1.000000" stroke="none"
-    d="
-M98.162529,26.487144
-	C108.243240,33.953518 108.112885,47.620670 98.261253,53.125057
-	C88.931824,58.337673 77.361923,52.012978 76.666824,41.320450
-	C75.856720,28.858881 86.221878,21.503265 98.162529,26.487144
-z"/>
+  <path
+   fill="url(#grad-center-head)"
+   opacity="1"
+   stroke="none"
+   d="M 72.713021,14.344374 C 82.793732,21.810748 82.663382,35.4779 72.811741,40.982287 63.482316,46.194903 51.912415,39.870208 51.217316,29.17768 50.407212,16.716111 60.77237,9.3604954 72.713021,14.344374 Z"
+   id="path12"
+   style="fill:url(#grad-center-head)" />
 
   <!-- Cabeça pessoa esquerda — roxo -->
-  <path fill="url(#grad-side)" opacity="1.000000" stroke="none"
-    d="
-M40.584824,39.700943
-	C34.412872,35.838791 31.570986,30.282354 32.788124,24.050606
-	C33.833229,18.699673 36.571476,14.461258 42.195644,12.907784
-	C49.006493,11.026531 55.638847,12.966565 58.844822,17.628458
-	C62.362991,22.744335 62.201496,31.138624 58.493122,35.908592
-	C54.756607,40.714764 47.733658,42.307644 40.584824,39.700943
-z"/>
+  <path
+   fill="url(#grad-side)"
+   opacity="1"
+   stroke="none"
+   d="M 15.135316,27.558173 C 8.9633642,23.696021 6.1214782,18.139584 7.3386162,11.907836 8.3837212,6.5569034 11.121968,2.3184884 16.746136,0.76501442 c 6.810849,-1.88125302 13.443203,0.05878 16.649178,4.72067398 3.518169,5.1158766 3.356674,13.5101656 -0.3517,18.2801336 -3.736515,4.806172 -10.759464,6.399052 -17.908298,3.792351 z"
+   id="path13"
+   style="fill:url(#linearGradient17)" />
 
   <!-- Cabeça pessoa direita — roxo -->
-  <path fill="url(#grad-side)" opacity="1.000000" stroke="none"
-    d="
-M120.853828,29.464228
-	C120.472153,16.369259 128.136765,9.956409 140.171906,12.812661
-	C145.430527,14.060668 149.249039,19.640432 149.345016,26.216755
-	C149.446167,33.146828 145.929703,38.548641 140.328094,40.182064
-	C131.509338,42.753597 123.866875,39.632401 120.853828,29.464228
-z"/>
+  <path
+   fill="url(#grad-side)"
+   opacity="1"
+   stroke="none"
+   d="M 95.404322,17.321458 C 95.022642,4.2264894 102.68725,-2.1863606 114.7224,0.66989142 c 5.25862,1.24800698 9.07713,6.82777098 9.17311,13.40409358 0.10115,6.930073 -3.41532,12.331886 -9.01693,13.965309 -8.81875,2.571533 -16.461218,-0.549663 -19.474258,-10.717836 z"
+   id="path14"
+   style="fill:url(#linearGradient18)" />
 
   <!-- Botão play — âmbar -->
-  <path fill="url(#grad-play)" opacity="1.000000" stroke="none"
-    d="
-M82.640015,99.168427
-	C82.089867,95.266411 81.684776,91.802429 82.142632,88.295227
-	C82.619194,84.644753 84.758881,83.716194 87.746414,85.358047
-	C92.989273,88.239372 98.087196,91.387375 103.210358,94.482384
-	C106.143967,96.254654 106.119057,98.818634 103.633766,100.527840
-	C98.163696,104.289757 92.477676,107.779297 86.655396,110.970596
-	C83.550049,112.672684 82.420593,110.114639 82.287849,107.560585
-	C82.150833,104.924225 82.509651,102.262085 82.640015,99.168427
-z"/>
+  <path
+   fill="url(#grad-play)"
+   opacity="1"
+   stroke="none"
+   d="m 57.190507,87.025657 c -0.697352,-3.656675 -0.955239,-7.365998 -0.497383,-10.8732 0.476562,-3.650474 2.616249,-4.579033 5.603782,-2.93718 5.242859,2.881325 10.340782,6.029328 15.463946,9.124337 2.93361,1.77227 2.9087,4.33625 0.42341,6.045456 -5.470074,3.76192 -11.156094,7.25146 -16.978374,10.44276 -3.105347,1.70208 -4.234803,-0.85596 -4.367547,-3.41001 -0.137016,-2.63636 0.221802,-5.2985 0.352166,-8.392163 z"
+   id="path15"
+   style="fill:url(#grad-play)"
+   sodipodi:nodetypes="cssssssc" />
 </svg>

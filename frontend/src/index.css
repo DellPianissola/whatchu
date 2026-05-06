@@ -38,15 +38,15 @@
   --warning: #fbbf24;
   --warning-rgb: 251, 191, 36;
 
-  /* prioridade */
-  --priority-low: #6b7280;
-  --priority-low-rgb: 107, 114, 128;
-  --priority-medium: #3b82f6;
-  --priority-medium-rgb: 59, 130, 246;
-  --priority-high: #f59e0b;
-  --priority-high-rgb: 245, 158, 11;
-  --priority-urgent: #ef4444;
-  --priority-urgent-rgb: 239, 68, 68;
+  /* prioridade — espectro frio→quente: teal → sky → rose → violet */
+  --priority-low: #14b8a6;
+  --priority-low-rgb: 20, 184, 166;
+  --priority-medium: #0ea5e9;
+  --priority-medium-rgb: 14, 165, 233;
+  --priority-high: #ec4899;
+  --priority-high-rgb: 236, 72, 153;
+  --priority-urgent: #a855f7;
+  --priority-urgent-rgb: 168, 85, 247;
 
   /* sombras / overlays — RGB pra permitir variar opacidade */
   --shadow-rgb: 0, 0, 0;
@@ -89,10 +89,6 @@
   /* warning escurecido pra contraste em branco */
   --warning: #d97706;
   --warning-rgb: 217, 119, 6;
-
-  /* prioridade — high acompanha mudança de âmbar */
-  --priority-high: #d97706;
-  --priority-high-rgb: 217, 119, 6;
 
   /* gradientes invertidos: gradient-1 (CTA principal) vira âmbar,
      gradient-2 (secundário) vira roxo */

@@ -18,28 +18,31 @@
   flex-wrap: wrap;
 }
 
+.priority-pill--low    { --pill-rgb: var(--priority-low-rgb); }
+.priority-pill--medium { --pill-rgb: var(--priority-medium-rgb); }
+.priority-pill--high   { --pill-rgb: var(--priority-high-rgb); }
+.priority-pill--urgent { --pill-rgb: var(--priority-urgent-rgb); }
+
 .priority-pill {
   padding: 0.3rem 0.85rem;
   border-radius: 99px;
-  border: 1.5px solid transparent;
+  border: 1.5px solid rgb(var(--pill-rgb));
+  background: rgb(var(--pill-rgb));
+  color: var(--text-on-media);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  color: var(--text-on-media);
-  transition: filter 0.15s, transform 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
-.priority-pill--low    { background: var(--priority-low);    border-color: var(--priority-low); }
-.priority-pill--medium { background: var(--priority-medium); border-color: var(--priority-medium); }
-.priority-pill--high   { background: var(--priority-high);   border-color: var(--priority-high); }
-.priority-pill--urgent { background: var(--priority-urgent); border-color: var(--priority-urgent); }
-
 .priority-pill:not(.priority-pill--active) {
-  filter: brightness(0.55) saturate(0.85);
+  background: color-mix(in srgb, rgb(var(--pill-rgb)), #000 60%);
+  border-color: color-mix(in srgb, rgb(var(--pill-rgb)), #000 60%);
 }
 
 .priority-pill:not(.priority-pill--active):hover {
-  filter: brightness(0.85) saturate(0.95);
+  background: color-mix(in srgb, rgb(var(--pill-rgb)), #000 35%);
+  border-color: color-mix(in srgb, rgb(var(--pill-rgb)), #000 35%);
 }
 
 .priority-pill--active {

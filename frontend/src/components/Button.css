@@ -39,9 +39,11 @@
 }
 
 .ui-btn--filter:not(.ui-btn--active) {
-  filter: brightness(0.55) saturate(0.85);
+  background: color-mix(in srgb, var(--primary), #000 60%);
+  border-color: color-mix(in srgb, var(--primary), #000 60%);
 }
 
 .ui-btn--filter:not(.ui-btn--active):hover:not(:disabled):not([aria-disabled="true"]) {
-  filter: brightness(0.85) saturate(0.95);
+  background: color-mix(in srgb, var(--primary), #000 35%);
+  border-color: color-mix(in srgb, var(--primary), #000 35%);
 }

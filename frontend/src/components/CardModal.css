@@ -209,63 +209,11 @@
   max-width: 300px;
 }
 
-/* ── Priority picker (MyList modal) ── */
-
 .modal-actions-stack {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-}
-
-.priority-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.priority-picker-label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.priority-pills {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.priority-pill {
-  padding: 0.3rem 0.85rem;
-  border-radius: 99px;
-  border: 1.5px solid transparent;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: transparent;
-  transition: all 0.15s;
-  opacity: 0.45;
-}
-
-.priority-pill--low    { border-color: var(--priority-low);    color: var(--priority-low); }
-.priority-pill--medium { border-color: var(--priority-medium); color: var(--priority-medium); }
-.priority-pill--high   { border-color: var(--priority-high);   color: var(--priority-high); }
-.priority-pill--urgent { border-color: var(--priority-urgent); color: var(--priority-urgent); }
-
-.priority-pill--active {
-  opacity: 1;
-}
-
-.priority-pill--low.priority-pill--active    { background: rgba(var(--priority-low-rgb), 0.15); }
-.priority-pill--medium.priority-pill--active { background: rgba(var(--priority-medium-rgb), 0.15); }
-.priority-pill--high.priority-pill--active   { background: rgba(var(--priority-high-rgb), 0.15); }
-.priority-pill--urgent.priority-pill--active { background: rgba(var(--priority-urgent-rgb), 0.15); }
-
-.priority-pill:not(.priority-pill--active):hover {
-  opacity: 0.75;
 }
 
 

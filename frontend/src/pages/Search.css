@@ -167,7 +167,8 @@
   cursor: pointer;
 }
 
-.result-card:hover {
+.result-card:hover,
+.result-card--menu-open {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.3);
 }

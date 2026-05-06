@@ -1,0 +1,115 @@
+.in-list-row {
+  display: flex;
+  gap: 0.4rem;
+  width: 100%;
+  align-items: stretch;
+  position: relative;
+}
+
+.in-list-row-remove {
+  flex: 1;
+  width: auto;
+}
+
+.priority-indicator-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.priority-indicator {
+  height: 100%;
+  width: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: width 0.25s ease, box-shadow 0.15s;
+  background: var(--ind-color);
+}
+
+.priority-indicator--low    { --ind-color: var(--priority-low); }
+.priority-indicator--medium { --ind-color: var(--priority-medium); }
+.priority-indicator--high   { --ind-color: var(--priority-high); }
+.priority-indicator--urgent { --ind-color: var(--priority-urgent); }
+
+.priority-indicator:hover:not(:disabled),
+.priority-indicator--open {
+  width: 92px;
+  box-shadow: 0 2px 8px rgba(var(--shadow-rgb), 0.25);
+}
+
+.priority-indicator:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.priority-indicator-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-on-media);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease 0.05s;
+  pointer-events: none;
+}
+
+.priority-indicator:hover:not(:disabled) .priority-indicator-label,
+.priority-indicator--open .priority-indicator-label {
+  opacity: 1;
+}
+
+.priority-color-dropdown {
+  position: fixed;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.45);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.priority-color-option {
+  position: relative;
+  padding: 0.6rem 0.4rem;
+  border: none;
+  color: var(--text-on-media);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  transition: filter 0.15s;
+  white-space: nowrap;
+}
+
+.priority-color-option--low    { background: var(--priority-low); }
+.priority-color-option--medium { background: var(--priority-medium); }
+.priority-color-option--high   { background: var(--priority-high); }
+.priority-color-option--urgent { background: var(--priority-urgent); }
+
+.priority-color-option:not(.priority-color-option--active) {
+  filter: brightness(0.55) saturate(0.85);
+}
+
+.priority-color-option:hover:not(:disabled):not(.priority-color-option--active) {
+  filter: brightness(0.85) saturate(0.95);
+}
+
+.priority-color-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.priority-color-option--active {
+  cursor: default;
+}
+
+.priority-color-option-check {
+  display: none;
+}

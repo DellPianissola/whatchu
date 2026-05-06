@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { searchExternal, createMovie, getMovies, deleteMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres } from '../services/api.js'
+import { searchExternal, createMovie, getMovies, deleteMovie, updateMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import AddToListButton from '../components/AddToListButton.jsx'
+import PriorityPicker from '../components/PriorityPicker.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
-import { TYPE_LABEL } from '../utils/content.js'
+import { TYPE_LABEL, PRIORITY_LABEL } from '../utils/content.js'
 import './Search.css'
 
 const parsePageParam = (value) => {
@@ -54,6 +56,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const [userMovies, setUserMovies] = useState([])
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
+  const [modalPriority, setModalPriority] = useState('MEDIUM')
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
   const debounceTimer = useRef(null)
 
@@ -103,6 +106,10 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       else next.set('genres', arr.join(','))
     }, { resetPage: true })
   }
+
+  useEffect(() => {
+    if (expandedItem) setModalPriority('MEDIUM')
+  }, [expandedItem])
 
   useEffect(() => {
     const loadUserMovies = async () => {
@@ -233,48 +240,57 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
     // busca é automática via useEffect; form existe pra UX (Enter, mobile submit)
   }
 
-  const isMovieInList = (movie) => {
-    return userMovies.some(userMovie => {
-      // externalId preferível; fallback por título
-      if (movie.externalId && userMovie.externalId) {
-        return userMovie.externalId === movie.externalId.toString()
-      }
-      return userMovie.title.toLowerCase() === movie.title.toLowerCase() &&
-             userMovie.type === (movie.type === 'MOVIE' ? 'MOVIE' : 
-                                movie.type === 'SERIES' ? 'SERIES' : 
-                                movie.type === 'ANIME' ? 'ANIME' : movie.type)
-    })
+  const findUserMovie = (movie) => userMovies.find(userMovie => {
+    // externalId preferível; fallback por título+tipo
+    if (movie.externalId && userMovie.externalId) {
+      return userMovie.externalId === movie.externalId.toString()
+    }
+    return userMovie.title.toLowerCase() === movie.title.toLowerCase() &&
+           userMovie.type === (movie.type === 'MOVIE'  ? 'MOVIE'
+                            :  movie.type === 'SERIES' ? 'SERIES'
+                            :  movie.type === 'ANIME'  ? 'ANIME'
+                            :  movie.type)
+  })
+
+  const isMovieInList = (movie) => Boolean(findUserMovie(movie))
+
+  const handleRemoveMovie = async (movie) => {
+    const userMovie = findUserMovie(movie)
+    if (!userMovie) return
+
+    setAddingMovie(movie.id)
+    try {
+      await deleteMovie(userMovie.id)
+      setUserMovies(userMovies.filter(m => m.id !== userMovie.id))
+      toast.success(`"${movie.title}" removido da lista`)
+    } catch (error) {
+      console.error('Erro ao remover filme:', error)
+      toast.error(error.response?.data?.error || 'Erro ao remover filme')
+    } finally {
+      setAddingMovie(null)
+    }
   }
 
-  const handleAddMovie = async (movie) => {
+  const handleChangePriority = async (movie, priority) => {
+    const userMovie = findUserMovie(movie)
+    if (!userMovie || userMovie.priority === priority) return
+    try {
+      await updateMovie(userMovie.id, { priority })
+      setUserMovies(prev => prev.map(m => m.id === userMovie.id ? { ...m, priority } : m))
+      toast.success(`Prioridade alterada para ${PRIORITY_LABEL[priority]}`)
+    } catch (error) {
+      console.error('Erro ao atualizar prioridade:', error)
+      toast.error('Erro ao atualizar prioridade')
+    }
+  }
+
+  const handleAddMovie = async (movie, priority = 'MEDIUM') => {
     if (!profile) {
       toast.error('Perfil não encontrado!')
       return
     }
 
-    if (isMovieInList(movie)) {
-      const userMovie = userMovies.find(userMovie => {
-        if (movie.externalId && userMovie.externalId) {
-          return userMovie.externalId === movie.externalId.toString()
-        }
-        return userMovie.title.toLowerCase() === movie.title.toLowerCase()
-      })
-
-      if (userMovie) {
-        setAddingMovie(movie.id)
-        try {
-          await deleteMovie(userMovie.id)
-          setUserMovies(userMovies.filter(m => m.id !== userMovie.id))
-          toast.success(`"${movie.title}" removido da lista`)
-        } catch (error) {
-          console.error('Erro ao remover filme:', error)
-          toast.error(error.response?.data?.error || 'Erro ao remover filme')
-        } finally {
-          setAddingMovie(null)
-        }
-      }
-      return
-    }
+    if (isMovieInList(movie)) return
 
     setAddingMovie(movie.id)
     try {
@@ -298,7 +314,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
         genres: movie.genres || [],
         rating: movie.rating,
         externalId: movie.externalId?.toString(),
-        priority: 'MEDIUM',
+        priority,
         isNew: true,
       }
 
@@ -515,17 +531,15 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
                           🎭 {genresDisplay}
                         </span>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleAddMovie(item) }}
-                        disabled={!profile || addingMovie === item.id}
-                        className={`btn-add ${isMovieInList(item) ? 'btn-remove' : ''}`}
-                      >
-                        {addingMovie === item.id 
-                          ? 'Processando...' 
-                          : isMovieInList(item) 
-                            ? '🗑️ Remover' 
-                            : '➕ Adicionar'}
-                      </button>
+                      <AddToListButton
+                        inList={isMovieInList(item)}
+                        currentPriority={findUserMovie(item)?.priority}
+                        processing={addingMovie === item.id}
+                        disabled={!profile}
+                        onAdd={(priority) => handleAddMovie(item, priority)}
+                        onChangePriority={(priority) => handleChangePriority(item, priority)}
+                        onRemove={() => handleRemoveMovie(item)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -598,19 +612,36 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
           richDetailsLoading={richDetailsLoading}
           richDetailsError={richDetailsError}
           onClose={() => setExpandedItem(null)}
-          actions={
-            <button
-              onClick={() => handleAddMovie(expandedItem)}
-              disabled={!profile || addingMovie === expandedItem.id}
-              className={`btn-add ${isMovieInList(expandedItem) ? 'btn-remove' : ''}`}
-            >
-              {addingMovie === expandedItem.id
-                ? 'Processando...'
-                : isMovieInList(expandedItem)
-                  ? '🗑️ Remover da lista'
-                  : '➕ Adicionar à lista'}
-            </button>
-          }
+          actions={(() => {
+            const inList = isMovieInList(expandedItem)
+            const userMovie = findUserMovie(expandedItem)
+            // in-list: picker reflete a prioridade atual e clicar troca inline
+            // not-in-list: picker seleciona qual prioridade usar no add (default MEDIUM)
+            const activePriority = inList ? userMovie?.priority : modalPriority
+            const handlePickerChange = (value) => {
+              if (inList) handleChangePriority(expandedItem, value)
+              else        setModalPriority(value)
+            }
+
+            return (
+              <div className="modal-actions-stack">
+                <PriorityPicker value={activePriority} onChange={handlePickerChange} />
+                <button
+                  onClick={() => inList
+                    ? handleRemoveMovie(expandedItem)
+                    : handleAddMovie(expandedItem, modalPriority)}
+                  disabled={!profile || addingMovie === expandedItem.id}
+                  className={`btn-add ${inList ? 'btn-remove' : ''}`}
+                >
+                  {addingMovie === expandedItem.id
+                    ? 'Processando...'
+                    : inList
+                      ? '🗑️ Remover da lista'
+                      : '➕ Adicionar à lista'}
+                </button>
+              </div>
+            )
+          })()}
         />
       )}
     </div>

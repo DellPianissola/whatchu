@@ -6,6 +6,7 @@ import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import CardModal from '../components/CardModal.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import PriorityPicker from '../components/PriorityPicker.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import { TYPE_LABEL, PRIORITY_COLOR, PRIORITY_LABEL } from '../utils/content.js'
 import './MyList.css'
@@ -289,25 +290,10 @@ const MyList = () => {
           onClose={() => setExpandedItemId(null)}
           actions={
             <div className="modal-actions-stack">
-              <div className="priority-picker">
-                <span className="priority-picker-label">Prioridade</span>
-                <div className="priority-pills">
-                  {[
-                    { value: 'LOW',    label: 'Baixa'   },
-                    { value: 'MEDIUM', label: 'Média'   },
-                    { value: 'HIGH',   label: 'Alta'    },
-                    { value: 'URGENT', label: 'Máxima' },
-                  ].map(({ value, label }) => (
-                    <button
-                      key={value}
-                      className={`priority-pill priority-pill--${value.toLowerCase()} ${expandedItem.priority === value ? 'priority-pill--active' : ''}`}
-                      onClick={() => handleChangePriority(expandedItem, value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <PriorityPicker
+                value={expandedItem.priority}
+                onChange={(priority) => handleChangePriority(expandedItem, priority)}
+              />
               <div className="movie-actions">
                 <button
                   onClick={() => handleToggleWatched(expandedItem)}

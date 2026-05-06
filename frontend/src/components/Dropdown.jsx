@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import Button from './Button.jsx'
 import './Dropdown.css'
 
 /**
@@ -82,24 +83,36 @@ const Dropdown = ({
     ? `${label}${selectedCount > 0 ? ` (${selectedCount})` : ''}`
     : (selectedSingle ?? label)
 
-  const triggerClass =
-    trigger === 'pill'
-      ? `filter-pill dropdown-trigger-pill ${(multi ? selectedCount > 0 : value) ? 'active' : ''}`
-      : `dropdown-trigger-btn ${(multi ? selectedCount > 0 : value) ? 'active' : ''}`
+  const isActive = multi ? selectedCount > 0 : Boolean(value)
 
   return (
     <div className={`dropdown-wrapper ${className}`} ref={wrapperRef}>
-      <button
-        type="button"
-        className={triggerClass}
-        onClick={() => !disabled && setOpen(o => !o)}
-        disabled={disabled}
-        title={disabled ? disabledTitle : ''}
-      >
-        {icon && <span className="dropdown-trigger-icon">{icon}</span>}
-        <span className="dropdown-trigger-label">{triggerLabel}</span>
-        <span className="dropdown-trigger-caret" aria-hidden>▾</span>
-      </button>
+      {trigger === 'pill' ? (
+        <Button
+          variant="filter"
+          size="sm"
+          pill
+          active={isActive}
+          icon={icon}
+          disabled={disabled}
+          onClick={() => !disabled && setOpen(o => !o)}
+          title={disabled ? disabledTitle : ''}
+        >
+          {triggerLabel} <span className="dropdown-trigger-caret" aria-hidden>▾</span>
+        </Button>
+      ) : (
+        <button
+          type="button"
+          className={`dropdown-trigger-btn ${isActive ? 'active' : ''}`}
+          onClick={() => !disabled && setOpen(o => !o)}
+          disabled={disabled}
+          title={disabled ? disabledTitle : ''}
+        >
+          {icon && <span className="dropdown-trigger-icon">{icon}</span>}
+          <span className="dropdown-trigger-label">{triggerLabel}</span>
+          <span className="dropdown-trigger-caret" aria-hidden>▾</span>
+        </button>
+      )}
 
       {open && (
         <div className={`dropdown-menu dropdown-menu-${align}`}>

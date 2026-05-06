@@ -37,19 +37,6 @@
   cursor: not-allowed;
 }
 
-/* ── Trigger: pill (compõe com .filter-pill global) ── */
-.dropdown-trigger-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-}
-
-.dropdown-trigger-pill:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .dropdown-trigger-icon {
   font-size: 0.95em;
   line-height: 1;

@@ -1,0 +1,47 @@
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+  transition: filter 0.15s, transform 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.ui-btn:disabled,
+.ui-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ui-btn--full { width: 100%; }
+.ui-btn--pill { border-radius: 99px; }
+
+/* ── Sizes ── */
+.ui-btn--sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
+.ui-btn--md { padding: 0.55rem 1rem;  font-size: 0.85rem; }
+
+/* ── Slots ── */
+.ui-btn-icon { font-size: 1em; line-height: 1; }
+.ui-btn-text { line-height: 1.1; }
+
+/* ── Variant: filter (toggle pill) ── */
+.ui-btn--filter {
+  background: var(--primary);
+  color: var(--text-on-media);
+  border-color: var(--primary);
+}
+
+.ui-btn--filter:not(.ui-btn--active) {
+  filter: brightness(0.55) saturate(0.85);
+}
+
+.ui-btn--filter:not(.ui-btn--active):hover:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(0.85) saturate(0.95);
+}

@@ -611,7 +611,6 @@
   transform: none;
 }
 
-/* Ghost — "Estou com sorte" */
 .btn-ghost {
   background: transparent;
   color: var(--text);
@@ -636,7 +635,6 @@
   z-index: 1;
 }
 
-/* Formar grupo */
 .group-row {
   display: flex;
   justify-content: center;
@@ -661,7 +659,6 @@
   color: var(--text);
 }
 
-/* Badge "em breve" */
 .btn-soon {
   font-size: 0.65rem;
   font-weight: 700;

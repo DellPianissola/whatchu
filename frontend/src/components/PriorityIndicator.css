@@ -1,0 +1,109 @@
+.priority-indicator-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.priority-indicator {
+  height: 100%;
+  width: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: width 0.25s ease, box-shadow 0.15s;
+  background: var(--ind-color);
+}
+
+.priority-indicator--low    { --ind-color: var(--priority-low); }
+.priority-indicator--medium { --ind-color: var(--priority-medium); }
+.priority-indicator--high   { --ind-color: var(--priority-high); }
+.priority-indicator--urgent { --ind-color: var(--priority-urgent); }
+
+.priority-indicator:hover:not(:disabled),
+.priority-indicator--open,
+.priority-indicator--expanded {
+  width: 92px;
+  box-shadow: 0 2px 8px rgba(var(--shadow-rgb), 0.25);
+}
+
+.priority-indicator--expanded {
+  height: 32px;
+}
+
+.priority-indicator:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.priority-indicator-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-on-media);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease 0.05s;
+  pointer-events: none;
+}
+
+.priority-indicator:hover:not(:disabled) .priority-indicator-label,
+.priority-indicator--open .priority-indicator-label,
+.priority-indicator--expanded .priority-indicator-label {
+  opacity: 1;
+}
+
+/* ── Dropdown via portal ── */
+.priority-color-dropdown {
+  position: fixed;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.45);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.priority-color-option {
+  position: relative;
+  padding: 0.6rem 0.4rem;
+  border: none;
+  color: var(--text-on-media);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.priority-color-option--low    { --opt-rgb: var(--priority-low-rgb); }
+.priority-color-option--medium { --opt-rgb: var(--priority-medium-rgb); }
+.priority-color-option--high   { --opt-rgb: var(--priority-high-rgb); }
+.priority-color-option--urgent { --opt-rgb: var(--priority-urgent-rgb); }
+
+.priority-color-option {
+  background: rgb(var(--opt-rgb));
+}
+
+.priority-color-option:not(.priority-color-option--active) {
+  background: color-mix(in srgb, rgb(var(--opt-rgb)), #000 60%);
+}
+
+.priority-color-option:hover:not(:disabled):not(.priority-color-option--active) {
+  background: color-mix(in srgb, rgb(var(--opt-rgb)), #000 35%);
+}
+
+.priority-color-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.priority-color-option--active {
+  cursor: default;
+}

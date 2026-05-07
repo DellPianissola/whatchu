@@ -4,7 +4,7 @@ import { trailerUrl } from '../utils/detailsCache.js'
 import { TYPE_LABEL, formatDuration } from '../utils/content.js'
 import './CardModal.css'
 
-const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions }) => {
+const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions, posterOverlay }) => {
   // ESC fecha o modal; body fica sem scroll enquanto aberto
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -32,6 +32,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
             ) : (
               <PosterPlaceholder title={item.title} type={item.type} className="result-poster" />
             )}
+            {posterOverlay}
           </div>
 
           <div className="card-modal-info">

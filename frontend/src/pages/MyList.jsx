@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMovies, deleteMovie, updateMovie } from '../services/api.js'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -7,8 +7,8 @@ import CardModal from '../components/CardModal.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import PriorityPicker from '../components/PriorityPicker.jsx'
+import PriorityIndicator from '../components/PriorityIndicator.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
-import { TYPE_LABEL, PRIORITY_COLOR, PRIORITY_LABEL } from '../utils/content.js'
 import './MyList.css'
 
 const MyList = () => {
@@ -18,24 +18,11 @@ const MyList = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState({ types: ALL_TYPES, watched: '' })
   const [expandedItemId, setExpandedItemId] = useState(null)
-  const [priorityDropdownId, setPriorityDropdownId] = useState(null)
-  const priorityDropdownRef = useRef(null)
 
   // expandedItem derivado do array — reage automaticamente a toggles e deletes
   const expandedItem = movies.find(m => m.id === expandedItemId) ?? null
 
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
-
-  useEffect(() => {
-    if (!priorityDropdownId) return
-    const handler = (e) => {
-      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(e.target)) {
-        setPriorityDropdownId(null)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [priorityDropdownId])
 
   useEffect(() => {
     loadMovies()
@@ -122,48 +109,14 @@ const MyList = () => {
           ) : (
             <PosterPlaceholder title={movie.title} type={movie.type} className="movie-poster" />
           )}
-          <span className="movie-type-badge">
-            {TYPE_LABEL[movie.type] ?? movie.type}
-          </span>
-          <div
-            className="movie-priority-badge-wrapper"
-            ref={priorityDropdownId === movie.id ? priorityDropdownRef : null}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleToggleWatched(movie) }}
+            className={`card-overlay-btn card-overlay-btn--watched ${movie.watched ? 'card-overlay-btn--watched-on' : ''}`}
+            title={movie.watched ? 'Marcar como não assistido' : 'Marcar como assistido'}
           >
-            <span
-              className="movie-priority-badge"
-              style={{ backgroundColor: PRIORITY_COLOR[movie.priority] ?? PRIORITY_COLOR.LOW }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setPriorityDropdownId(priorityDropdownId === movie.id ? null : movie.id)
-              }}
-              title="Alterar prioridade"
-            >
-              {PRIORITY_LABEL[movie.priority] ?? movie.priority} ▾
-            </span>
-            {priorityDropdownId === movie.id && (
-              <div className="priority-dropdown">
-                {[
-                  { value: 'LOW',    label: 'Baixa'   },
-                  { value: 'MEDIUM', label: 'Média'   },
-                  { value: 'HIGH',   label: 'Alta'    },
-                  { value: 'URGENT', label: 'Máxima'  },
-                ].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    className={`priority-dropdown-option ${movie.priority === value ? 'active' : ''}`}
-                    style={{ '--priority-color': PRIORITY_COLOR[value] ?? PRIORITY_COLOR.LOW }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleChangePriority(movie, value)
-                      setPriorityDropdownId(null)
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            {movie.watched ? '✓' : '👁'}
+          </button>
         </div>
         <div className="movie-info">
           <div className="movie-header">
@@ -176,20 +129,18 @@ const MyList = () => {
               <span>⭐ {movie.rating || 'Sem nota'}</span>
               <span className="genres-span" title={genresText}>🎭 {genresText}</span>
             </div>
-            <div className="movie-actions">
+            <div className="movie-card-actions">
               <button
-                onClick={(e) => { e.stopPropagation(); handleToggleWatched(movie) }}
-                className={`btn-toggle ${movie.watched ? 'watched' : ''}`}
-              >
-                {movie.watched ? '✅ Assistido' : '⭕ Não assistido'}
-              </button>
-              <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleDelete(movie.id) }}
-                className="btn-delete-icon"
-                title="Remover da lista"
+                className="btn-remove-from-list"
               >
-                🗑️
+                🗑️ Remover
               </button>
+              <PriorityIndicator
+                value={movie.priority}
+                onChange={(priority) => handleChangePriority(movie, priority)}
+              />
             </div>
           </div>
         </div>
@@ -288,27 +239,28 @@ const MyList = () => {
           richDetailsLoading={richDetailsLoading}
           richDetailsError={richDetailsError}
           onClose={() => setExpandedItemId(null)}
+          posterOverlay={
+            <button
+              type="button"
+              onClick={() => handleToggleWatched(expandedItem)}
+              className={`card-overlay-btn card-overlay-btn--watched ${expandedItem.watched ? 'card-overlay-btn--watched-on' : ''}`}
+              title={expandedItem.watched ? 'Marcar como não assistido' : 'Marcar como assistido'}
+            >
+              {expandedItem.watched ? '✓' : '👁'}
+            </button>
+          }
           actions={
             <div className="modal-actions-stack">
               <PriorityPicker
                 value={expandedItem.priority}
                 onChange={(priority) => handleChangePriority(expandedItem, priority)}
               />
-              <div className="movie-actions">
-                <button
-                  onClick={() => handleToggleWatched(expandedItem)}
-                  className={`btn-toggle ${expandedItem.watched ? 'watched' : ''}`}
-                >
-                  {expandedItem.watched ? '✅ Assistido' : '⭕ Não assistido'}
-                </button>
-                <button
-                  onClick={() => handleDelete(expandedItem.id)}
-                  className="btn-delete-icon"
-                  title="Remover da lista"
-                >
-                  🗑️
-                </button>
-              </div>
+              <button
+                onClick={() => handleDelete(expandedItem.id)}
+                className="btn-remove-from-list"
+              >
+                🗑️ Remover da lista
+              </button>
             </div>
           }
         />

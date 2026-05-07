@@ -57,6 +57,7 @@
   width: 260px;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .card-modal-poster-col img {

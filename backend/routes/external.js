@@ -1,6 +1,7 @@
 import express from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import * as externalService from '../services/external.js'
+import { luckyDraw } from '../services/externalLottery.js'
 
 const router = express.Router()
 
@@ -15,6 +16,13 @@ router.get('/genres', asyncHandler(async (req, res) => {
   const { type } = req.query
   const genres = await externalService.listGenres(type)
   res.json({ type: type || 'movie', genres })
+}))
+
+// POST /api/external/lucky - Sorteia um item popular de fora da lista
+// Body: { types?: ('MOVIE'|'SERIES'|'ANIME')[], genres?: string[] }
+router.post('/lucky', asyncHandler(async (req, res) => {
+  const result = await luckyDraw(req.body || {})
+  res.json(result)
 }))
 
 // GET /api/external/movies - Lista filmes (discover) com sort/gênero

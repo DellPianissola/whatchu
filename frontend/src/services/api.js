@@ -127,6 +127,8 @@ export const getPopularAnimes = (page = 1, opts = {}) =>
 export const getExternalGenres = (type) =>
   api.get('/external/genres', { params: { type } })
 
+export const luckyDraw = (filters = {}) => api.post('/external/lucky', filters)
+
 export const getMovieDetails = (id) =>
   api.get(`/external/movies/${id}`)
 

@@ -8,6 +8,7 @@ export default defineConfig({
       'tests/lib/**/*.test.js',
       'tests/middleware/**/*.test.js',
       'tests/services/external.test.js',
+      'tests/services/externalLottery.test.js',
     ],
 
     // Ambiente Node — não DOM

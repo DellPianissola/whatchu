@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getMovies, drawMovie } from '../services/api.js'
+import { getMovies, drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
@@ -24,7 +24,7 @@ const Home = () => {
   const [filterTypes, setFilterTypes] = useState(ALL_TYPES)
   const [filterPriorities, setFilterPriorities] = useState([])
   const [filterGenres, setFilterGenres] = useState([])
-  const [availableGenres, setAvailableGenres] = useState([])
+  const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [], ANIME: [] })
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
   // opções fixas — não dependem de dados da API
@@ -40,6 +40,7 @@ const Home = () => {
   useEffect(() => {
     setIsLoaded(true)
     loadStats()
+    loadGenres()
   }, [])
 
   const loadStats = async () => {
@@ -51,14 +52,35 @@ const Home = () => {
         series: movies.filter(m => m.type === 'SERIES').length,
         animes: movies.filter(m => m.type === 'ANIME').length,
       })
-      const genres = [...new Set(movies.flatMap(m => m.genres ?? []))].sort()
-      setAvailableGenres(genres)
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
     } finally {
       setIsLoadingStats(false)
     }
   }
+
+  const loadGenres = async () => {
+    try {
+      const [movie, series, anime] = await Promise.all([
+        getExternalGenres('movie'),
+        getExternalGenres('series'),
+        getExternalGenres('anime'),
+      ])
+      setGenresByType({
+        MOVIE:  movie.data.genres,
+        SERIES: series.data.genres,
+        ANIME:  anime.data.genres,
+      })
+    } catch (error) {
+      console.error('Erro ao carregar gêneros:', error)
+    }
+  }
+
+  const availableGenres = useMemo(() => {
+    const set = new Set()
+    filterTypes.forEach(t => (genresByType[t] || []).forEach(g => set.add(g)))
+    return [...set].sort()
+  }, [filterTypes, genresByType])
 
   const handleDraw = async () => {
     setIsDrawing(true)
@@ -86,8 +108,25 @@ const Home = () => {
     }
   }
 
-  const handleLucky = () => {
-    toast.info('Em breve — vai descobrir algo novo fora da sua lista!')
+  const handleLucky = async () => {
+    setIsDrawing(true)
+    setSelectedMovie(null)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await luckyDraw({
+        types: filterTypes,
+        genres: filterGenres,
+      })
+      if (response.data.movie) {
+        setSelectedMovie(response.data.movie)
+      } else {
+        toast.info('Não rolou achar nada com esses filtros. Tente outros gêneros ou tipos.')
+      }
+    } catch (error) {
+      toast.error('Erro ao sortear. Tente novamente.')
+    } finally {
+      setIsDrawing(false)
+    }
   }
 
   const handleGroup = () => {
@@ -199,10 +238,14 @@ const Home = () => {
                     <span className="btn-icon">🎲</span>
                     <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Sortear'}</span>
                   </button>
-                  <button className="btn btn-ghost btn-lucky" onClick={handleLucky}>
+                  <button
+                    className="btn btn-ghost btn-lucky"
+                    onClick={handleLucky}
+                    disabled={drawDisabled}
+                    title={noTypeSelected ? 'Selecione ao menos um tipo (Filme, Série ou Anime)' : undefined}
+                  >
                     <span className="btn-icon">✨</span>
-                    <span className="btn-text">Estou com sorte</span>
-                    <span className="btn-soon">em breve</span>
+                    <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Estou com sorte'}</span>
                   </button>
                 </div>
               )}

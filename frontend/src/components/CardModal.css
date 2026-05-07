@@ -197,17 +197,10 @@
   background: var(--surface);
 }
 
-/* ── Ações: contexto Busca (centralizado, botão único) ── */
 .card-modal-actions {
   margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid var(--surface-light);
-  display: flex;
-  justify-content: center;
-}
-
-.card-modal-actions .btn-add {
-  max-width: 300px;
 }
 
 .modal-actions-stack {
@@ -248,7 +241,4 @@
     padding: 1.5rem;
   }
 
-  .card-modal-actions .btn-add {
-    max-width: none;
-  }
 }

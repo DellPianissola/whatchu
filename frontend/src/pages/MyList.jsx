@@ -18,11 +18,22 @@ const MyList = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState({ types: ALL_TYPES, watched: '' })
   const [expandedItemId, setExpandedItemId] = useState(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
 
   // expandedItem derivado do array — reage automaticamente a toggles e deletes
   const expandedItem = movies.find(m => m.id === expandedItemId) ?? null
 
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
+
+  useEffect(() => {
+    if (!confirmingDeleteId) return
+    const handler = (e) => {
+      if (e.target.closest(`[data-card-id="${confirmingDeleteId}"]`)) return
+      setConfirmingDeleteId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [confirmingDeleteId])
 
   useEffect(() => {
     loadMovies()
@@ -47,17 +58,27 @@ const MyList = () => {
     ? movies
     : movies.filter(m => filter.types.includes(m.type))
 
-  const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja remover este item?')) return
+  const performDelete = async (id) => {
     try {
       await deleteMovie(id)
       setExpandedItemId(null)
+      setConfirmingDeleteId(null)
       setMovies(prev => prev.filter(m => m.id !== id))
       toast.success('Item removido da lista')
     } catch (error) {
       console.error('Erro ao remover:', error)
       toast.error('Erro ao remover item')
     }
+  }
+
+  const handleRequestDelete = (id) => {
+    if (confirmingDeleteId === id) performDelete(id)
+    else                            setConfirmingDeleteId(id)
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Tem certeza que deseja remover este item?')) return
+    await performDelete(id)
   }
 
   const handleChangePriority = async (movie, priority) => {
@@ -100,8 +121,15 @@ const MyList = () => {
     return (
       <div
         key={movie.id}
-        className={`movie-card ${movie.watched ? 'watched' : ''}`}
-        onClick={() => setExpandedItemId(movie.id)}
+        data-card-id={movie.id}
+        className={`movie-card ${movie.watched ? 'watched' : ''} ${confirmingDeleteId === movie.id ? 'movie-card--deleting' : ''}`}
+        onClick={() => {
+          if (confirmingDeleteId === movie.id) {
+            setConfirmingDeleteId(null)
+            return
+          }
+          setExpandedItemId(movie.id)
+        }}
       >
         <div className="movie-poster-container">
           {movie.poster ? (
@@ -132,10 +160,10 @@ const MyList = () => {
             <div className="movie-card-actions">
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); handleDelete(movie.id) }}
-                className="btn-remove-from-list"
+                onClick={(e) => { e.stopPropagation(); handleRequestDelete(movie.id) }}
+                className={`btn-remove-from-list ${confirmingDeleteId === movie.id ? 'btn-remove-from-list--confirming' : ''}`}
               >
-                🗑️ Remover
+                {confirmingDeleteId === movie.id ? 'Confirmar' : '🗑️ Remover'}
               </button>
               <PriorityIndicator
                 value={movie.priority}
@@ -144,6 +172,18 @@ const MyList = () => {
             </div>
           </div>
         </div>
+        {confirmingDeleteId === movie.id && (
+          <div className="card-delete-overlay">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); performDelete(movie.id) }}
+              className="card-delete-icon"
+              title="Confirmar remoção"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
     )
   }

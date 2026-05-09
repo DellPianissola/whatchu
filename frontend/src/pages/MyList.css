@@ -112,6 +112,7 @@
 }
 
 .movie-card {
+  position: relative;
   background: var(--surface);
   border-radius: 16px;
   overflow: hidden;
@@ -122,8 +123,8 @@
   cursor: pointer;
 }
 
-.movie-card:hover,
-.movie-card.card--menu-open {
+.movie-card:hover:not(.movie-card--deleting),
+.movie-card.card--menu-open:not(.movie-card--deleting) {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.3);
 }
@@ -145,7 +146,7 @@
   object-fit: cover;
 }
 
-/* ── Overlays sobre o poster (assistido + remover) ── */
+/* ── Overlay no poster: toggle de assistido ── */
 .card-overlay-btn {
   position: absolute;
   top: 0.75rem;
@@ -274,11 +275,69 @@
   color: var(--text-on-media);
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  z-index: 6;
 }
 
-.btn-remove-from-list:hover {
+.btn-remove-from-list:hover:not(.btn-remove-from-list--confirming) {
   transform: scale(1.02);
+}
+
+.btn-remove-from-list--confirming {
+  box-shadow: 0 4px 16px rgba(var(--danger-rgb), 0.5);
+}
+
+/* ── Card armado pra deletar: blur + overlay + glow ── */
+.movie-card--deleting {
+  box-shadow: 0 0 0 2px var(--danger), 0 8px 28px rgba(var(--danger-rgb), 0.45);
+}
+
+.movie-card--deleting .movie-poster-container,
+.movie-card--deleting .movie-header,
+.movie-card--deleting .movie-meta {
+  filter: blur(3px);
+  opacity: 0.35;
+  pointer-events: none;
+  transition: filter 0.25s, opacity 0.25s;
+}
+
+.card-delete-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  animation: card-delete-overlay-in 0.2s ease;
+}
+
+.card-delete-icon {
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 6px 18px rgba(var(--danger-rgb), 0.65));
+  animation: card-delete-icon-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.15s;
+}
+
+.card-delete-icon:hover {
+  transform: scale(1.08);
+}
+
+@keyframes card-delete-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes card-delete-icon-pop {
+  from { transform: scale(0.45); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 .movie-meta {

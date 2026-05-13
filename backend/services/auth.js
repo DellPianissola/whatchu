@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { randomBytes } from 'crypto'
 import { prisma } from '../config/database.js'
 import {
   ValidationError,
@@ -9,6 +8,7 @@ import {
   NotFoundError,
 } from '../lib/httpErrors.js'
 import { validatePassword } from '../lib/passwordPolicy.js'
+import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -62,17 +62,8 @@ const decodeRefreshToken = (refreshToken) => {
   }
 }
 
-const generateVerificationToken = () => randomBytes(32).toString('hex')
-
-const TOKEN_TTL = {
-  EMAIL_VERIFICATION: 24 * 60 * 60 * 1000, // 24h
-  PASSWORD_RESET:     30 * 60 * 1000,       // 30min
-  EMAIL_CHANGE:       24 * 60 * 60 * 1000,  // 24h
-}
-
-// Cria (ou substitui) um token de verificação para o usuário
 const upsertVerificationToken = async (userId, type) => {
-  const token = generateVerificationToken()
+  const token = generateRandomToken()
   const expiresAt = new Date(Date.now() + TOKEN_TTL[type])
   await prisma.verificationToken.deleteMany({ where: { userId, type } })
   await prisma.verificationToken.create({ data: { userId, token, type, expiresAt } })
@@ -86,43 +77,126 @@ const PUBLIC_USER_FIELDS = {
   username: true,
   birthDate: true,
   isAdmin: true,
-  emailVerified: true,
   createdAt: true,
 }
 
 // ─── Operações públicas (chamadas pelas rotas) ──────────────────────────────
 
+// Squat protection: múltiplos Pendings paralelos com mesmo email coexistem;
+// quem verificar primeiro materializa o User (UNIQUE em users.email decide a corrida).
 export const registerUser = async ({ email, username, password, birthDate }) => {
   validateRegistrationInput({ email, username, password, birthDate })
 
-  const existing = await prisma.user.findUnique({ where: { username } })
-  if (existing) {
+  const [existingUsername, existingEmail] = await Promise.all([
+    prisma.user.findUnique({ where: { username }, select: { id: true } }),
+    prisma.user.findUnique({ where: { email },    select: { id: true } }),
+  ])
+
+  if (existingUsername) {
     throw new ConflictError('Nome de usuário já cadastrado')
+  }
+  // Email já em uso: resposta idêntica a sucesso (anti-enum). User legítimo
+  // que esqueceu cai no fluxo de "esqueci senha".
+  if (existingEmail) {
+    return { pending: true, email }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10)
+  const token = generateRandomToken()
+  const expiresAt = new Date(Date.now() + TOKEN_TTL.PENDING_REGISTRATION)
 
-  const user = await prisma.user.create({
+  // Re-cadastro idempotente do mesmo (email, username). Pendings de outros
+  // usernames com este email continuam vivos — competição saudável.
+  await prisma.pendingRegistration.deleteMany({ where: { email, username } })
+
+  await prisma.pendingRegistration.create({
     data: {
       email,
       username,
       password: hashedPassword,
       birthDate: birthDate ? new Date(birthDate) : null,
+      token,
+      expiresAt,
     },
-    select: PUBLIC_USER_FIELDS,
   })
 
-  const profile = await prisma.profile.create({
-    data: { name: username, userId: user.id },
-  })
+  // Background — falha no email não bloqueia o cadastro
+  sendVerificationEmail(email, token).catch(console.error)
 
-  const verificationToken = await upsertVerificationToken(user.id, 'EMAIL_VERIFICATION')
-  // Disparo em background — falha no email não deve bloquear o cadastro
-  sendVerificationEmail(user.email, verificationToken).catch(console.error)
+  return { pending: true, email }
+}
+
+export const verifyEmail = async (token) => {
+  const pending = await prisma.pendingRegistration.findUnique({ where: { token } })
+
+  if (!pending) {
+    throw new ValidationError('Token de verificação inválido')
+  }
+  if (pending.expiresAt < new Date()) {
+    await prisma.pendingRegistration.delete({ where: { token } }).catch(() => {})
+    throw new ValidationError('Token de verificação expirado')
+  }
+
+  let user, profile
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email:     pending.email,
+          username:  pending.username,
+          password:  pending.password,
+          birthDate: pending.birthDate,
+        },
+        select: PUBLIC_USER_FIELDS,
+      })
+      const newProfile = await tx.profile.create({
+        data: { name: newUser.username, userId: newUser.id },
+      })
+      // Concorrentes (Pendings com mesmo email) perderam a corrida
+      await tx.pendingRegistration.deleteMany({ where: { email: pending.email } })
+      return { user: newUser, profile: newProfile }
+    })
+    user = result.user
+    profile = result.profile
+  } catch (err) {
+    // P2002: outro Pending materializou antes (corrida de UNIQUE)
+    if (err.code === 'P2002') {
+      const target = err.meta?.target?.join(',') || 'email'
+      await prisma.pendingRegistration.delete({ where: { token } }).catch(() => {})
+      throw new ConflictError(
+        target.includes('username')
+          ? 'Nome de usuário já cadastrado por outra conta. Tente novamente com outro.'
+          : 'Já existe uma conta com este email. Use "Esqueci minha senha" para acessar.',
+        { code: target.includes('username') ? 'USERNAME_TAKEN' : 'EMAIL_TAKEN' },
+      )
+    }
+    throw err
+  }
 
   const tokens = generateTokens(user.id, user.username)
-
   return { user, profile, ...tokens }
+}
+
+// Anti-enum: silencia se não há Pending pra este email.
+// orderBy desc: se houver múltiplos Pendings (usernames diferentes), renova o mais recente.
+export const resendVerificationEmailByEmail = async (email) => {
+  if (!email) return
+
+  const pending = await prisma.pendingRegistration.findFirst({
+    where:   { email, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' },
+    select:  { id: true, email: true },
+  })
+
+  if (!pending) return
+
+  const newToken = generateRandomToken()
+  const expiresAt = new Date(Date.now() + TOKEN_TTL.PENDING_REGISTRATION)
+  await prisma.pendingRegistration.update({
+    where: { id: pending.id },
+    data:  { token: newToken, expiresAt },
+  })
+  await sendVerificationEmail(pending.email, newToken)
 }
 
 export const loginUser = async ({ username, password }) => {
@@ -152,7 +226,6 @@ export const loginUser = async ({ username, password }) => {
       email: user.email,
       username: user.username,
       isAdmin: user.isAdmin,
-      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     },
     profile: user.profile,
@@ -207,60 +280,9 @@ export const refreshTokens = async (refreshToken) => {
   return generateTokens(user.id, user.username)
 }
 
-export const verifyEmail = async (token) => {
-  const record = await prisma.verificationToken.findUnique({ where: { token } })
-
-  if (!record || record.type !== 'EMAIL_VERIFICATION') {
-    throw new ValidationError('Token de verificação inválido')
-  }
-  if (record.expiresAt < new Date()) {
-    throw new ValidationError('Token de verificação expirado')
-  }
-
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: record.userId },
-      data:  { emailVerified: true },
-    }),
-    prisma.verificationToken.delete({ where: { token } }),
-  ])
-}
-
-export const resendVerificationEmail = async (userId) => {
-  const user = await prisma.user.findUnique({
-    where:  { id: userId },
-    select: { id: true, email: true, emailVerified: true },
-  })
-
-  if (!user) throw new NotFoundError('Usuário não encontrado')
-  if (user.emailVerified) throw new ValidationError('Email já verificado')
-
-  const token = await upsertVerificationToken(userId, 'EMAIL_VERIFICATION')
-  await sendVerificationEmail(user.email, token)
-}
-
-// Versão pública (sem autenticação) — usada quando o link expirou e o usuário
-// não está logado. Anti-enumeração: responde silenciosamente se o email não existe
-// ou já está verificado.
-export const resendVerificationEmailByEmail = async (email) => {
-  if (!email) return
-
-  const user = await prisma.user.findFirst({
-    where:  { email },
-    select: { id: true, email: true, emailVerified: true },
-  })
-
-  if (!user || user.emailVerified) return
-
-  const token = await upsertVerificationToken(user.id, 'EMAIL_VERIFICATION')
-  await sendVerificationEmail(user.email, token)
-}
-
-// Permite reset mesmo com email não verificado: a posse do email é provada ao
-// clicar no link, e `resetPassword` marca emailVerified = true como efeito.
-// Resposta sempre genérica (anti-enumeração) — endpoint não revela se o email existe.
+// Anti-enum: silencia se não há User com aquele email.
 export const requestPasswordReset = async (email) => {
-  const user = await prisma.user.findFirst({
+  const user = await prisma.user.findUnique({
     where:  { email },
     select: { id: true, email: true },
   })
@@ -271,9 +293,6 @@ export const requestPasswordReset = async (email) => {
   await sendPasswordResetEmail(user.email, token)
 }
 
-// Reset com sucesso prova posse do email → marca emailVerified = true como efeito.
-// Limpa todos os tokens pendentes do usuário (PASSWORD_RESET + EMAIL_VERIFICATION):
-// um deles acabou de ser consumido, o outro ficou redundante.
 export const resetPassword = async (token, newPassword) => {
   validatePassword(newPassword)
 
@@ -291,8 +310,16 @@ export const resetPassword = async (token, newPassword) => {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data:  { password: hashedPassword, emailVerified: true },
+      data:  { password: hashedPassword },
     }),
-    prisma.verificationToken.deleteMany({ where: { userId: record.userId } }),
+    prisma.verificationToken.delete({ where: { token } }),
   ])
+}
+
+// Pode ser chamado por cron — retorna a quantidade removida.
+export const cleanupExpiredPendingRegistrations = async () => {
+  const result = await prisma.pendingRegistration.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  })
+  return result.count
 }

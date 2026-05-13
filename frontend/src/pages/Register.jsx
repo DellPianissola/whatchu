@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { resendVerificationPublic } from '../services/api.js'
 import WatchuLogo from '../components/WatchuLogo.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import './Register.css'
@@ -14,8 +15,8 @@ const Register = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
+  const [resendStatus, setResendStatus] = useState('idle') // idle | loading | done
   const { register } = useAuth()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,6 +46,17 @@ const Register = () => {
     setLoading(false)
   }
 
+  const handleResend = async () => {
+    setResendStatus('loading')
+    try {
+      await resendVerificationPublic(email)
+    } catch {
+      // silencioso — mantemos UX igual a sucesso (anti-enum, e o usuário pode tentar de novo)
+    } finally {
+      setResendStatus('done')
+    }
+  }
+
   if (registered) {
     return (
       <div className="register-page">
@@ -57,18 +69,28 @@ const Register = () => {
               </div>
             </div>
             <div className="registered-success">
-              <div className="registered-icon">✓</div>
-              <h2>Conta criada!</h2>
+              <div className="registered-icon">✉️</div>
+              <h2>Verifique seu email</h2>
               <p>
-                Enviamos um email para <strong>{email}</strong>.
-                Clique no link para verificar sua conta.
+                Enviamos um link de confirmação para <strong>{email}</strong>.
+                Clique no link para concluir o cadastro — você será logado automaticamente.
               </p>
               <p className="registered-hint">
-                Não recebeu? Verifique a caixa de spam ou{' '}
-                <button className="btn-link" onClick={() => navigate('/')}>
-                  acesse o app
-                </button>{' '}
-                e reenvie pelo banner de aviso.
+                O link expira em 24 horas. Não recebeu? Verifique a caixa de spam, ou{' '}
+                {resendStatus === 'done' ? (
+                  <span>já reenviamos — confira novamente em alguns instantes.</span>
+                ) : (
+                  <button
+                    className="btn-link"
+                    onClick={handleResend}
+                    disabled={resendStatus === 'loading'}
+                  >
+                    {resendStatus === 'loading' ? 'reenviando...' : 'clique aqui para reenviar'}
+                  </button>
+                )}
+              </p>
+              <p className="registered-hint">
+                <Link to="/login">← Voltar para o login</Link>
               </p>
             </div>
           </div>

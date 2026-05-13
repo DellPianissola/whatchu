@@ -1,8 +1,8 @@
 import { prisma } from '../config/database.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
 import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../lib/httpErrors.js'
+import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
 import { sendEmailChangeVerification } from './email.js'
-import { randomBytes } from 'crypto'
 
 // `_count.movies` aparece em várias queries — extraído pra constante.
 const COUNT_MOVIES = { _count: { select: { movies: true } } }
@@ -84,13 +84,22 @@ export const changeEmail = async (userId, newEmail) => {
   if (!user) throw new NotFoundError('Usuário não encontrado')
   if (user.email === newEmail) throw new ValidationError('O novo email é igual ao atual')
 
-  const token = randomBytes(32).toString('hex')
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const token = generateRandomToken()
+  const expiresAt = new Date(Date.now() + TOKEN_TTL.EMAIL_CHANGE)
 
+  // Verifica unicidade do novo email — schema agora tem @unique
+  const dup = await prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } })
+  if (dup && dup.id !== userId) {
+    throw new ConflictError('Email já cadastrado por outra conta')
+  }
+
+  // TODO: idealmente a troca só deveria efetivar APÓS verificação no novo endereço,
+  // pra não permitir que sessão comprometida sequestre a conta via email. Implementação
+  // atual mantém o comportamento legado (troca imediata + email informativo).
   await prisma.$transaction([
     prisma.user.update({
       where: { id: userId },
-      data:  { email: newEmail, emailVerified: false },
+      data:  { email: newEmail },
     }),
     prisma.verificationToken.deleteMany({ where: { userId, type: 'EMAIL_CHANGE' } }),
     prisma.verificationToken.create({
@@ -104,7 +113,7 @@ export const changeEmail = async (userId, newEmail) => {
 export const setAdultContentPreference = async (userId, enabled) => {
   const profile = await prisma.profile.findUnique({
     where:   { userId },
-    include: { user: { select: { birthDate: true, emailVerified: true } } },
+    include: { user: { select: { birthDate: true } } },
   })
   if (!profile) throw new NotFoundError('Perfil não encontrado')
 
@@ -114,11 +123,7 @@ export const setAdultContentPreference = async (userId, enabled) => {
   }
 
   const { user } = profile
-  if (!user.emailVerified) {
-    throw new ForbiddenError('Verifique seu email para acessar esta configuração', {
-      code: 'EMAIL_NOT_VERIFIED',
-    })
-  }
+  // Email verificado é invariante pós-cadastro — todo User passou pela verificação.
   if (!user.birthDate) {
     throw new ForbiddenError('Informe sua data de nascimento para acessar esta configuração', {
       code: 'BIRTHDATE_REQUIRED',

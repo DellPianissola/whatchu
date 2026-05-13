@@ -83,11 +83,12 @@ export const deleteMovie = (id) => api.delete(`/movies/${id}`)
 export const drawMovie = (filters = {}) => api.post('/movies/draw', filters)
 
 // Auth
-export const login = (email, password) => api.post('/auth/login', { email, password })
-export const register = (email, username, password) => api.post('/auth/register', { email, username, password })
+export const login = (username, password) => api.post('/auth/login', { username, password })
+export const register = (email, username, password, birthDate) =>
+  api.post('/auth/register', { email, username, password, birthDate })
 export const getMe = () => api.get('/auth/me')
-export const verifyEmail = (token) => api.get('/auth/verify-email', { params: { token } })
-export const resendVerification = () => api.post('/auth/resend-verification')
+// verifyEmail é POST (e não GET) pra evitar consumo de token por scanners de email / pré-fetch.
+export const verifyEmail = (token) => api.post('/auth/verify-email', { token })
 export const resendVerificationPublic = (email) => api.post('/auth/resend-verification-public', { email })
 export const requestPasswordReset = (email) => api.post('/auth/request-password-reset', { email })
 export const resetPassword = (token, password) => api.post('/auth/reset-password', { token, password })

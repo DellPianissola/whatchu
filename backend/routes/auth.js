@@ -5,10 +5,14 @@ import * as authService from '../services/auth.js'
 
 const router = express.Router()
 
-// POST /api/auth/register
+// POST /api/auth/register — resposta genérica (anti-enum), sem tokens.
+// User só é materializado em /verify-email.
 router.post('/register', asyncHandler(async (req, res) => {
-  const result = await authService.registerUser(req.body)
-  res.status(201).json({ message: 'Usuário criado com sucesso', ...result })
+  await authService.registerUser(req.body)
+  res.status(202).json({
+    message: 'Cadastro recebido. Verifique seu email para concluir.',
+    pending: true,
+  })
 }))
 
 // POST /api/auth/login
@@ -30,31 +34,22 @@ router.post('/refresh', asyncHandler(async (req, res) => {
   res.json(tokens)
 }))
 
-// GET /api/auth/verify-email?token=
-router.get('/verify-email', asyncHandler(async (req, res) => {
-  await authService.verifyEmail(req.query.token)
-  res.json({ message: 'Email verificado com sucesso' })
+// POST (não GET) pra não ser consumido por scanners de email / pré-fetch.
+router.post('/verify-email', asyncHandler(async (req, res) => {
+  const result = await authService.verifyEmail(req.body.token)
+  res.json({ message: 'Email verificado com sucesso', ...result })
 }))
 
-// POST /api/auth/resend-verification
-router.post('/resend-verification', authenticateToken, asyncHandler(async (req, res) => {
-  await authService.resendVerificationEmail(req.user.id)
-  res.json({ message: 'Email de verificação reenviado' })
-}))
-
-// POST /api/auth/resend-verification-public
-// Versão sem auth — usada quando o link expirou e o usuário não consegue logar.
-// Anti-enumeração: resposta sempre genérica, mesmo se o email não existe ou já está verificado.
+// POST /api/auth/resend-verification-public — anti-enum.
 router.post('/resend-verification-public', asyncHandler(async (req, res) => {
   await authService.resendVerificationEmailByEmail(req.body.email)
-  res.json({ message: 'Se o email estiver cadastrado e ainda não verificado, você receberá um novo link em breve' })
+  res.json({ message: 'Se houver um cadastro pendente com este email, um novo link foi enviado' })
 }))
 
 // POST /api/auth/request-password-reset
 router.post('/request-password-reset', asyncHandler(async (req, res) => {
   await authService.requestPasswordReset(req.body.email)
-  // Resposta genérica independente de o email existir (anti-enumeração)
-  res.json({ message: 'Se o email estiver cadastrado e verificado, você receberá as instruções em breve' })
+  res.json({ message: 'Se o email estiver cadastrado, você receberá as instruções em breve' })
 }))
 
 // POST /api/auth/reset-password

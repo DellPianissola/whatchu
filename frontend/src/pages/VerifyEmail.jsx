@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
-import { verifyEmail, resendVerificationPublic } from '../services/api.js'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { resendVerificationPublic } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import WatchuLogo from '../components/WatchuLogo.jsx'
 import './VerifyEmail.css'
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { verifyEmailAndLogin } = useAuth()
   const [status, setStatus]     = useState('loading') // loading | success | error
   const [errorMsg, setErrorMsg] = useState('')
-  const { refreshUser }         = useAuth()
+  const [errorCode, setErrorCode] = useState('')
 
   // Subestado do formulário de reenvio (visível só na branch error)
   const [resendEmail, setResendEmail]   = useState('')
@@ -17,9 +19,7 @@ const VerifyEmail = () => {
   const [resendDone, setResendDone]     = useState(false)
   const [resendError, setResendError]   = useState('')
 
-  // Guard contra double-invoke do useEffect em React StrictMode (dev). Sem isso,
-  // a 1ª chamada consome o token (sucesso) e a 2ª falha — o setStatus('error')
-  // da 2ª sobrescreve o success da 1ª e a tela mostra erro mesmo verificando.
+  // Guard contra double-invoke do useEffect em React StrictMode (dev).
   const verifyAttempted = useRef(false)
 
   useEffect(() => {
@@ -33,17 +33,17 @@ const VerifyEmail = () => {
       return
     }
 
-    verifyEmail(token)
-      .then(() => {
+    verifyEmailAndLogin(token).then((result) => {
+      if (result.success) {
         setStatus('success')
-        refreshUser?.()
-      })
-      .catch((err) => {
+        // Login automático: redireciona pra Home após breve confirmação visual
+        setTimeout(() => navigate('/', { replace: true }), 1500)
+      } else {
         setStatus('error')
-        setErrorMsg(
-          err.response?.data?.error || 'Link inválido ou expirado. Solicite um novo abaixo.'
-        )
-      })
+        setErrorMsg(result.error || 'Link inválido ou expirado. Solicite um novo abaixo.')
+        setErrorCode(result.code || '')
+      }
+    })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleResend = async (e) => {
@@ -71,16 +71,15 @@ const VerifyEmail = () => {
         {status === 'loading' && (
           <div className="verify-content">
             <div className="verify-spinner" />
-            <p>Verificando seu email...</p>
+            <p>Confirmando sua conta...</p>
           </div>
         )}
 
         {status === 'success' && (
           <div className="verify-content">
             <div className="verify-icon verify-icon--success">✓</div>
-            <h2>Email verificado!</h2>
-            <p>Sua conta está confirmada. Agora você tem acesso completo à plataforma.</p>
-            <Link to="/" className="btn-verify-primary">Ir para o início</Link>
+            <h2>Tudo certo!</h2>
+            <p>Sua conta foi criada e você já está logado. Redirecionando...</p>
           </div>
         )}
 
@@ -90,9 +89,12 @@ const VerifyEmail = () => {
             <h2>Verificação falhou</h2>
             <p>{errorMsg}</p>
 
-            {resendDone ? (
+            {/* USERNAME_TAKEN ou EMAIL_TAKEN: já tem User com esses dados — sugere login. */}
+            {(errorCode === 'EMAIL_TAKEN' || errorCode === 'USERNAME_TAKEN') ? (
+              <Link to="/login" className="btn-verify-primary">Ir para o login</Link>
+            ) : resendDone ? (
               <p className="verify-resend-done">
-                Se o email estiver cadastrado e ainda não verificado, você receberá um novo link em breve.
+                Se houver um cadastro pendente com este email, um novo link foi enviado.
               </p>
             ) : (
               <form onSubmit={handleResend} className="verify-resend-form">
@@ -114,7 +116,7 @@ const VerifyEmail = () => {
               </form>
             )}
 
-            <Link to="/" className="btn-verify-secondary">Voltar ao início</Link>
+            <Link to="/login" className="btn-verify-secondary">Voltar ao login</Link>
           </div>
         )}
       </div>

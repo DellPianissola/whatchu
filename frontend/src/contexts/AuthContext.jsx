@@ -74,9 +74,23 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Registro não loga — só cria Pending. Login acontece em verifyEmailAndLogin().
   const register = async (email, username, password, birthDate) => {
     try {
-      const response = await api.post('/auth/register', { email, username, password, birthDate: birthDate || null })
+      await api.post('/auth/register', { email, username, password, birthDate: birthDate || null })
+      return { success: true, pending: true }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Erro ao registrar',
+      }
+    }
+  }
+
+  // Materializa o User e já loga. Chamado por VerifyEmail.jsx.
+  const verifyEmailAndLogin = async (token) => {
+    try {
+      const response = await api.post('/auth/verify-email', { token })
       const { user, profile, accessToken, refreshToken } = response.data
       setUser(user)
       setProfile(profile)
@@ -86,7 +100,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Erro ao registrar',
+        error: error.response?.data?.error || 'Não foi possível verificar o email',
+        code:  error.response?.data?.code,
       }
     }
   }
@@ -114,6 +129,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         login,
         register,
+        verifyEmailAndLogin,
         logout,
         updateProfile,
         refreshUser,

@@ -65,6 +65,7 @@ connectDB()
 app.use('/api', indexRoutes)
 // Limiter agressivo nos disparadores de email pra destinatários não autenticados.
 // Aplicado ANTES do authLimiter pra contar separadamente — a barreira mais apertada vence.
+app.use('/api/auth/register', emailDispatchLimiter)
 app.use('/api/auth/request-password-reset', emailDispatchLimiter)
 app.use('/api/auth/resend-verification-public', emailDispatchLimiter)
 app.use('/api/auth', authLimiter, authRoutes)

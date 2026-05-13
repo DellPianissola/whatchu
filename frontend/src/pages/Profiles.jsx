@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { createProfile, updateProfile, changeEmail, setAdultContent, uploadAvatar, resendVerification } from '../services/api.js'
+import { createProfile, updateProfile, changeEmail, setAdultContent, uploadAvatar } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import './Profiles.css'
@@ -8,7 +8,6 @@ const Profiles = () => {
   const { user, profile, updateProfile: updateAuthProfile, refreshUser } = useAuth()
   const { toast } = useNotify()
   const [loading, setLoading] = useState(false)
-  const [resendingVerification, setResendingVerification] = useState(false)
   const [section, setSection] = useState(null) // null | 'profile' | 'email'
   const avatarInputRef = useRef(null)
 
@@ -48,18 +47,6 @@ const Profiles = () => {
     }
   }
 
-  const handleResendVerification = async () => {
-    setResendingVerification(true)
-    try {
-      await resendVerification()
-      toast.success('Email de verificação reenviado. Verifique sua caixa de entrada.')
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao reenviar email')
-    } finally {
-      setResendingVerification(false)
-    }
-  }
-
   const handleChangeEmail = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -83,9 +70,7 @@ const Profiles = () => {
       toast.success(enabled ? 'Conteúdo adulto ativado' : 'Conteúdo adulto desativado')
     } catch (err) {
       const code = err.response?.data?.code
-      if (code === 'EMAIL_NOT_VERIFIED') {
-        toast.error('Verifique seu email antes de usar esta opção')
-      } else if (code === 'UNDERAGE' || code === 'BIRTHDATE_REQUIRED') {
+      if (code === 'UNDERAGE' || code === 'BIRTHDATE_REQUIRED') {
         toast.error(err.response.data.error)
       } else {
         toast.error('Erro ao atualizar preferência')
@@ -157,20 +142,8 @@ const Profiles = () => {
             <span className="info-label">Email</span>
             <div className="info-value-group">
               <span className="info-value">{user?.email}</span>
-              {!user?.emailVerified && (
-                <span className="badge badge--warning">não verificado</span>
-              )}
             </div>
             <div className="email-actions">
-              {!user?.emailVerified && (
-                <button
-                  className="btn-resend"
-                  onClick={handleResendVerification}
-                  disabled={resendingVerification}
-                >
-                  {resendingVerification ? 'Enviando...' : 'Reenviar verificação'}
-                </button>
-              )}
               <button
                 className="btn-link-small"
                 onClick={() => { setFormEmail(user?.email ?? ''); setSection(section === 'email' ? null : 'email') }}

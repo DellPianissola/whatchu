@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import WatchuLogo from '../components/WatchuLogo.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 import './Login.css'
 
 const Login = () => {
@@ -53,20 +54,22 @@ const Login = () => {
                 placeholder="seu_usuario"
                 required
                 disabled={loading}
+                autoComplete="username"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">Senha</label>
-              <input
+              <div className="form-group-label-row">
+                <label htmlFor="password">Senha</label>
+                <Link to="/forgot-password" className="forgot-link">Esqueci minha senha</Link>
+              </div>
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
+                autoComplete="current-password"
               />
             </div>
 
@@ -87,4 +90,3 @@ const Login = () => {
 }
 
 export default Login
-

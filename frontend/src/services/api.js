@@ -88,6 +88,7 @@ export const register = (email, username, password) => api.post('/auth/register'
 export const getMe = () => api.get('/auth/me')
 export const verifyEmail = (token) => api.get('/auth/verify-email', { params: { token } })
 export const resendVerification = () => api.post('/auth/resend-verification')
+export const resendVerificationPublic = (email) => api.post('/auth/resend-verification-public', { email })
 export const requestPasswordReset = (email) => api.post('/auth/request-password-reset', { email })
 export const resetPassword = (token, password) => api.post('/auth/reset-password', { token, password })
 

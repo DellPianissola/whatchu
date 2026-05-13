@@ -7,6 +7,7 @@ import {
   refreshTokens,
   verifyEmail,
   resendVerificationEmail,
+  resendVerificationEmailByEmail,
   requestPasswordReset,
   resetPassword,
 } from '../../services/auth.js'
@@ -20,7 +21,6 @@ import {
   ConflictError,
   UnauthorizedError,
   NotFoundError,
-  ForbiddenError,
 } from '../../lib/httpErrors.js'
 
 describe('auth service', () => {
@@ -52,9 +52,9 @@ describe('auth service', () => {
       ).rejects.toThrow(ValidationError)
     })
 
-    it('lança ValidationError para senha com menos de 6 caracteres', async () => {
+    it('lança ValidationError para senha com menos de 8 caracteres', async () => {
       await expect(
-        registerUser({ email: 'a@b.com', username: 'u', password: '123' })
+        registerUser({ email: 'a@b.com', username: 'u', password: '1234567' })
       ).rejects.toThrow(ValidationError)
     })
 
@@ -255,11 +255,17 @@ describe('auth service', () => {
       expect(token).not.toBeNull()
     })
 
-    it('lança ForbiddenError quando o email não está verificado', async () => {
-      await createUserFactory({
+    // Opção C: reset é permitido mesmo sem verificação prévia. Clicar no link
+    // prova posse do email; resetPassword marca emailVerified = true como efeito.
+    it('cria token PASSWORD_RESET mesmo quando o email não está verificado', async () => {
+      const user = await createUserFactory({
         username: 'resetunverified', email: 'unv@t.com', emailVerified: false,
       })
-      await expect(requestPasswordReset('unv@t.com')).rejects.toThrow(ForbiddenError)
+      await expect(requestPasswordReset('unv@t.com')).resolves.toBeUndefined()
+      const token = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'PASSWORD_RESET' },
+      })
+      expect(token).not.toBeNull()
     })
 
     it('retorna silenciosamente para email inexistente (anti-enumeração)', async () => {
@@ -283,6 +289,47 @@ describe('auth service', () => {
     })
   })
 
+  // ─── resendVerificationEmailByEmail (público) ────────────────────────────
+
+  describe('resendVerificationEmailByEmail', () => {
+    it('cria novo token EMAIL_VERIFICATION para usuário não verificado', async () => {
+      const user = await createUserFactory({
+        username: 'resendpub', email: 'resendpub@t.com', emailVerified: false,
+      })
+      await resendVerificationEmailByEmail('resendpub@t.com')
+      const token = await prisma.verificationToken.findFirst({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      expect(token).not.toBeNull()
+    })
+
+    it('retorna silenciosamente quando o email já está verificado (anti-enumeração)', async () => {
+      const user = await createUserFactory({
+        username: 'resendverified', email: 'rv@t.com', emailVerified: true,
+      })
+      await expect(
+        resendVerificationEmailByEmail('rv@t.com')
+      ).resolves.toBeUndefined()
+      const tokens = await prisma.verificationToken.findMany({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      })
+      expect(tokens).toHaveLength(0)
+    })
+
+    it('retorna silenciosamente para email inexistente (anti-enumeração)', async () => {
+      await expect(
+        resendVerificationEmailByEmail('naoexiste@t.com')
+      ).resolves.toBeUndefined()
+      const count = await prisma.verificationToken.count()
+      expect(count).toBe(0)
+    })
+
+    it('retorna silenciosamente quando email é vazio ou nulo', async () => {
+      await expect(resendVerificationEmailByEmail('')).resolves.toBeUndefined()
+      await expect(resendVerificationEmailByEmail(undefined)).resolves.toBeUndefined()
+    })
+  })
+
   // ─── resetPassword ────────────────────────────────────────────────────────
 
   describe('resetPassword', () => {
@@ -300,6 +347,33 @@ describe('auth service', () => {
         where: { token: 'valid-reset-token' },
       })
       expect(token).toBeNull()
+    })
+
+    // Opção C: reset bem-sucedido prova posse do email → marca emailVerified.
+    it('marca emailVerified = true mesmo se o usuário ainda não tinha verificado', async () => {
+      const user = await createUserFactory({ username: 'resetunv', emailVerified: false })
+      await createVerificationToken(user.id, {
+        token: 'reset-unv-token',
+        type: 'PASSWORD_RESET',
+      })
+      await resetPassword('reset-unv-token', 'novaSenha456')
+      const updated = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(updated.emailVerified).toBe(true)
+    })
+
+    it('limpa também tokens EMAIL_VERIFICATION pendentes do usuário', async () => {
+      const user = await createUserFactory({ username: 'resetcleanup', emailVerified: false })
+      await createVerificationToken(user.id, {
+        token: 'reset-cleanup-token',
+        type: 'PASSWORD_RESET',
+      })
+      await createVerificationToken(user.id, {
+        token: 'pending-verify-token',
+        type: 'EMAIL_VERIFICATION',
+      })
+      await resetPassword('reset-cleanup-token', 'novaSenha456')
+      const remaining = await prisma.verificationToken.count({ where: { userId: user.id } })
+      expect(remaining).toBe(0)
     })
 
     it('lança ValidationError para token inexistente', async () => {

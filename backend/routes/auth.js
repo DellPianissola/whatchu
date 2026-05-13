@@ -42,6 +42,14 @@ router.post('/resend-verification', authenticateToken, asyncHandler(async (req, 
   res.json({ message: 'Email de verificação reenviado' })
 }))
 
+// POST /api/auth/resend-verification-public
+// Versão sem auth — usada quando o link expirou e o usuário não consegue logar.
+// Anti-enumeração: resposta sempre genérica, mesmo se o email não existe ou já está verificado.
+router.post('/resend-verification-public', asyncHandler(async (req, res) => {
+  await authService.resendVerificationEmailByEmail(req.body.email)
+  res.json({ message: 'Se o email estiver cadastrado e ainda não verificado, você receberá um novo link em breve' })
+}))
+
 // POST /api/auth/request-password-reset
 router.post('/request-password-reset', asyncHandler(async (req, res) => {
   await authService.requestPasswordReset(req.body.email)

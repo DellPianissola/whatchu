@@ -40,6 +40,16 @@ const authLimiter = rateLimit({
   message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
 })
 
+// Limiter mais agressivo para endpoints que disparam email para destinatários
+// não autenticados — reduz risco de abuso (flood/assédio) e custo do provedor.
+const emailDispatchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas solicitações. Tente novamente em 15 minutos.' },
+})
+
 // Swagger — apenas em desenvolvimento
 if (!IS_PROD) {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -53,6 +63,10 @@ connectDB()
 
 // Public Routes (não requerem autenticação)
 app.use('/api', indexRoutes)
+// Limiter agressivo nos disparadores de email pra destinatários não autenticados.
+// Aplicado ANTES do authLimiter pra contar separadamente — a barreira mais apertada vence.
+app.use('/api/auth/request-password-reset', emailDispatchLimiter)
+app.use('/api/auth/resend-verification-public', emailDispatchLimiter)
 app.use('/api/auth', authLimiter, authRoutes)
 
 // Protected Routes (requerem autenticação)

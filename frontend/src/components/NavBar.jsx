@@ -52,8 +52,15 @@ const NavBar = () => {
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <Link to="/profiles" className="nav-username-link">
+          <Link
+            to="/profiles"
+            className="nav-username-link"
+            title={user && !user.emailVerified ? 'Email ainda não verificado — clique para resolver' : undefined}
+          >
             {user?.username}
+            {user && !user.emailVerified && (
+              <span className="nav-alert-dot" aria-label="Email não verificado" />
+            )}
           </Link>
           <button onClick={handleLogout} className="btn-logout">
             Sair

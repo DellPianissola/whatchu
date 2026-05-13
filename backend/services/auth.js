@@ -7,8 +7,8 @@ import {
   ConflictError,
   UnauthorizedError,
   NotFoundError,
-  ForbiddenError,
 } from '../lib/httpErrors.js'
+import { validatePassword } from '../lib/passwordPolicy.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -37,9 +37,7 @@ const validateRegistrationInput = ({ email, username, password, birthDate }) => 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new ValidationError('Email inválido')
   }
-  if (password.length < 8) {
-    throw new ValidationError('Senha deve ter no mínimo 8 caracteres')
-  }
+  validatePassword(password)
   if (birthDate) {
     const date = new Date(birthDate)
     if (isNaN(date.getTime())) {
@@ -241,29 +239,43 @@ export const resendVerificationEmail = async (userId) => {
   await sendVerificationEmail(user.email, token)
 }
 
-export const requestPasswordReset = async (email) => {
+// Versão pública (sem autenticação) — usada quando o link expirou e o usuário
+// não está logado. Anti-enumeração: responde silenciosamente se o email não existe
+// ou já está verificado.
+export const resendVerificationEmailByEmail = async (email) => {
+  if (!email) return
+
   const user = await prisma.user.findFirst({
     where:  { email },
     select: { id: true, email: true, emailVerified: true },
   })
 
-  // Anti-enumeração: retorna silenciosamente se o email não existe
-  if (!user) return
+  if (!user || user.emailVerified) return
 
-  if (!user.emailVerified) {
-    throw new ForbiddenError('Verifique seu email antes de redefinir a senha', {
-      code: 'EMAIL_NOT_VERIFIED',
-    })
-  }
+  const token = await upsertVerificationToken(user.id, 'EMAIL_VERIFICATION')
+  await sendVerificationEmail(user.email, token)
+}
+
+// Permite reset mesmo com email não verificado: a posse do email é provada ao
+// clicar no link, e `resetPassword` marca emailVerified = true como efeito.
+// Resposta sempre genérica (anti-enumeração) — endpoint não revela se o email existe.
+export const requestPasswordReset = async (email) => {
+  const user = await prisma.user.findFirst({
+    where:  { email },
+    select: { id: true, email: true },
+  })
+
+  if (!user) return
 
   const token = await upsertVerificationToken(user.id, 'PASSWORD_RESET')
   await sendPasswordResetEmail(user.email, token)
 }
 
+// Reset com sucesso prova posse do email → marca emailVerified = true como efeito.
+// Limpa todos os tokens pendentes do usuário (PASSWORD_RESET + EMAIL_VERIFICATION):
+// um deles acabou de ser consumido, o outro ficou redundante.
 export const resetPassword = async (token, newPassword) => {
-  if (!newPassword || newPassword.length < 8) {
-    throw new ValidationError('Senha deve ter no mínimo 8 caracteres')
-  }
+  validatePassword(newPassword)
 
   const record = await prisma.verificationToken.findUnique({ where: { token } })
 
@@ -279,8 +291,8 @@ export const resetPassword = async (token, newPassword) => {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data:  { password: hashedPassword },
+      data:  { password: hashedPassword, emailVerified: true },
     }),
-    prisma.verificationToken.delete({ where: { token } }),
+    prisma.verificationToken.deleteMany({ where: { userId: record.userId } }),
   ])
 }

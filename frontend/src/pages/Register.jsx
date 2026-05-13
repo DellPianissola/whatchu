@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import WatchuLogo from '../components/WatchuLogo.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 import './Register.css'
 
 const Register = () => {
@@ -132,30 +133,26 @@ const Register = () => {
 
             <div className="form-group">
               <label htmlFor="password">Senha</label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
                 disabled={loading}
                 minLength={8}
+                autoComplete="new-password"
               />
               <small className="form-hint">Mínimo de 8 caracteres</small>
             </div>
 
             <div className="form-group">
               <label htmlFor="confirmPassword">Confirmar senha</label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                required
                 disabled={loading}
                 minLength={8}
+                autoComplete="new-password"
               />
             </div>
 

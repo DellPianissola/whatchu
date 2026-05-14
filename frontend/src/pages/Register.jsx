@@ -22,7 +22,6 @@ const Register = () => {
     e.preventDefault()
     setError('')
 
-    // Validações
     if (password.length < 8) {
       setError('A senha deve ter no mínimo 8 caracteres')
       return

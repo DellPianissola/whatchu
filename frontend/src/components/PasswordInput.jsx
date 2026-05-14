@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import './PasswordInput.css'
 
-// Input de senha com toggle de visibilidade. Reutilizado em Login, Register e Reset.
-// Aceita as mesmas props de um <input> nativo via spread.
 const PasswordInput = ({ id, value, onChange, disabled, placeholder = '••••••••', minLength = 8, autoComplete = 'current-password', required = true, ...rest }) => {
   const [visible, setVisible] = useState(false)
 

@@ -13,7 +13,6 @@ const VerifyEmail = () => {
   const [errorMsg, setErrorMsg] = useState('')
   const [errorCode, setErrorCode] = useState('')
 
-  // Subestado do formulário de reenvio (visível só na branch error)
   const [resendEmail, setResendEmail]   = useState('')
   const [resendLoading, setResendLoading] = useState(false)
   const [resendDone, setResendDone]     = useState(false)
@@ -36,7 +35,6 @@ const VerifyEmail = () => {
     verifyEmailAndLogin(token).then((result) => {
       if (result.success) {
         setStatus('success')
-        // Login automático: redireciona pra Home após breve confirmação visual
         setTimeout(() => navigate('/', { replace: true }), 1500)
       } else {
         setStatus('error')
@@ -89,7 +87,6 @@ const VerifyEmail = () => {
             <h2>Verificação falhou</h2>
             <p>{errorMsg}</p>
 
-            {/* USERNAME_TAKEN ou EMAIL_TAKEN: já tem User com esses dados — sugere login. */}
             {(errorCode === 'EMAIL_TAKEN' || errorCode === 'USERNAME_TAKEN') ? (
               <Link to="/login" className="btn-verify-primary">Ir para o login</Link>
             ) : resendDone ? (

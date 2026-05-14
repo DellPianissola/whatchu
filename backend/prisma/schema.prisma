@@ -27,10 +27,7 @@ model User {
   @@map("users")
 }
 
-// Cadastro pendente — vive até o usuário verificar o email (clicar no link).
-// Não é um User real ainda: não pode fazer login nem reset de senha.
-// Quando verifica, vira User e este registro é deletado.
-// Cleanup automático: registros com expiresAt < now() podem ser removidos por cron.
+// Cadastro pendente. Vira User ao verificar o email; expira em ~24h.
 model PendingRegistration {
   id        String   @id @default(uuid())
   email     String

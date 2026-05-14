@@ -87,7 +87,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Materializa o User e já loga. Chamado por VerifyEmail.jsx.
   const verifyEmailAndLogin = async (token) => {
     try {
       const response = await api.post('/auth/verify-email', { token })

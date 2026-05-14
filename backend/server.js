@@ -20,10 +20,8 @@ const app = express()
 const PORT = process.env.PORT || 5000
 const IS_PROD = process.env.NODE_ENV === 'production'
 
-// Segurança — headers HTTP
 app.use(helmet())
 
-// CORS — restrito à origem configurada em produção
 app.use(cors({
   origin: IS_PROD ? process.env.CORS_ORIGIN : '*',
   credentials: true,
@@ -31,17 +29,16 @@ app.use(cors({
 
 app.use(express.json())
 
-// Rate limiting nas rotas de autenticação (brute force)
+// Brute-force protection nas rotas de auth
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20,                   // máx 20 tentativas por IP
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
 })
 
-// Limiter mais agressivo para endpoints que disparam email para destinatários
-// não autenticados — reduz risco de abuso (flood/assédio) e custo do provedor.
+// Limita disparo de email pra destinatários não autenticados (flood/assédio/custo)
 const emailDispatchLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -50,7 +47,6 @@ const emailDispatchLimiter = rateLimit({
   message: { error: 'Muitas solicitações. Tente novamente em 15 minutos.' },
 })
 
-// Swagger — apenas em desenvolvimento
 if (!IS_PROD) {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
@@ -58,27 +54,22 @@ if (!IS_PROD) {
   }))
 }
 
-// Connect to PostgreSQL
 connectDB()
 
-// Public Routes (não requerem autenticação)
 app.use('/api', indexRoutes)
-// Limiter agressivo nos disparadores de email pra destinatários não autenticados.
 // Aplicado ANTES do authLimiter pra contar separadamente — a barreira mais apertada vence.
 app.use('/api/auth/register', emailDispatchLimiter)
 app.use('/api/auth/request-password-reset', emailDispatchLimiter)
 app.use('/api/auth/resend-verification-public', emailDispatchLimiter)
 app.use('/api/auth', authLimiter, authRoutes)
 
-// Protected Routes (requerem autenticação)
 app.use('/api/movies', authenticateToken, moviesRoutes)
 app.use('/api/profiles', authenticateToken, profilesRoutes)
 app.use('/api/external', authenticateToken, externalRoutes)
 
-// Middleware central de erros — DEVE ser o último middleware registrado.
+// Último middleware — captura erros propagados pelos handlers
 app.use(errorHandler)
 
-// Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📡 API available at http://localhost:${PORT}/api`)

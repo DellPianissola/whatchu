@@ -68,7 +68,6 @@ describe('auth service', () => {
         email: 'dup@test.com', username: 'otherusername', password: 'senha12345',
       })
       expect(result).toEqual({ pending: true, email: 'dup@test.com' })
-      // Nenhum Pending foi criado (não vamos enviar email pra User real)
       const pending = await prisma.pendingRegistration.findFirst({ where: { email: 'dup@test.com' } })
       expect(pending).toBeNull()
     })
@@ -126,7 +125,6 @@ describe('auth service', () => {
       expect(result.accessToken).toMatch(/^eyJ/)
       expect(result.refreshToken).toMatch(/^eyJ/)
 
-      // Pending consumido
       const leftover = await prisma.pendingRegistration.findUnique({ where: { token: 'valid-token-1' } })
       expect(leftover).toBeNull()
     })
@@ -150,7 +148,6 @@ describe('auth service', () => {
 
       await expect(verifyEmail('attacker-token')).rejects.toThrow(ConflictError)
 
-      // O Pending perdedor deve ser limpo
       const leftover = await prisma.pendingRegistration.findUnique({ where: { token: 'attacker-token' } })
       expect(leftover).toBeNull()
     })

@@ -10,7 +10,14 @@ until nc -z "$PGHOST" "$PGPORT" 2>/dev/null; do
   sleep 1
 done
 
-echo "[start] Banco respondendo. Aplicando migrations..."
+echo "[start] Banco respondendo. Gerando Prisma Client..."
+
+# Em dev, o volume node_modules persiste e o generate do Dockerfile fica obsoleto
+# quando o schema muda. Regenerar no boot garante consistência entre schema atual
+# e client em runtime — custo de ~1-2s, evita P2022 ("column X does not exist").
+npx prisma generate
+
+echo "[start] Aplicando migrations..."
 
 if [ -d "prisma/migrations" ] && [ -n "$(ls -A prisma/migrations 2>/dev/null)" ]; then
   npx prisma migrate deploy

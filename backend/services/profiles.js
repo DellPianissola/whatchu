@@ -87,7 +87,6 @@ export const changeEmail = async (userId, newEmail) => {
   const token = generateRandomToken()
   const expiresAt = new Date(Date.now() + TOKEN_TTL.EMAIL_CHANGE)
 
-  // Verifica unicidade do novo email — schema agora tem @unique
   const dup = await prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } })
   if (dup && dup.id !== userId) {
     throw new ConflictError('Email já cadastrado por outra conta')
@@ -123,7 +122,6 @@ export const setAdultContentPreference = async (userId, enabled) => {
   }
 
   const { user } = profile
-  // Email verificado é invariante pós-cadastro — todo User passou pela verificação.
   if (!user.birthDate) {
     throw new ForbiddenError('Informe sua data de nascimento para acessar esta configuração', {
       code: 'BIRTHDATE_REQUIRED',

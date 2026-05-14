@@ -14,8 +14,6 @@ import {
   sendPasswordResetEmail,
 } from './email.js'
 
-// ─── Helpers internos ───────────────────────────────────────────────────────
-
 const generateTokens = (userId, username) => {
   const accessToken = jwt.sign(
     { userId, username },
@@ -70,7 +68,6 @@ const upsertVerificationToken = async (userId, type) => {
   return token
 }
 
-// Seleciona apenas campos públicos do user (nunca a senha)
 const PUBLIC_USER_FIELDS = {
   id: true,
   email: true,
@@ -79,8 +76,6 @@ const PUBLIC_USER_FIELDS = {
   isAdmin: true,
   createdAt: true,
 }
-
-// ─── Operações públicas (chamadas pelas rotas) ──────────────────────────────
 
 // Squat protection: múltiplos Pendings paralelos com mesmo email coexistem;
 // quem verificar primeiro materializa o User (UNIQUE em users.email decide a corrida).
@@ -316,7 +311,6 @@ export const resetPassword = async (token, newPassword) => {
   ])
 }
 
-// Pode ser chamado por cron — retorna a quantidade removida.
 export const cleanupExpiredPendingRegistrations = async () => {
   const result = await prisma.pendingRegistration.deleteMany({
     where: { expiresAt: { lt: new Date() } },

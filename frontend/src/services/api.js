@@ -83,7 +83,7 @@ export const deleteMovie = (id) => api.delete(`/movies/${id}`)
 export const drawMovie = (filters = {}) => api.post('/movies/draw', filters)
 
 // Auth
-export const login = (username, password) => api.post('/auth/login', { username, password })
+export const login = (identifier, password) => api.post('/auth/login', { identifier, password })
 export const register = (email, username, password, birthDate) =>
   api.post('/auth/register', { email, username, password, birthDate })
 export const getMe = () => api.get('/auth/me')

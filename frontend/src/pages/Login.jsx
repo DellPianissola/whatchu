@@ -6,7 +6,7 @@ import PasswordInput from '../components/PasswordInput.jsx'
 import './Login.css'
 
 const Login = () => {
-  const [username, setUsername] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,7 +18,7 @@ const Login = () => {
     setError('')
     setLoading(true)
 
-    const result = await login(username, password)
+    const result = await login(identifier, password)
 
     if (result.success) {
       navigate('/')
@@ -45,13 +45,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
-              <label htmlFor="username">Usuário</label>
+              <label htmlFor="identifier">Email ou usuário</label>
               <input
-                id="username"
+                id="identifier"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="seu_usuario"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="seu@email.com ou seu_usuario"
                 required
                 disabled={loading}
                 autoComplete="username"

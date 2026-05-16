@@ -194,13 +194,14 @@ export const resendVerificationEmailByEmail = async (email) => {
   await sendVerificationEmail(pending.email, newToken)
 }
 
-export const loginUser = async ({ username, password }) => {
-  if (!username || !password) {
-    throw new ValidationError('Usuário e senha são obrigatórios')
+export const loginUser = async ({ identifier, password }) => {
+  if (!identifier || !password) {
+    throw new ValidationError('Email/usuário e senha são obrigatórios')
   }
 
+  const where = identifier.includes('@') ? { email: identifier } : { username: identifier }
   const user = await prisma.user.findUnique({
-    where: { username },
+    where,
     include: { profile: true },
   })
 

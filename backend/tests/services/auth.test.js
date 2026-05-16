@@ -214,39 +214,53 @@ describe('auth service', () => {
   // ─── loginUser ────────────────────────────────────────────────────────────
 
   describe('loginUser', () => {
-    it('autentica User real com username + senha corretos', async () => {
-      // Cria User via fluxo completo: register → verify
+    it('autentica com username + senha corretos', async () => {
       await registerUser({ email: 'log@test.com', username: 'loguser', password: 'senha12345' })
       const pending = await prisma.pendingRegistration.findFirst({ where: { email: 'log@test.com' } })
       await verifyEmail(pending.token)
 
-      const result = await loginUser({ username: 'loguser', password: 'senha12345' })
+      const result = await loginUser({ identifier: 'loguser', password: 'senha12345' })
       expect(result.user.username).toBe('loguser')
       expect(result.accessToken).toMatch(/^eyJ/)
     })
 
+    it('autentica com email + senha corretos', async () => {
+      await registerUser({ email: 'log@test.com', username: 'loguser', password: 'senha12345' })
+      const pending = await prisma.pendingRegistration.findFirst({ where: { email: 'log@test.com' } })
+      await verifyEmail(pending.token)
+
+      const result = await loginUser({ identifier: 'log@test.com', password: 'senha12345' })
+      expect(result.user.email).toBe('log@test.com')
+      expect(result.accessToken).toMatch(/^eyJ/)
+    })
+
     it('lança ValidationError quando faltam campos', async () => {
-      await expect(loginUser({ username: '', password: '' })).rejects.toThrow(ValidationError)
+      await expect(loginUser({ identifier: '', password: '' })).rejects.toThrow(ValidationError)
     })
 
     it('lança UnauthorizedError para usuário inexistente', async () => {
       await expect(
-        loginUser({ username: 'naoexiste', password: 'senha12345' })
+        loginUser({ identifier: 'naoexiste', password: 'senha12345' })
+      ).rejects.toThrow(UnauthorizedError)
+    })
+
+    it('lança UnauthorizedError para email inexistente', async () => {
+      await expect(
+        loginUser({ identifier: 'naoexiste@test.com', password: 'senha12345' })
       ).rejects.toThrow(UnauthorizedError)
     })
 
     it('lança UnauthorizedError para PendingRegistration (não tem User ainda — não pode logar)', async () => {
       await registerUser({ email: 'pend@test.com', username: 'penduser', password: 'senha12345' })
-      // Sem verificar: continua só Pending
       await expect(
-        loginUser({ username: 'penduser', password: 'senha12345' })
+        loginUser({ identifier: 'penduser', password: 'senha12345' })
       ).rejects.toThrow(UnauthorizedError)
     })
 
     it('lança UnauthorizedError para senha incorreta', async () => {
       await createUserFactory({ username: 'wrongpw', password: 'correta12345' })
       await expect(
-        loginUser({ username: 'wrongpw', password: 'errada' })
+        loginUser({ identifier: 'wrongpw', password: 'errada' })
       ).rejects.toThrow(UnauthorizedError)
     })
   })

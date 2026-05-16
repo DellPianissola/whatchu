@@ -57,9 +57,9 @@ export const AuthProvider = ({ children }) => {
     checkAuth()
   }, [])
 
-  const login = async (username, password) => {
+  const login = async (identifier, password) => {
     try {
-      const response = await api.post('/auth/login', { username, password })
+      const response = await api.post('/auth/login', { identifier, password })
       const { user, profile, accessToken, refreshToken } = response.data
       setUser(user)
       setProfile(profile)

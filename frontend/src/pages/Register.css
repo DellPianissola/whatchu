@@ -38,14 +38,14 @@
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: var(--primary);
-}
-
-.auth-chu {
-  background: var(--gradient-cta);
+  background: var(--gradient-wordmark);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.auth-chu {
+  color: inherit;
 }
 
 .register-header h1 {

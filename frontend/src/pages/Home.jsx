@@ -151,9 +151,11 @@ const Home = () => {
         <header className="home-header">
           <div className="logo">
             <WatchuLogo size={72} />
-            <h1 className="logo-text">What<span className="logo-chu">chu</span></h1>
+            <div className="logo-text-group">
+              <h1 className="logo-text">What<span className="logo-chu">chu</span></h1>
+              <p className="tagline">O que vamos assistir hoje?</p>
+            </div>
           </div>
-          <p className="tagline">O que vamos assistir hoje?</p>
         </header>
 
         <div className="main-card">

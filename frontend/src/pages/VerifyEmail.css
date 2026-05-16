@@ -26,15 +26,18 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--primary);
   margin-bottom: 2rem;
 }
 
-.verify-chu {
-  background: var(--gradient-cta);
+.verify-brand > span {
+  background: var(--gradient-wordmark);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.verify-chu {
+  color: inherit;
 }
 
 .verify-content {

@@ -16,6 +16,7 @@
     "test:integration": "vitest run --config vitest.integration.config.js",
     "test:integration:coverage": "vitest run --config vitest.integration.config.js --coverage",
     "test:all": "npm test && npm run test:integration",
+    "test:manual": "vitest run --config vitest.manual.config.js",
     "test:db": "docker compose --profile test up postgres-test -d"
   },
   "dependencies": {

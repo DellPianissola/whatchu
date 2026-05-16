@@ -10,14 +10,14 @@ const resend = process.env.RESEND_API_KEY
 const send = async (payload) => {
   if (!resend) {
     console.warn('[email] RESEND_API_KEY não configurada — email não enviado:', payload.subject)
-    return
+    return null
   }
-  await resend.emails.send(payload)
+  return resend.emails.send(payload)
 }
 
-export const sendVerificationEmail = async (to, token) => {
+export const sendVerificationEmail = (to, token) => {
   const link = `${APP_URL}/verify-email?token=${token}`
-  await send({
+  return send({
     from: FROM,
     to,
     subject: 'Confirme seu email — Whatchu',
@@ -31,9 +31,9 @@ export const sendVerificationEmail = async (to, token) => {
   })
 }
 
-export const sendPasswordResetEmail = async (to, token) => {
+export const sendPasswordResetEmail = (to, token) => {
   const link = `${APP_URL}/reset-password?token=${token}`
-  await send({
+  return send({
     from: FROM,
     to,
     subject: 'Redefinição de senha — Whatchu',
@@ -47,9 +47,9 @@ export const sendPasswordResetEmail = async (to, token) => {
   })
 }
 
-export const sendEmailChangeVerification = async (to, token) => {
+export const sendEmailChangeVerification = (to, token) => {
   const link = `${APP_URL}/verify-email?token=${token}&type=email-change`
-  await send({
+  return send({
     from: FROM,
     to,
     subject: 'Confirme seu novo email — Whatchu',

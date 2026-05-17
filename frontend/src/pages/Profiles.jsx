@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { createProfile, updateProfile, changeEmail, setAdultContent, uploadAvatar } from '../services/api.js'
+import { createProfile, updateProfile, changeEmail, uploadAvatar } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import './Profiles.css'
@@ -19,12 +19,6 @@ const Profiles = () => {
     if (profile) setFormName(profile.name)
     if (user?.birthDate) setFormBirthDate(user.birthDate.split('T')[0])
   }, [profile, user])
-
-  const isAdult = () => {
-    if (!user?.birthDate) return false
-    const age = Math.floor((Date.now() - new Date(user.birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    return age >= 18
-  }
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -57,24 +51,6 @@ const Profiles = () => {
       toast.success('Email atualizado. Verifique sua caixa de entrada.')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao atualizar email')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAdultContent = async (enabled) => {
-    setLoading(true)
-    try {
-      const res = await setAdultContent(enabled)
-      updateAuthProfile(res.data.profile)
-      toast.success(enabled ? 'Conteúdo adulto ativado' : 'Conteúdo adulto desativado')
-    } catch (err) {
-      const code = err.response?.data?.code
-      if (code === 'UNDERAGE' || code === 'BIRTHDATE_REQUIRED') {
-        toast.error(err.response.data.error)
-      } else {
-        toast.error('Erro ao atualizar preferência')
-      }
     } finally {
       setLoading(false)
     }
@@ -240,24 +216,6 @@ const Profiles = () => {
           )}
         </div>
 
-        {isAdult() && (
-          <div className="profile-section">
-            <h3 className="section-title">Preferências</h3>
-            <div className="profile-info-row profile-info-row--toggle">
-              <div>
-                <span className="info-label">Conteúdo adulto (+18)</span>
-                <p className="info-hint">Exibe resultados classificados como adultos na busca e descoberta.</p>
-              </div>
-              <button
-                className={`btn-toggle ${profile?.allowAdultContent ? 'btn-toggle--on' : ''}`}
-                onClick={() => handleAdultContent(!profile?.allowAdultContent)}
-                disabled={loading}
-              >
-                {profile?.allowAdultContent ? 'Ativado' : 'Desativado'}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

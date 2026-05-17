@@ -1,6 +1,6 @@
 import { prisma } from '../config/database.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
-import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../lib/httpErrors.js'
+import { NotFoundError, ConflictError, ValidationError } from '../lib/httpErrors.js'
 import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
 import { sendEmailChangeVerification } from './email.js'
 
@@ -107,35 +107,6 @@ export const changeEmail = async (userId, newEmail) => {
   ])
 
   sendEmailChangeVerification(newEmail, token).catch(console.error)
-}
-
-export const setAdultContentPreference = async (userId, enabled) => {
-  const profile = await prisma.profile.findUnique({
-    where:   { userId },
-    include: { user: { select: { birthDate: true } } },
-  })
-  if (!profile) throw new NotFoundError('Perfil não encontrado')
-
-  // Desativar não exige verificações
-  if (!enabled) {
-    return prisma.profile.update({ where: { userId }, data: { allowAdultContent: false } })
-  }
-
-  const { user } = profile
-  if (!user.birthDate) {
-    throw new ForbiddenError('Informe sua data de nascimento para acessar esta configuração', {
-      code: 'BIRTHDATE_REQUIRED',
-    })
-  }
-
-  const age = Math.floor((Date.now() - user.birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-  if (age < 18) {
-    throw new ForbiddenError('É necessário ter 18 anos ou mais para acessar esta configuração', {
-      code: 'UNDERAGE',
-    })
-  }
-
-  return prisma.profile.update({ where: { userId }, data: { allowAdultContent: true } })
 }
 
 export const markOnboarded = async (userId) => {

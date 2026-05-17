@@ -241,7 +241,6 @@ export const getMe = async (userId) => {
           userId: true,
           onboardedAt: true,
           avatarUrl: true,
-          allowAdultContent: true,
           createdAt: true,
           updatedAt: true,
           _count: { select: { movies: true } },

@@ -99,7 +99,6 @@ export const createProfile = (data) => api.post('/profiles', data)
 export const updateProfile = (id, data) => api.put('/profiles', data)
 export const markOnboarded = () => api.post('/profiles/onboarded')
 export const changeEmail = (email) => api.put('/profiles/email', { email })
-export const setAdultContent = (enabled) => api.put('/profiles/adult-content', { enabled })
 export const uploadAvatar = (formData) =>
   api.put('/profiles/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 

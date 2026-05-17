@@ -6,7 +6,6 @@ import {
   updateProfile,
   markOnboarded,
   changeEmail,
-  setAdultContentPreference,
 } from '../../services/profiles.js'
 import { truncateAll, prisma } from '../helpers/db.js'
 import {
@@ -14,7 +13,7 @@ import {
   createProfile as createProfileFactory,
   createMovie,
 } from '../helpers/factories.js'
-import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from '../../lib/httpErrors.js'
+import { NotFoundError, ConflictError, ValidationError } from '../../lib/httpErrors.js'
 
 describe('profiles service', () => {
   beforeEach(() => truncateAll())
@@ -193,49 +192,4 @@ describe('profiles service', () => {
     })
   })
 
-  // ─── setAdultContentPreference ────────────────────────────────────────────
-
-  describe('setAdultContentPreference', () => {
-    const adultBirthDate = () => {
-      const d = new Date()
-      d.setFullYear(d.getFullYear() - 20)
-      return d
-    }
-    const minorBirthDate = () => {
-      const d = new Date()
-      d.setFullYear(d.getFullYear() - 16)
-      return d
-    }
-
-    it('ativa a opção para usuário maior de 18', async () => {
-      const user = await createUser({ birthDate: adultBirthDate() })
-      await createProfileFactory(user.id)
-      const updated = await setAdultContentPreference(user.id, true)
-      expect(updated.allowAdultContent).toBe(true)
-    })
-
-    it('desativa a opção sem exigir verificações (só define como false)', async () => {
-      const user = await createUser({ birthDate: adultBirthDate() })
-      await createProfileFactory(user.id, { allowAdultContent: true })
-      const updated = await setAdultContentPreference(user.id, false)
-      expect(updated.allowAdultContent).toBe(false)
-    })
-
-    it('lança ForbiddenError para menor de 18', async () => {
-      const user = await createUser({ birthDate: minorBirthDate() })
-      await createProfileFactory(user.id)
-      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(ForbiddenError)
-    })
-
-    it('lança ForbiddenError quando birthDate não está definido', async () => {
-      const user = await createUser({ birthDate: null })
-      await createProfileFactory(user.id)
-      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(ForbiddenError)
-    })
-
-    it('lança NotFoundError quando não tem perfil', async () => {
-      const user = await createUser({ birthDate: adultBirthDate() })
-      await expect(setAdultContentPreference(user.id, true)).rejects.toThrow(NotFoundError)
-    })
-  })
 })

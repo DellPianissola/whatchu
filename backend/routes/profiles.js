@@ -51,12 +51,6 @@ router.put('/email', asyncHandler(async (req, res) => {
   res.json({ message: 'Email atualizado. Verifique sua caixa de entrada para confirmar.' })
 }))
 
-// PUT /api/profiles/adult-content - Liga/desliga conteúdo adulto (exige 18+ e email verificado)
-router.put('/adult-content', asyncHandler(async (req, res) => {
-  const profile = await profilesService.setAdultContentPreference(req.user.id, req.body.enabled)
-  res.json({ message: 'Preferência atualizada', profile })
-}))
-
 // PUT /api/profiles/avatar - Upload de foto de perfil
 router.put('/avatar', upload.single('avatar'), asyncHandler(async (req, res) => {
   const profile = await uploadAvatar(req.user.id, req.file?.buffer, req.file?.mimetype)

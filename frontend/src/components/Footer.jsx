@@ -42,6 +42,10 @@ const Footer = () => {
             Este produto usa o TMDB e as APIs do TMDB, mas não é endossado,
             certificado nem aprovado pelo TMDB.
           </p>
+          {/* Disclosure obrigatório do Amazon Associates. */}
+          <p className="footer-disclaimer">
+            Como Associado da Amazon, podemos receber comissões por compras qualificadas.
+          </p>
         </div>
 
         <div className="footer-col footer-col--right">

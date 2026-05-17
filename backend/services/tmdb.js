@@ -4,6 +4,13 @@ import { extractVirtualGenres, VIRTUAL_GENRE_NAMES } from '../lib/virtualGenres.
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
+const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w92'
+
+// Watch providers e classificação etária são por região. Whatchu é BR-only por
+// enquanto — se um dia virar multi-país, isso passa pra config de perfil.
+const WATCH_REGION = 'BR'
+const CERTIFICATION_REGION = 'BR'
+
 const toUpstreamError = makeUpstreamErrorFactory('TMDB')
 
 class TMDBService {
@@ -18,9 +25,6 @@ class TMDBService {
     }
   }
 
-  /**
-   * Busca lista de gêneros do TMDB
-   */
   async getGenres(type = 'movie') {
     if (this.genreCache[type]) {
       return this.genreCache[type]
@@ -48,9 +52,6 @@ class TMDBService {
     }
   }
 
-  /**
-   * Converte IDs de gêneros para nomes
-   */
   async mapGenreIds(genreIds, type = 'movie') {
     if (!genreIds || genreIds.length === 0) return []
 
@@ -58,9 +59,6 @@ class TMDBService {
     return genreIds.map(id => genres[id]).filter(Boolean)
   }
 
-  /**
-   * Converte nomes de gêneros para IDs (para uso no /discover)
-   */
   async getGenreIdsFromNames(names, type = 'movie') {
     if (!names || names.length === 0) return []
     const genres = await this.getGenres(type)
@@ -71,18 +69,11 @@ class TMDBService {
     return names.map(n => reverse[n.toLowerCase()]).filter(Boolean)
   }
 
-  /**
-   * Lista de nomes de gêneros (para o dropdown do frontend).
-   * Injeta gêneros virtuais (ex.: "Anime") junto com os reais do TMDB.
-   */
   async getGenresList(type = 'movie') {
     const genres = await this.getGenres(type)
     return [...Object.values(genres), ...VIRTUAL_GENRE_NAMES].sort()
   }
 
-  /**
-   * Mapeia o sortBy do frontend para o sort_by do TMDB
-   */
   _buildSortParam(sortBy, type = 'movie') {
     const dateField = type === 'tv' ? 'first_air_date' : 'primary_release_date'
     const map = {
@@ -95,9 +86,6 @@ class TMDBService {
     return map[sortBy] || 'popularity.desc'
   }
 
-  /**
-   * Discover: lista filmes/séries com sort e filtro por gênero
-   */
   async discover(type = 'movie', { page = 1, sortBy = 'popularity', genres = [] } = {}) {
     if (!this.apiKey) {
       throw new Error('TMDB API Key não configurada')
@@ -246,7 +234,7 @@ class TMDBService {
         params: {
           api_key: this.apiKey,
           language: 'pt-BR',
-          append_to_response: 'videos,credits',
+          append_to_response: 'videos,credits,watch/providers,release_dates,content_ratings',
         },
       })
 
@@ -267,7 +255,7 @@ class TMDBService {
         params: {
           api_key: this.apiKey,
           language: 'pt-BR',
-          append_to_response: 'videos,credits',
+          append_to_response: 'videos,credits,watch/providers,release_dates,content_ratings',
         },
       })
 
@@ -303,6 +291,50 @@ class TMDBService {
     }))
   }
 
+  _formatAgeRating(data) {
+    const region = CERTIFICATION_REGION
+
+    // Movie
+    const movieEntry = data.release_dates?.results?.find(r => r.iso_3166_1 === region)
+    if (movieEntry) {
+      const cert = movieEntry.release_dates?.find(d => d.certification)?.certification
+      if (cert) return { region, value: cert }
+    }
+
+    // TV
+    const tvEntry = data.content_ratings?.results?.find(r => r.iso_3166_1 === region)
+    if (tvEntry?.rating) return { region, value: tvEntry.rating }
+
+    return null
+  }
+
+  _formatWatchProviders(rawWatch) {
+    const region = rawWatch?.results?.[WATCH_REGION]
+    if (!region) return null
+
+    const mapItem = (p) => ({
+      id:   p.provider_id,
+      name: p.provider_name,
+      logo: p.logo_path ? `${TMDB_LOGO_BASE_URL}${p.logo_path}` : null,
+    })
+
+    const streaming = (region.flatrate || []).map(mapItem)
+    const free      = [...(region.free || []), ...(region.ads || [])].map(mapItem)
+    const rent      = (region.rent || []).map(mapItem)
+    const buy       = (region.buy  || []).map(mapItem)
+
+    if (streaming.length + free.length + rent.length + buy.length === 0) return null
+
+    return {
+      region: WATCH_REGION,
+      link:   region.link || null,
+      streaming,
+      free,
+      rent,
+      buy,
+    }
+  }
+
   formatMovieDetails(data) {
     return {
       id: data.id,
@@ -320,6 +352,8 @@ class TMDBService {
       director: data.credits?.crew?.find(c => c.job === 'Director')?.name || null,
       cast: data.credits?.cast?.slice(0, 5).map(a => a.name) || [],
       trailer: data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
+      watchProviders: this._formatWatchProviders(data['watch/providers']),
+      ageRating: this._formatAgeRating(data),
     }
   }
 
@@ -341,6 +375,8 @@ class TMDBService {
       episodes: data.number_of_episodes,
       cast: data.credits?.cast?.slice(0, 5).map(a => a.name) || [],
       trailer: data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
+      watchProviders: this._formatWatchProviders(data['watch/providers']),
+      ageRating: this._formatAgeRating(data),
     }
   }
 }

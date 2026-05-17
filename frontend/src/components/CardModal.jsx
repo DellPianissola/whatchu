@@ -2,7 +2,58 @@ import { useEffect } from 'react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
 import { trailerUrl } from '../utils/detailsCache.js'
 import { TYPE_LABEL, formatDuration } from '../utils/content.js'
+import { providerUrl } from '../utils/providers.js'
+import { ageRatingTier } from '../utils/ageRating.js'
 import './CardModal.css'
+
+const PROVIDER_GROUPS = [
+  { key: 'streaming', label: 'Streaming' },
+  { key: 'free',      label: 'Grátis'    },
+  { key: 'rent',      label: 'Alugar'    },
+  { key: 'buy',       label: 'Comprar'   },
+]
+
+const ProviderLogo = ({ provider }) => {
+  const url = providerUrl(provider.id)
+  const img = (
+    <img
+      src={provider.logo}
+      alt={provider.name}
+      title={provider.name}
+      className="card-modal-provider-logo"
+    />
+  )
+  if (!url) return img
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" aria-label={provider.name}>
+      {img}
+    </a>
+  )
+}
+
+const WatchProviders = ({ providers }) => {
+  if (!providers) return null
+  const groups = PROVIDER_GROUPS.filter(g => providers[g.key]?.length > 0)
+  if (groups.length === 0) return null
+
+  return (
+    <div className="card-modal-providers">
+      <span className="card-modal-detail-label">Onde assistir</span>
+      <div className="card-modal-providers-groups">
+        {groups.map(({ key, label }) => (
+          <div key={key} className="card-modal-providers-group">
+            <span className="card-modal-providers-group-label">{label}</span>
+            <div className="card-modal-providers-logos">
+              {providers[key].map(p => <ProviderLogo key={p.id} provider={p} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Atribuição obrigatória pelos termos de uso do TMDB. */}
+      <p className="card-modal-providers-source">Dados via JustWatch</p>
+    </div>
+  )
+}
 
 const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions, posterOverlay }) => {
   // ESC fecha o modal; body fica sem scroll enquanto aberto
@@ -19,6 +70,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
   if (!item) return null
 
   const duration = richDetails?.duration || item.duration
+  const ageRating = richDetails?.ageRating
 
   return (
     <div className="card-modal-backdrop" onClick={onClose}>
@@ -47,6 +99,14 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
               <span>📅 {item.year || 'Sem data'}</span>
               <span>⭐ {item.rating || 'Sem nota'}</span>
               {item.type === 'MOVIE' && duration && <span>⏱ {formatDuration(duration)}</span>}
+              {ageRating && (
+                <span
+                  className={`age-rating age-rating--tier-${ageRatingTier(ageRating)}`}
+                  title={`Classificação ${ageRating.region}`}
+                >
+                  {ageRating.value}
+                </span>
+              )}
             </div>
 
             <div className="card-modal-genres">
@@ -119,6 +179,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
                     ▶ Ver Trailer
                   </a>
                 )}
+                <WatchProviders providers={richDetails.watchProviders} />
               </div>
             )}
 

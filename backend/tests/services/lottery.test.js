@@ -20,7 +20,7 @@ describe('lottery: drawMovie', () => {
 
   it('devolve movie:null + reason NO_MATCH quando filtros excluem tudo', async () => {
     await createMovie(profile.id, { title: 'A', type: 'MOVIE' })
-    const result = await drawMovie(profile.id, { types: ['ANIME'] })
+    const result = await drawMovie(profile.id, { types: ['SERIES'] })
     expect(result.movie).toBeNull()
     expect(result.reason).toBe('NO_MATCH')
   })

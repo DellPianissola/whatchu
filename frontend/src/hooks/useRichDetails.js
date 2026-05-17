@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react'
-import { getMovieDetails, getSeriesDetails, getAnimeDetails } from '../services/api.js'
+import { getMovieDetails, getSeriesDetails } from '../services/api.js'
 import { detailsCache } from '../utils/detailsCache.js'
 
-const buildErrorMessage = (error, type) => {
-  const source = type === 'ANIME' ? 'MyAnimeList' : 'TMDB'
-  const code   = error.response?.data?.code
+const buildErrorMessage = (error) => {
+  const code = error.response?.data?.code
 
   if (!error.response) {
     return 'Não foi possível carregar detalhes adicionais. Sem conexão com o servidor.'
   }
   if (code === 'UPSTREAM_RATE_LIMIT') {
-    return `Não foi possível carregar detalhes adicionais. ${source} está limitando as requisições — tenta de novo em alguns segundos.`
+    return 'Não foi possível carregar detalhes adicionais. TMDB está limitando as requisições — tenta de novo em alguns segundos.'
   }
   if (code === 'UPSTREAM_DOWN') {
-    return `Não foi possível carregar detalhes adicionais. ${source} está fora do ar agora.`
+    return 'Não foi possível carregar detalhes adicionais. TMDB está fora do ar agora.'
   }
   return 'Não foi possível carregar detalhes adicionais. Tenta de novo daqui a pouco.'
 }
@@ -49,10 +48,9 @@ export const useRichDetails = (item) => {
 
     const fetchDetails = async () => {
       try {
-        let response
-        if (item.type === 'MOVIE') response = await getMovieDetails(item.externalId)
-        else if (item.type === 'SERIES') response = await getSeriesDetails(item.externalId)
-        else response = await getAnimeDetails(item.externalId)
+        const response = item.type === 'SERIES'
+          ? await getSeriesDetails(item.externalId)
+          : await getMovieDetails(item.externalId)
 
         if (!cancelled) {
           detailsCache.set(cacheKey, response.data)
@@ -61,7 +59,7 @@ export const useRichDetails = (item) => {
       } catch (error) {
         if (!cancelled) {
           console.error('Erro ao carregar detalhes:', error)
-          setRichDetailsError(buildErrorMessage(error, item.type))
+          setRichDetailsError(buildErrorMessage(error))
         }
       } finally {
         if (!cancelled) setRichDetailsLoading(false)

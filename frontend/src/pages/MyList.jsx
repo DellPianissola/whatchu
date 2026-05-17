@@ -112,7 +112,6 @@ const MyList = () => {
   const moviesByCategory = {
     movies: visibleMovies.filter(m => m.type === 'MOVIE'),
     series: visibleMovies.filter(m => m.type === 'SERIES'),
-    animes: visibleMovies.filter(m => m.type === 'ANIME'),
   }
 
   const renderMovieCard = (movie) => {
@@ -235,7 +234,7 @@ const MyList = () => {
             ) : (
               <>
                 <p>Nenhum item adicionado ainda</p>
-                <p className="empty-hint">Clique em "Adicionar" para buscar filmes, séries e animes!</p>
+                <p className="empty-hint">Clique em "Adicionar" para buscar filmes e séries!</p>
                 <button className="btn-add-empty" onClick={() => navigate('/search')}>
                   ➕ Adicionar Primeiro Item
                 </button>
@@ -257,14 +256,6 @@ const MyList = () => {
                 <h3 className="category-title">📺 Séries ({moviesByCategory.series.length})</h3>
                 <div className="movies-grid">
                   {moviesByCategory.series.map(renderMovieCard)}
-                </div>
-              </div>
-            )}
-            {moviesByCategory.animes.length > 0 && (
-              <div className="category-section">
-                <h3 className="category-title">🎌 Animes ({moviesByCategory.animes.length})</h3>
-                <div className="movies-grid">
-                  {moviesByCategory.animes.map(renderMovieCard)}
                 </div>
               </div>
             )}

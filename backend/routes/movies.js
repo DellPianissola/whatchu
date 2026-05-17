@@ -17,7 +17,7 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ movies })
 }))
 
-// POST /api/movies - Adiciona novo filme, série ou anime
+// POST /api/movies - Adiciona novo filme ou série
 router.post('/', asyncHandler(async (req, res) => {
   const movie = await moviesService.createMovie(req.user.id, req.body)
   res.status(201).json({ message: 'Filme adicionado com sucesso', movie })

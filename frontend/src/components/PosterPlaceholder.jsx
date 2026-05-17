@@ -3,15 +3,11 @@ import './PosterPlaceholder.css'
 const PosterPlaceholder = ({ title, type, className = '' }) => {
   const getIcon = () => {
     switch (type) {
-      case 'MOVIE':
-      case 'movie':
-        return '🎬'
       case 'SERIES':
       case 'series':
         return '📺'
-      case 'ANIME':
-      case 'anime':
-        return '🎌'
+      case 'MOVIE':
+      case 'movie':
       default:
         return '🎬'
     }
@@ -26,4 +22,3 @@ const PosterPlaceholder = ({ title, type, className = '' }) => {
 }
 
 export default PosterPlaceholder
-

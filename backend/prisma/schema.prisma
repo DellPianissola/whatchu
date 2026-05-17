@@ -112,7 +112,6 @@ enum TokenType {
 enum MovieType {
   MOVIE
   SERIES
-  ANIME
 }
 
 enum Priority {

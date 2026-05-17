@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Whatchu API
   version: 1.0.0
-  description: API para gerenciar filmes, séries e animes para assistir juntos
+  description: API para gerenciar filmes e séries para assistir juntos
   contact:
     name: Whatchu
     email: dell.pianissola@outlook.com
@@ -34,7 +34,7 @@ paths:
 
   /movies:
     get:
-      summary: Lista todos os filmes, séries e animes
+      summary: Lista todos os filmes e séries
       tags: [Movies]
       description: Retorna uma lista de todos os conteúdos cadastrados
       responses:
@@ -51,7 +51,7 @@ paths:
                       $ref: '#/components/schemas/Movie'
     
     post:
-      summary: Adiciona um novo filme, série ou anime
+      summary: Adiciona um novo filme ou série
       tags: [Movies]
       description: Cria um novo conteúdo na lista
       requestBody:
@@ -93,7 +93,7 @@ paths:
 
   /movies/{id}:
     get:
-      summary: Busca um filme, série ou anime por ID
+      summary: Busca um filme ou série por ID
       tags: [Movies]
       description: Retorna os detalhes de um conteúdo específico
       parameters:
@@ -121,7 +121,7 @@ paths:
                 $ref: '#/components/schemas/Error'
     
     put:
-      summary: Atualiza um filme, série ou anime
+      summary: Atualiza um filme ou série
       tags: [Movies]
       description: Atualiza os dados de um conteúdo existente
       parameters:
@@ -152,7 +152,7 @@ paths:
                 $ref: '#/components/schemas/Error'
     
     delete:
-      summary: Remove um filme, série ou anime
+      summary: Remove um filme ou série
       tags: [Movies]
       description: Remove um conteúdo da lista
       parameters:
@@ -295,15 +295,15 @@ components:
       properties:
         id:
           type: string
-          description: ID único do filme/série/anime
+          description: ID único do filme/série
           example: '507f1f77bcf86cd799439011'
         title:
           type: string
-          description: Título do filme/série/anime
+          description: Título do filme/série
           example: 'Interestelar'
         type:
           type: string
-          enum: [movie, series, anime]
+          enum: [movie, series]
           description: Tipo de conteúdo
           example: movie
         description:

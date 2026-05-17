@@ -123,9 +123,6 @@ export const getPopularMovies = (page = 1, opts = {}) =>
 export const getPopularSeries = (page = 1, opts = {}) =>
   api.get('/external/series', { params: buildExtParams({ page, ...opts }) })
 
-export const getPopularAnimes = (page = 1, opts = {}) =>
-  api.get('/external/animes', { params: buildExtParams({ page, ...opts }) })
-
 export const getExternalGenres = (type) =>
   api.get('/external/genres', { params: { type } })
 
@@ -136,8 +133,5 @@ export const getMovieDetails = (id) =>
 
 export const getSeriesDetails = (id) =>
   api.get(`/external/series/${id}`)
-
-export const getAnimeDetails = (id) =>
-  api.get(`/external/animes/${id}`)
 
 export default api

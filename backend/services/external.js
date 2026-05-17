@@ -1,15 +1,12 @@
 import tmdbService from './tmdb.js'
-import jikanService from './jikan.js'
 import { ValidationError } from '../lib/httpErrors.js'
 
 /**
- * Camada de orquestração entre os providers externos (TMDB e Jikan).
+ * Camada de orquestração do provider externo (TMDB).
  *
- * `tmdb.js` e `jikan.js` são adapters de provider (baixo nível, falam HTTP
- * com a API). Aqui em cima ficam as regras de:
- *   - qual provider chamar baseado no `type`
- *   - como aplicar sort/genres respeitando limitações de cada API
- *   - como combinar resultados quando há multi (sem `type`)
+ * `tmdb.js` é o adapter de baixo nível (HTTP). Aqui em cima ficam as regras
+ * de roteamento por `type` e como aplicar sort/genres respeitando limitações
+ * de cada endpoint do TMDB.
  */
 
 const TMDB_TYPE_MAP = {
@@ -26,58 +23,28 @@ const parseGenres = (raw) => {
 // ─── Busca textual ──────────────────────────────────────────────────────────
 
 /**
- * Busca textual em todas as APIs. Roteamento por `type`:
- *   - anime  → Jikan (suporta q + sort + genres juntos)
- *   - movie  → TMDB /search/movie (sort/genres ignorados — limitação da API)
- *   - series → TMDB /search/tv (idem)
- *   - sem type → multi: TMDB /search/multi + Jikan, resultados combinados.
+ * Busca textual no TMDB. Roteamento por `type`:
+ *   - movie  → /search/movie
+ *   - series → /search/tv
+ *   - sem type → /search/multi
  *
- * Em modo "multi", falha de um provider não derruba a busca — acumula o que
- * deu certo. Em modo type-specific, exceções propagam pro middleware de erros.
+ * TMDB /search não suporta sort/genres — esses params são ignorados aqui.
  */
-export const searchByText = async ({ q, type, page = 1, sortBy, genres }) => {
+export const searchByText = async ({ q, type, page = 1 }) => {
   if (!q) {
     throw new ValidationError('Parâmetro "q" (query) é obrigatório')
   }
 
-  const genreList = parseGenres(genres)
-
-  if (type === 'anime') {
-    const data = await jikanService.search(q, page, { sortBy, genres: genreList })
-    return formatSearchResponse({ q, type, page, totalPages: data.totalPages, results: data.results })
-  }
-
-  if (type === 'movie' || type === 'series') {
-    // TMDB /search ignora sortBy/genres (limitação da API)
-    const tmdbType = TMDB_TYPE_MAP[type]
-    const data = await tmdbService.search(q, tmdbType, page)
-    return formatSearchResponse({ q, type, page, totalPages: data.totalPages, results: data.results })
-  }
-
-  // Sem type: combina TMDB multi + Jikan, com tolerância a falhas
-  const [tmdbResults, jikanResults] = await Promise.all([
-    safeProviderCall(() => tmdbService.search(q, 'multi', page), 'TMDB'),
-    safeProviderCall(() => jikanService.search(q, page), 'Jikan'),
-  ])
+  const tmdbType = TMDB_TYPE_MAP[type] || 'multi'
+  const data = await tmdbService.search(q, tmdbType, page)
 
   return formatSearchResponse({
     q,
-    type: 'all',
+    type: type || 'all',
     page,
-    totalPages: tmdbResults?.totalPages || 1,
-    results: [...(tmdbResults?.results || []), ...(jikanResults?.results || [])],
+    totalPages: data.totalPages,
+    results: data.results,
   })
-}
-
-// Wrapper que captura erro de um provider e devolve null pra não interromper
-// busca multi. Loga pra ficar visível em prod.
-const safeProviderCall = async (fn, providerName) => {
-  try {
-    return await fn()
-  } catch (error) {
-    console.error(`Erro ao buscar no ${providerName}:`, error.message)
-    return null
-  }
 }
 
 const formatSearchResponse = ({ q, type, page, totalPages, results }) => ({
@@ -91,22 +58,13 @@ const formatSearchResponse = ({ q, type, page, totalPages, results }) => ({
 // ─── Discover (listagens populares com sort/genres) ─────────────────────────
 
 /**
- * Lista de conteúdo (sem busca textual). Roteia pro provider certo e aplica
- * sort/genres no nível da API (server-side, nada client-side).
+ * Lista de conteúdo (sem busca textual). Aplica sort/genres no nível da API.
+ * Gêneros virtuais (ex.: "Anime") são resolvidos dentro do tmdbService.
  */
 export const discoverByType = async (type, { page = 1, sortBy, genres } = {}) => {
   const genreList = parseGenres(genres)
-  const opts = { page, sortBy, genres: genreList }
-
-  let data
-  if (type === 'anime') {
-    data = await jikanService.getPopularAnimes(page, opts)
-  } else if (type === 'series') {
-    data = await tmdbService.discover('tv', opts)
-  } else {
-    // default: movie
-    data = await tmdbService.discover('movie', opts)
-  }
+  const tmdbType = TMDB_TYPE_MAP[type] || 'movie'
+  const data = await tmdbService.discover(tmdbType, { page, sortBy, genres: genreList })
 
   return {
     page: parseInt(page),
@@ -118,21 +76,19 @@ export const discoverByType = async (type, { page = 1, sortBy, genres } = {}) =>
 // ─── Gêneros ────────────────────────────────────────────────────────────────
 
 export const listGenres = async (type) => {
-  if (type === 'series') return tmdbService.getGenresList('tv')
-  if (type === 'anime') return jikanService.getGenresList()
-  return tmdbService.getGenresList('movie')
+  const tmdbType = TMDB_TYPE_MAP[type] || 'movie'
+  return tmdbService.getGenresList(tmdbType)
 }
 
 // ─── Detalhes ───────────────────────────────────────────────────────────────
 
-const VALID_DETAIL_TYPES = ['movie', 'series', 'anime']
+const VALID_DETAIL_TYPES = ['movie', 'series']
 
 export const getDetails = async (type, id) => {
   if (!VALID_DETAIL_TYPES.includes(type)) {
-    throw new ValidationError(`Tipo inválido: ${type}. Use movie, series ou anime`)
+    throw new ValidationError(`Tipo inválido: ${type}. Use movie ou series`)
   }
 
   if (type === 'movie') return tmdbService.getMovieDetails(id)
-  if (type === 'series') return tmdbService.getSeriesDetails(id)
-  return jikanService.getAnimeDetails(id)
+  return tmdbService.getSeriesDetails(id)
 }

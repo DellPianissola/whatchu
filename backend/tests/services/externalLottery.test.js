@@ -6,19 +6,11 @@ vi.mock('../../services/tmdb.js', () => ({
   },
 }))
 
-vi.mock('../../services/jikan.js', () => ({
-  default: {
-    getPopularAnimes: vi.fn(),
-  },
-}))
-
-import tmdbService  from '../../services/tmdb.js'
-import jikanService from '../../services/jikan.js'
+import tmdbService from '../../services/tmdb.js'
 import { luckyDraw, weightByRating } from '../../services/externalLottery.js'
 import { ValidationError } from '../../lib/httpErrors.js'
 
-const tmdbPage  = (results = []) => ({ totalPages: 20, results })
-const jikanPage = (results = []) => ({ totalPages: 20, results })
+const tmdbPage = (results = []) => ({ totalPages: 20, results })
 
 const mkItem = (overrides = {}) => ({
   id: 1,
@@ -60,27 +52,24 @@ describe('luckyDraw', () => {
 
   it('quando types vazio/undefined, busca todos os tipos', async () => {
     tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
-    jikanService.getPopularAnimes.mockResolvedValue(jikanPage([mkItem({ type: 'ANIME' })]))
 
     await luckyDraw({})
 
     expect(tmdbService.discover).toHaveBeenCalledWith('movie', expect.any(Object))
     expect(tmdbService.discover).toHaveBeenCalledWith('tv', expect.any(Object))
-    expect(jikanService.getPopularAnimes).toHaveBeenCalled()
   })
 
   it('passa gêneros pros providers', async () => {
     tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
-    jikanService.getPopularAnimes.mockResolvedValue(jikanPage([]))
 
-    await luckyDraw({ types: ['MOVIE', 'ANIME'], genres: ['Ação', 'Drama'] })
+    await luckyDraw({ types: ['MOVIE', 'SERIES'], genres: ['Ação', 'Drama'] })
 
     expect(tmdbService.discover).toHaveBeenCalledWith(
       'movie',
       expect.objectContaining({ genres: ['Ação', 'Drama'], sortBy: 'popularity' })
     )
-    expect(jikanService.getPopularAnimes).toHaveBeenCalledWith(
-      expect.any(Number),
+    expect(tmdbService.discover).toHaveBeenCalledWith(
+      'tv',
       expect.objectContaining({ genres: ['Ação', 'Drama'], sortBy: 'popularity' })
     )
   })
@@ -97,7 +86,6 @@ describe('luckyDraw', () => {
 
   it('devolve NO_RESULTS quando todos os providers vêm vazios', async () => {
     tmdbService.discover.mockResolvedValue(tmdbPage([]))
-    jikanService.getPopularAnimes.mockResolvedValue(jikanPage([]))
 
     const result = await luckyDraw({})
 
@@ -106,13 +94,15 @@ describe('luckyDraw', () => {
   })
 
   it('falha de um provider não derruba o sorteio', async () => {
-    const anime = mkItem({ id: 9, type: 'ANIME', title: 'Anime' })
-    tmdbService.discover.mockRejectedValue(new Error('TMDB down'))
-    jikanService.getPopularAnimes.mockResolvedValue(jikanPage([anime]))
+    const series = mkItem({ id: 9, type: 'SERIES', title: 'Série' })
+    tmdbService.discover.mockImplementation((type) => {
+      if (type === 'movie') return Promise.reject(new Error('TMDB movie down'))
+      return Promise.resolve(tmdbPage([series]))
+    })
 
-    const result = await luckyDraw({ types: ['MOVIE', 'ANIME'] })
+    const result = await luckyDraw({ types: ['MOVIE', 'SERIES'] })
 
-    expect(result.movie).toEqual(anime)
+    expect(result.movie).toEqual(series)
   })
 
   it('quando página aleatória vem vazia, refaz na página 1', async () => {
@@ -131,7 +121,6 @@ describe('luckyDraw', () => {
   })
 
   it('peso por nota faz item bem avaliado vencer maioria dos sorteios', async () => {
-    // Nota 9 (peso 17) vs nota 5 (peso 1) → 17/18 ≈ 94%. Limiar 80% pra não flakear.
     const winner = mkItem({ id: 1, rating: 9, title: 'Bom' })
     const loser  = mkItem({ id: 2, rating: 5, title: 'Médio' })
     tmdbService.discover.mockResolvedValue(tmdbPage([winner, loser]))
@@ -148,10 +137,9 @@ describe('luckyDraw', () => {
   it('ignora tipos inválidos no input mas mantém os válidos', async () => {
     tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
 
-    await luckyDraw({ types: ['MOVIE', 'GARBAGE'] })
+    await luckyDraw({ types: ['MOVIE', 'ANIME', 'GARBAGE'] })
 
     expect(tmdbService.discover).toHaveBeenCalledWith('movie', expect.any(Object))
     expect(tmdbService.discover).not.toHaveBeenCalledWith('tv', expect.any(Object))
-    expect(jikanService.getPopularAnimes).not.toHaveBeenCalled()
   })
 })

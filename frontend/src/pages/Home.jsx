@@ -17,14 +17,14 @@ const Home = () => {
   const { toast } = useNotify()
   const [isLoaded, setIsLoaded] = useState(false)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [stats, setStats] = useState({ movies: 0, series: 0, animes: 0 })
+  const [stats, setStats] = useState({ movies: 0, series: 0 })
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [filterTypes, setFilterTypes] = useState(ALL_TYPES)
   const [filterPriorities, setFilterPriorities] = useState([])
   const [filterGenres, setFilterGenres] = useState([])
-  const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [], ANIME: [] })
+  const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
   // opções fixas — não dependem de dados da API
@@ -50,7 +50,6 @@ const Home = () => {
       setStats({
         movies: movies.filter(m => m.type === 'MOVIE').length,
         series: movies.filter(m => m.type === 'SERIES').length,
-        animes: movies.filter(m => m.type === 'ANIME').length,
       })
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error)
@@ -61,15 +60,13 @@ const Home = () => {
 
   const loadGenres = async () => {
     try {
-      const [movie, series, anime] = await Promise.all([
+      const [movie, series] = await Promise.all([
         getExternalGenres('movie'),
         getExternalGenres('series'),
-        getExternalGenres('anime'),
       ])
       setGenresByType({
         MOVIE:  movie.data.genres,
         SERIES: series.data.genres,
-        ANIME:  anime.data.genres,
       })
     } catch (error) {
       console.error('Erro ao carregar gêneros:', error)
@@ -97,7 +94,7 @@ const Home = () => {
     } catch (error) {
       const code = error.response?.data?.code
       if (code === 'EMPTY_LIST') {
-        toast.info('Sua lista está vazia — adicione filmes, séries ou animes pra começar')
+        toast.info('Sua lista está vazia — adicione filmes ou séries pra começar')
       } else if (code === 'NO_MATCH') {
         toast.info('Nenhum item da sua lista corresponde aos filtros selecionados')
       } else {
@@ -134,7 +131,7 @@ const Home = () => {
   }
 
   const greeting = profile?.name ? `Olá, ${profile.name.split(' ')[0]}!` : 'Bem-vindo!'
-  const totalItems = stats.movies + stats.series + stats.animes
+  const totalItems = stats.movies + stats.series
   const listIsEmpty = !isLoadingStats && totalItems === 0
   const noTypeSelected = filterTypes.length === 0
   const drawDisabled = isDrawing || noTypeSelected
@@ -174,11 +171,6 @@ const Home = () => {
               <div className="stat-item">
                 <div className="stat-value">{isLoadingStats ? '—' : stats.series}</div>
                 <div className="stat-label">Séries</div>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-item">
-                <div className="stat-value">{isLoadingStats ? '—' : stats.animes}</div>
-                <div className="stat-label">Animes</div>
               </div>
             </div>
 
@@ -222,7 +214,7 @@ const Home = () => {
               {listIsEmpty ? (
                 <div className="empty-list-state">
                   <p className="empty-list-text">
-                    Sua lista está vazia. Pesquise filmes, séries ou animes para começar.
+                    Sua lista está vazia. Pesquise filmes ou séries para começar.
                   </p>
                   <Link to="/search" className="btn btn-primary btn-draw">
                     <span className="btn-icon">🔍</span>
@@ -235,7 +227,7 @@ const Home = () => {
                     className="btn btn-primary btn-draw"
                     onClick={handleDraw}
                     disabled={drawDisabled}
-                    title={noTypeSelected ? 'Selecione ao menos um tipo (Filme, Série ou Anime)' : undefined}
+                    title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
                   >
                     <span className="btn-icon">🎲</span>
                     <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Sortear'}</span>
@@ -244,7 +236,7 @@ const Home = () => {
                     className="btn btn-ghost btn-lucky"
                     onClick={handleLucky}
                     disabled={drawDisabled}
-                    title={noTypeSelected ? 'Selecione ao menos um tipo (Filme, Série ou Anime)' : undefined}
+                    title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
                   >
                     <span className="btn-icon">✨</span>
                     <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Estou com sorte'}</span>

@@ -5,13 +5,13 @@ import { luckyDraw } from '../services/externalLottery.js'
 
 const router = express.Router()
 
-// GET /api/external/search - Busca textual em todas as APIs
+// GET /api/external/search - Busca textual no TMDB
 router.get('/search', asyncHandler(async (req, res) => {
   const result = await externalService.searchByText(req.query)
   res.json(result)
 }))
 
-// GET /api/external/genres?type=movie|series|anime
+// GET /api/external/genres?type=movie|series
 router.get('/genres', asyncHandler(async (req, res) => {
   const { type } = req.query
   const genres = await externalService.listGenres(type)
@@ -19,7 +19,7 @@ router.get('/genres', asyncHandler(async (req, res) => {
 }))
 
 // POST /api/external/lucky - Sorteia um item popular de fora da lista
-// Body: { types?: ('MOVIE'|'SERIES'|'ANIME')[], genres?: string[] }
+// Body: { types?: ('MOVIE'|'SERIES')[], genres?: string[] }
 router.post('/lucky', asyncHandler(async (req, res) => {
   const result = await luckyDraw(req.body || {})
   res.json(result)
@@ -37,12 +37,6 @@ router.get('/series', asyncHandler(async (req, res) => {
   res.json(result)
 }))
 
-// GET /api/external/animes - Lista animes com sort/gênero
-router.get('/animes', asyncHandler(async (req, res) => {
-  const result = await externalService.discoverByType('anime', req.query)
-  res.json(result)
-}))
-
 // GET /api/external/movies/:id - Detalhes de filme
 router.get('/movies/:id', asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('movie', req.params.id))
@@ -51,11 +45,6 @@ router.get('/movies/:id', asyncHandler(async (req, res) => {
 // GET /api/external/series/:id - Detalhes de série
 router.get('/series/:id', asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('series', req.params.id))
-}))
-
-// GET /api/external/animes/:id - Detalhes de anime
-router.get('/animes/:id', asyncHandler(async (req, res) => {
-  res.json(await externalService.getDetails('anime', req.params.id))
 }))
 
 export default router

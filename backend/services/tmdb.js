@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
+import { extractVirtualGenres, VIRTUAL_GENRE_NAMES } from '../lib/virtualGenres.js'
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
@@ -71,11 +72,12 @@ class TMDBService {
   }
 
   /**
-   * Lista de nomes de gêneros (para o dropdown do frontend)
+   * Lista de nomes de gêneros (para o dropdown do frontend).
+   * Injeta gêneros virtuais (ex.: "Anime") junto com os reais do TMDB.
    */
   async getGenresList(type = 'movie') {
     const genres = await this.getGenres(type)
-    return Object.values(genres).sort()
+    return [...Object.values(genres), ...VIRTUAL_GENRE_NAMES].sort()
   }
 
   /**
@@ -104,7 +106,9 @@ class TMDBService {
     try {
       const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie'
       const sort = this._buildSortParam(sortBy, type)
-      const genreIds = await this.getGenreIdsFromNames(genres, type)
+      const { realGenres, extraTmdbGenreIds, tmdbOriginCountries } = extractVirtualGenres(genres)
+      const realGenreIds = await this.getGenreIdsFromNames(realGenres, type)
+      const allGenreIds = [...realGenreIds, ...extraTmdbGenreIds]
 
       const params = {
         api_key: this.apiKey,
@@ -114,8 +118,12 @@ class TMDBService {
         include_adult: false,
       }
 
-      if (genreIds.length > 0) {
-        params.with_genres = genreIds.join(',')
+      if (allGenreIds.length > 0) {
+        params.with_genres = allGenreIds.join(',')
+      }
+
+      if (tmdbOriginCountries.length > 0) {
+        params.with_origin_country = tmdbOriginCountries.join(',')
       }
 
       // Para sort por nota, exigir um mínimo de votos para evitar resultados de 1 usuário com nota 10

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { searchExternal, createMovie, getMovies, deleteMovie, updateMovie, getPopularMovies, getPopularSeries, getPopularAnimes, getExternalGenres } from '../services/api.js'
+import { searchExternal, createMovie, getMovies, deleteMovie, updateMovie, getPopularMovies, getPopularSeries, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
@@ -18,7 +18,7 @@ const parsePageParam = (value) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
 }
 
-const VALID_TYPES = ['movie', 'series', 'anime']
+const VALID_TYPES = ['movie', 'series']
 const parseTypeParam = (value) => {
   return VALID_TYPES.includes(value) ? value : 'movie'
 }
@@ -67,9 +67,9 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const selectedGenres = parseGenresParam(searchParams.get('genres'))
   const { sortDate, sortRating } = splitSort(sortBy)
 
-  // TMDB /search não suporta sort/gênero — UI desabilitada nesses casos
+  // TMDB /search não suporta sort/gênero — UI desabilitada durante busca textual
   const textSearchActive = query.trim().length > 0
-  const sortAndGenreDisabled = textSearchActive && type !== 'anime'
+  const sortAndGenreDisabled = textSearchActive
 
   const updateParams = (mutate, { resetPage = false } = {}) => {
     const next = new URLSearchParams(searchParams)
@@ -160,7 +160,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
         if (!query.trim()) {
           await loadPopular(currentPage, sortBy, selectedGenres)
         } else {
-          await loadSearch(query, type, currentPage, sortBy, selectedGenres)
+          await loadSearch(query, type, currentPage)
         }
       } finally {
         setLoading(false)
@@ -183,15 +183,8 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const loadPopular = async (page, sort, genres) => {
     try {
       const opts = { sortBy: sort || undefined, genres }
-      let response
-
-      if (type === 'movie') {
-        response = await getPopularMovies(page, opts)
-      } else if (type === 'series') {
-        response = await getPopularSeries(page, opts)
-      } else {
-        response = await getPopularAnimes(page, opts)
-      }
+      const fetcher = type === 'series' ? getPopularSeries : getPopularMovies
+      const response = await fetcher(page, opts)
 
       setResults(response.data.results || [])
       setTotalPages(response.data.totalPages || 1)
@@ -199,37 +192,33 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       console.error('Erro ao carregar conteúdo popular:', error)
       setResults([])
       setTotalPages(1)
-      notifyExternalError(error, type)
+      notifyExternalError(error)
     }
   }
 
-  const loadSearch = async (q, searchType, page, sort, genres) => {
+  const loadSearch = async (q, searchType, page) => {
     try {
-      // Jikan suporta sort/gênero na busca; TMDB não
-      const opts = searchType === 'anime'
-        ? { sortBy: sort || undefined, genres }
-        : {}
-      const response = await searchExternal(q, searchType, page, opts)
+      // TMDB /search não aceita sort/gênero — params extras são ignorados
+      const response = await searchExternal(q, searchType, page)
       setResults(response.data.results || [])
       setTotalPages(response.data.totalPages || 1)
     } catch (error) {
       console.error('Erro ao buscar:', error)
       setResults([])
       setTotalPages(1)
-      notifyExternalError(error, searchType)
+      notifyExternalError(error)
     }
   }
 
-  const notifyExternalError = (error, searchType) => {
-    const source = searchType === 'anime' ? 'MyAnimeList' : 'TMDB'
-    const code   = error.response?.data?.code
+  const notifyExternalError = (error) => {
+    const code = error.response?.data?.code
 
     if (!error.response) {
       toast.error('Sem conexão com o servidor. Tenta de novo em alguns segundos.')
     } else if (code === 'UPSTREAM_RATE_LIMIT') {
-      toast.error(`${source} está limitando as requisições. Aguarda um momento e tenta de novo.`)
+      toast.error('TMDB está limitando as requisições. Aguarda um momento e tenta de novo.')
     } else if (code === 'UPSTREAM_DOWN') {
-      toast.error(`${source} está fora do ar agora. Tenta de novo daqui a pouco.`)
+      toast.error('TMDB está fora do ar agora. Tenta de novo daqui a pouco.')
     } else {
       toast.error('Erro ao buscar conteúdo. Tenta de novo.')
     }
@@ -246,10 +235,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       return userMovie.externalId === movie.externalId.toString()
     }
     return userMovie.title.toLowerCase() === movie.title.toLowerCase() &&
-           userMovie.type === (movie.type === 'MOVIE'  ? 'MOVIE'
-                            :  movie.type === 'SERIES' ? 'SERIES'
-                            :  movie.type === 'ANIME'  ? 'ANIME'
-                            :  movie.type)
+           userMovie.type === movie.type
   })
 
   const isMovieInList = (movie) => Boolean(findUserMovie(movie))
@@ -294,19 +280,10 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
 
     setAddingMovie(movie.id)
     try {
-      // normaliza tipo: API externa usa lowercase, backend espera uppercase
-      const typeMap = {
-        'MOVIE': 'MOVIE',
-        'SERIES': 'SERIES',
-        'ANIME': 'ANIME',
-        'movie': 'MOVIE',
-        'series': 'SERIES',
-        'anime': 'ANIME',
-      }
-      
+      // normaliza tipo: API externa pode mandar lowercase, backend espera uppercase
       const movieData = {
         title: movie.title,
-        type: typeMap[movie.type] || movie.type,
+        type: String(movie.type || '').toUpperCase(),
         description: movie.description,
         poster: movie.poster,
         year: movie.year,
@@ -410,21 +387,14 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
               >
                 📺 Séries
               </button>
-              <button
-                type="button"
-                onClick={() => setType('anime')}
-                className={`filter-btn ${type === 'anime' ? 'active' : ''}`}
-              >
-                🎌 Animes
-              </button>
             </div>
-            
+
             <div className="search-input-group">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Digite o nome do filme, série ou anime..."
+                placeholder="Digite o nome do filme ou série..."
                 className="search-input"
               />
             </div>

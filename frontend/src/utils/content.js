@@ -1,7 +1,6 @@
 export const TYPE_LABEL = {
   MOVIE: 'Filme',
   SERIES: 'Série',
-  ANIME: 'Anime',
 }
 
 export const PRIORITY_COLOR = {

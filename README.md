@@ -1,12 +1,12 @@
 # Whatchu — O que assistir hoje?
 
-Plataforma multi-usuário para gerenciar listas de filmes, séries e animes. Cada usuário monta sua lista a partir de buscas no TMDB e Jikan (MyAnimeList), e o sistema ajuda o grupo a decidir o que assistir com um sorteio inteligente.
+Plataforma multi-usuário para gerenciar listas de filmes e séries. Cada usuário monta sua lista a partir de buscas no TMDB, e o sistema ajuda o grupo a decidir o que assistir com um sorteio inteligente.
 
 ## Funcionalidades
 
 - **Autenticação** — cadastro e login por username, JWT com refresh token
 - **Perfis** — cada usuário tem seu perfil e sua lista própria
-- **Busca integrada** — filmes e séries via TMDB, animes via Jikan, com filtros de gênero, ordenação e paginação real
+- **Busca integrada** — filmes e séries via TMDB, com filtros de gênero (incluindo o filtro virtual "Anime"), ordenação e paginação real
 - **Watchlist** — adicione, organize por prioridade (baixa / média / alta) e marque como assistido
 - **Sorteio** — sorteia um título da lista com peso por prioridade
 - **Onboarding** — fluxo guiado no primeiro acesso para montar a lista inicial
@@ -18,7 +18,7 @@ Plataforma multi-usuário para gerenciar listas de filmes, séries e animes. Cad
 |---|---|
 | Frontend | React 18, Vite, React Router v6, Axios |
 | Backend | Node.js, Express, Prisma, PostgreSQL, JWT |
-| Busca externa | TMDB API v3, Jikan API v4 |
+| Busca externa | TMDB API v3 |
 | Email | Resend |
 | Storage | MinIO (S3-compatible, self-hosted) |
 | Infra | Docker, Docker Compose |

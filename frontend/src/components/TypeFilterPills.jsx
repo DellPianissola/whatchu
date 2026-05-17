@@ -3,7 +3,6 @@ import Button from './Button.jsx'
 export const TYPE_OPTIONS = [
   { value: 'MOVIE',  label: 'Filme'  },
   { value: 'SERIES', label: 'Série'  },
-  { value: 'ANIME',  label: 'Anime'  },
 ]
 
 export const ALL_TYPES = TYPE_OPTIONS.map(t => t.value)

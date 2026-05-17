@@ -8,7 +8,7 @@ import {
   ConflictError,
 } from '../lib/httpErrors.js'
 
-const VALID_TYPES = ['MOVIE', 'SERIES', 'ANIME']
+const VALID_TYPES = ['MOVIE', 'SERIES']
 const VALID_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
 
 // `include` padrão: traz quem adicionou (id + nome). Reusado em várias queries.
@@ -24,7 +24,7 @@ const normalizeType = (type) => {
   }
   const upper = type.toUpperCase()
   if (!VALID_TYPES.includes(upper)) {
-    throw new ValidationError('Tipo inválido. Use: MOVIE, SERIES ou ANIME')
+    throw new ValidationError('Tipo inválido. Use: MOVIE ou SERIES')
   }
   return upper
 }

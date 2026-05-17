@@ -5,8 +5,6 @@ import './Footer.css'
 const FRONTEND_VERSION = __APP_VERSION__
 const PORTFOLIO_URL = 'https://portfolio.dell-pianissola.workers.dev'
 const TMDB_URL = 'https://www.themoviedb.org/'
-const JIKAN_URL = 'https://jikan.moe/'
-const MAL_URL = 'https://myanimelist.net/'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -38,12 +36,6 @@ const Footer = () => {
             <a href={TMDB_URL} target="_blank" rel="noopener noreferrer" className="footer-tmdb-link">
               <img src="/tmdb-logo.svg" alt="TMDB" className="footer-tmdb-logo" />
             </a>
-            <span>
-              Animes via{' '}
-              <a href={JIKAN_URL} target="_blank" rel="noopener noreferrer">Jikan</a>
-              {' / '}
-              <a href={MAL_URL} target="_blank" rel="noopener noreferrer">MyAnimeList</a>
-            </span>
           </div>
           {/* Texto de atribuição obrigatório pela TMDB — não remover nem alterar. */}
           <p className="footer-disclaimer">

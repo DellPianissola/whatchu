@@ -31,7 +31,6 @@ export default defineConfig({
       // O que ignorar (provider externo + bootstrap + config)
       exclude: [
         'services/tmdb.js',
-        'services/jikan.js',
         'config/**',
         'prisma/**',
         '**/*.config.js',

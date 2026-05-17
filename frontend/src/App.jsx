@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -13,14 +14,26 @@ import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import NavBar from './components/NavBar.jsx'
+import CookieBanner from './components/CookieBanner.jsx'
+import { initAnalytics, trackPageView } from './services/analytics.js'
 import './App.css'
+
+initAnalytics()
+
+const PageViewTracker = () => {
+  const location = useLocation()
+  useEffect(() => { trackPageView(location.pathname) }, [location.pathname])
+  return null
+}
 
 function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
       <Router>
+        <PageViewTracker />
         <NavBar />
+        <CookieBanner />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

@@ -1,6 +1,21 @@
 import axios from 'axios'
+import { ERROR_CODES } from '../constants/errorCodes'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+export const apiErrorMessage = (err, fallback) =>
+  err?.response?.data?.error || fallback
+
+export const mapUpstreamError = (err) => {
+  const code = err?.response?.data?.code
+  if (code === ERROR_CODES.UPSTREAM_RATE_LIMIT) {
+    return 'Muitas buscas em pouco tempo. Tente novamente em alguns segundos.'
+  }
+  if (code === ERROR_CODES.UPSTREAM_DOWN) {
+    return 'O serviço externo está indisponível no momento. Tente novamente em breve.'
+  }
+  return null
+}
 
 const api = axios.create({
   baseURL: API_URL,

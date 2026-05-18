@@ -32,3 +32,16 @@ export const formatDuration = (minutes) => {
   if (m === 0) return `${h}h`
   return `${h}h${m}min`
 }
+
+export const displayYear = (year) => year ?? 'Sem data'
+
+export const displayRating = (rating) =>
+  rating ? `${Number(rating).toFixed(1)}` : 'Sem nota'
+
+export const displayGenres = (genres) =>
+  genres && genres.length > 0 ? genres.join(', ') : 'Sem gênero'
+
+export const pluralize = (n, singular, plural) =>
+  n === 1 ? singular : plural
+
+export const todayISODate = () => new Date().toISOString().split('T')[0]

@@ -95,6 +95,8 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL}
         VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID}
+        VITE_AMAZON_TAG: ${VITE_AMAZON_TAG}
+        VITE_PORTFOLIO_URL: ${VITE_PORTFOLIO_URL}
     container_name: whatchu-frontend
     restart: unless-stopped
     ports:

@@ -1,4 +1,4 @@
-const AMAZON_AFFILIATE_TAG = 'whatchu-20'
+const AMAZON_AFFILIATE_TAG = import.meta.env.VITE_AMAZON_TAG || 'whatchu-20'
 const PRIME_VIDEO_URL = `https://www.primevideo.com/?tag=${AMAZON_AFFILIATE_TAG}`
 
 const URL_BY_ID = {

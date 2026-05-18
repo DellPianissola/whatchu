@@ -3,7 +3,7 @@ import { checkHealth } from '../services/api'
 import './Footer.css'
 
 const FRONTEND_VERSION = __APP_VERSION__
-const PORTFOLIO_URL = 'https://portfolio.dell-pianissola.workers.dev'
+const PORTFOLIO_URL = import.meta.env.VITE_PORTFOLIO_URL || 'https://portfolio.dell-pianissola.workers.dev'
 const TMDB_URL = 'https://www.themoviedb.org/'
 
 const CURRENT_YEAR = new Date().getFullYear()

@@ -12,6 +12,8 @@ COPY . .
 # Passar via --build-arg no docker build ou via build.args no compose
 ARG VITE_API_URL
 ARG VITE_GA_MEASUREMENT_ID
+ARG VITE_AMAZON_TAG
+ARG VITE_PORTFOLIO_URL
 
 RUN npm run build
 

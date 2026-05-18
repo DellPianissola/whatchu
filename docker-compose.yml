@@ -103,6 +103,8 @@ services:
     command: sh -c "npm install --silent && npm run dev"
     environment:
       - VITE_API_URL=${VITE_API_URL}
+      - VITE_AMAZON_TAG=${VITE_AMAZON_TAG}
+      - VITE_PORTFOLIO_URL=${VITE_PORTFOLIO_URL}
     depends_on:
       - backend
     networks:

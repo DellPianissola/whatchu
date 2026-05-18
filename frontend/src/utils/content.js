@@ -3,6 +3,8 @@ export const TYPE_LABEL = {
   SERIES: 'Série',
 }
 
+export const PRIORITY_VALUES = ['URGENT', 'HIGH', 'MEDIUM', 'LOW']
+
 export const PRIORITY_COLOR = {
   URGENT: 'var(--priority-urgent)',
   HIGH:   'var(--priority-high)',
@@ -16,6 +18,11 @@ export const PRIORITY_LABEL = {
   MEDIUM: 'Média',
   LOW:    'Baixa',
 }
+
+export const PRIORITY_OPTIONS = PRIORITY_VALUES.map((value) => ({
+  value,
+  label: PRIORITY_LABEL[value],
+}))
 
 export const formatDuration = (minutes) => {
   if (!minutes) return null

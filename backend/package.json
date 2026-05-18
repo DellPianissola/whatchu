@@ -1,6 +1,6 @@
 {
   "name": "whatchu-backend",
-  "version": "0.2.2-alpha",
+  "version": "0.2.3-alpha",
   "description": "Backend API para Whatchu",
   "main": "server.js",
   "type": "module",

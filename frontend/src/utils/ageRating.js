@@ -1,10 +1,3 @@
-/**
- * Mapa de classificação etária por região. O valor da rating vem cru do TMDB
- * (já específico da região), aqui só decidimos a "intensidade" pra cor.
- *
- * Pra adicionar uma região nova: somar uma entrada com a escala local. O modal
- * lê `region` do payload do backend e cai no mapa correspondente.
- */
 const TIER_BY_REGION = {
   BR: {
     L:    1,

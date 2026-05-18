@@ -8,7 +8,7 @@ import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
-import PriorityPicker from '../components/PriorityPicker.jsx'
+import PriorityIndicator from '../components/PriorityIndicator.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import { TYPE_LABEL, PRIORITY_LABEL } from '../utils/content.js'
 import './Search.css'
@@ -56,7 +56,6 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const [userMovies, setUserMovies] = useState([])
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
-  const [modalPriority, setModalPriority] = useState('MEDIUM')
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
   const debounceTimer = useRef(null)
 
@@ -106,10 +105,6 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       else next.set('genres', arr.join(','))
     }, { resetPage: true })
   }
-
-  useEffect(() => {
-    if (expandedItem) setModalPriority('MEDIUM')
-  }, [expandedItem])
 
   useEffect(() => {
     const loadUserMovies = async () => {
@@ -585,30 +580,33 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
           actions={(() => {
             const inList = isMovieInList(expandedItem)
             const userMovie = findUserMovie(expandedItem)
-            // in-list: picker reflete a prioridade atual e clicar troca inline
-            // not-in-list: picker seleciona qual prioridade usar no add (default MEDIUM)
-            const activePriority = inList ? userMovie?.priority : modalPriority
-            const handlePickerChange = (value) => {
-              if (inList) handleChangePriority(expandedItem, value)
-              else        setModalPriority(value)
+            const busy = addingMovie === expandedItem.id
+
+            if (!inList) {
+              return (
+                <button
+                  onClick={() => handleAddMovie(expandedItem)}
+                  disabled={!profile || busy}
+                  className="btn-add"
+                >
+                  {busy ? 'Processando...' : '➕ Adicionar à lista'}
+                </button>
+              )
             }
 
             return (
-              <div className="modal-actions-stack">
-                <PriorityPicker value={activePriority} onChange={handlePickerChange} />
+              <div className="modal-actions-row">
                 <button
-                  onClick={() => inList
-                    ? handleRemoveMovie(expandedItem)
-                    : handleAddMovie(expandedItem, modalPriority)}
-                  disabled={!profile || addingMovie === expandedItem.id}
-                  className={`btn-add ${inList ? 'btn-remove' : ''}`}
+                  onClick={() => handleRemoveMovie(expandedItem)}
+                  disabled={!profile || busy}
+                  className="btn-add btn-remove"
                 >
-                  {addingMovie === expandedItem.id
-                    ? 'Processando...'
-                    : inList
-                      ? '🗑️ Remover da lista'
-                      : '➕ Adicionar à lista'}
+                  {busy ? 'Processando...' : '🗑️ Remover'}
                 </button>
+                <PriorityIndicator
+                  value={userMovie?.priority}
+                  onChange={(p) => handleChangePriority(expandedItem, p)}
+                />
               </div>
             )
           })()}

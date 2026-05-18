@@ -6,8 +6,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
 const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w92'
 
-// Watch providers e classificação etária são por região. Whatchu é BR-only por
-// enquanto — se um dia virar multi-país, isso passa pra config de perfil.
+// BR-only por enquanto; se virar multi-país, passa pra config de perfil.
 const WATCH_REGION = 'BR'
 const CERTIFICATION_REGION = 'BR'
 
@@ -282,7 +281,9 @@ class TMDBService {
         description: item.overview,
         descriptionLanguage: 'pt-BR', // TMDB retorna em português quando language=pt-BR
         poster: item.poster_path ? `${TMDB_IMAGE_BASE_URL}${item.poster_path}` : null,
-        year: item.release_date ? new Date(item.release_date).getFullYear() : null,
+        year: (item.release_date || item.first_air_date)
+          ? new Date(item.release_date || item.first_air_date).getFullYear()
+          : null,
         rating: item.vote_average ? parseFloat(item.vote_average.toFixed(1)) : null,
         genres: genreNames,
         externalId: item.id.toString(),
@@ -294,18 +295,33 @@ class TMDBService {
   _formatAgeRating(data) {
     const region = CERTIFICATION_REGION
 
-    // Movie
     const movieEntry = data.release_dates?.results?.find(r => r.iso_3166_1 === region)
     if (movieEntry) {
       const cert = movieEntry.release_dates?.find(d => d.certification)?.certification
       if (cert) return { region, value: cert }
     }
 
-    // TV
     const tvEntry = data.content_ratings?.results?.find(r => r.iso_3166_1 === region)
     if (tvEntry?.rating) return { region, value: tvEntry.rating }
 
     return null
+  }
+
+  // Tiers "with Ads" compartilham catálogo com a versão principal — mantém só uma.
+  _dedupeProviders(list) {
+    const stripAds = (name) => String(name || '').replace(/\s*(standard\s+)?with\s+ads\s*$/i, '').trim()
+    const isAd = (name) => /with\s+ads\s*$/i.test(name || '')
+
+    const byKey = new Map()
+    for (const p of list || []) {
+      const key = stripAds(p.provider_name).toLowerCase()
+      const adVariant = isAd(p.provider_name)
+      const existing = byKey.get(key)
+      if (!existing || (existing._ad && !adVariant)) {
+        byKey.set(key, { ...p, _ad: adVariant })
+      }
+    }
+    return [...byKey.values()].map(({ _ad, ...rest }) => rest)
   }
 
   _formatWatchProviders(rawWatch) {
@@ -318,10 +334,10 @@ class TMDBService {
       logo: p.logo_path ? `${TMDB_LOGO_BASE_URL}${p.logo_path}` : null,
     })
 
-    const streaming = (region.flatrate || []).map(mapItem)
-    const free      = [...(region.free || []), ...(region.ads || [])].map(mapItem)
-    const rent      = (region.rent || []).map(mapItem)
-    const buy       = (region.buy  || []).map(mapItem)
+    const streaming = this._dedupeProviders(region.flatrate).map(mapItem)
+    const free      = this._dedupeProviders([...(region.free || []), ...(region.ads || [])]).map(mapItem)
+    const rent      = this._dedupeProviders(region.rent).map(mapItem)
+    const buy       = this._dedupeProviders(region.buy).map(mapItem)
 
     if (streaming.length + free.length + rent.length + buy.length === 0) return null
 
@@ -358,6 +374,9 @@ class TMDBService {
   }
 
   formatSeriesDetails(data) {
+    // status vem traduzido pelo TMDB; in_production é o único bool cru
+    const hasEnded = data.in_production === false
+
     return {
       id: data.id,
       title: data.name,
@@ -366,6 +385,8 @@ class TMDBService {
       descriptionLanguage: 'pt-BR', // TMDB retorna em português quando language=pt-BR
       poster: data.poster_path ? `${TMDB_IMAGE_BASE_URL}${data.poster_path}` : null,
       year: data.first_air_date ? new Date(data.first_air_date).getFullYear() : null,
+      endYear: data.last_air_date ? new Date(data.last_air_date).getFullYear() : null,
+      hasEnded,
       duration: data.episode_run_time?.[0] || null,
       genres: data.genres?.map(g => g.name) || [],
       rating: data.vote_average ? parseFloat(data.vote_average.toFixed(1)) : null,

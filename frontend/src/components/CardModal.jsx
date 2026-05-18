@@ -14,49 +14,76 @@ const PROVIDER_GROUPS = [
 ]
 
 const ProviderLogo = ({ provider }) => {
-  const url = providerUrl(provider.id)
-  const img = (
-    <img
-      src={provider.logo}
-      alt={provider.name}
-      title={provider.name}
-      className="card-modal-provider-logo"
-    />
+  const url = providerUrl(provider)
+  const content = (
+    <>
+      <img
+        src={provider.logo}
+        alt={provider.name}
+        className="card-modal-provider-logo"
+      />
+      <span className="card-modal-provider-tooltip">{provider.name}</span>
+    </>
   )
-  if (!url) return img
+  if (!url) {
+    return <span className="card-modal-provider-wrap">{content}</span>
+  }
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" aria-label={provider.name}>
-      {img}
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="card-modal-provider-wrap"
+      aria-label={provider.name}
+    >
+      {content}
     </a>
   )
 }
 
-const WatchProviders = ({ providers }) => {
-  if (!providers) return null
-  const groups = PROVIDER_GROUPS.filter(g => providers[g.key]?.length > 0)
-  if (groups.length === 0) return null
+const WatchProviders = ({ providers, trailer }) => {
+  const groups = providers
+    ? PROVIDER_GROUPS.filter(g => providers[g.key]?.length > 0)
+    : []
+  const hasProviders = groups.length > 0
+  const trailerHref = trailerUrl(trailer)
+  if (!hasProviders && !trailerHref) return null
 
   return (
     <div className="card-modal-providers">
-      <span className="card-modal-detail-label">Onde assistir</span>
-      <div className="card-modal-providers-groups">
-        {groups.map(({ key, label }) => (
-          <div key={key} className="card-modal-providers-group">
-            <span className="card-modal-providers-group-label">{label}</span>
-            <div className="card-modal-providers-logos">
-              {providers[key].map(p => <ProviderLogo key={p.id} provider={p} />)}
-            </div>
-          </div>
-        ))}
+      <div className="card-modal-providers-header">
+        <span className="card-modal-detail-label">Onde assistir</span>
+        {trailerHref && (
+          <a
+            href={trailerHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-trailer-subtle"
+          >
+            ▶ Trailer
+          </a>
+        )}
       </div>
-      {/* Atribuição obrigatória pelos termos de uso do TMDB. */}
-      <p className="card-modal-providers-source">Dados via JustWatch</p>
+      {hasProviders && (
+        <div className="card-modal-providers-groups">
+          {groups.map(({ key, label }) => (
+            <div key={key} className="card-modal-providers-group">
+              <span className="card-modal-providers-group-label">{label}</span>
+              <div className="card-modal-providers-logos">
+                {providers[key].map(p => <ProviderLogo key={p.id} provider={p} />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {hasProviders && (
+        <p className="card-modal-providers-source">Dados via JustWatch</p>
+      )}
     </div>
   )
 }
 
 const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions, posterOverlay }) => {
-  // ESC fecha o modal; body fica sem scroll enquanto aberto
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -71,6 +98,14 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
 
   const duration = richDetails?.duration || item.duration
   const ageRating = richDetails?.ageRating
+
+  const yearLabel = (() => {
+    if (!item.year) return 'Sem data'
+    if (item.type !== 'SERIES' || !richDetails) return item.year
+    const end = richDetails.endYear
+    if (richDetails.hasEnded) return end && end !== item.year ? `${item.year} – ${end}` : item.year
+    return `${item.year} – ...`
+  })()
 
   return (
     <div className="card-modal-backdrop" onClick={onClose}>
@@ -96,7 +131,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
             </div>
 
             <div className="card-modal-meta">
-              <span>📅 {item.year || 'Sem data'}</span>
+              <span>📅 {yearLabel}</span>
               <span>⭐ {item.rating || 'Sem nota'}</span>
               {item.type === 'MOVIE' && duration && <span>⏱ {formatDuration(duration)}</span>}
               {ageRating && (
@@ -169,17 +204,10 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
                     <span>{richDetails.status}</span>
                   </div>
                 )}
-                {trailerUrl(richDetails.trailer) && (
-                  <a
-                    href={trailerUrl(richDetails.trailer)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-trailer"
-                  >
-                    ▶ Ver Trailer
-                  </a>
-                )}
-                <WatchProviders providers={richDetails.watchProviders} />
+                <WatchProviders
+                  providers={richDetails.watchProviders}
+                  trailer={richDetails.trailer}
+                />
               </div>
             )}
 

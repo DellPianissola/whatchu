@@ -1,40 +1,64 @@
-// Tags de afiliado por programa. Não são segredos — aparecem na URL pública —
-// então tudo bem viverem no frontend.
 const AMAZON_AFFILIATE_TAG = 'whatchu-20'
-
 const PRIME_VIDEO_URL = `https://www.primevideo.com/?tag=${AMAZON_AFFILIATE_TAG}`
 
-// Mapa de provider_id (TMDB/JustWatch) → URL da homepage do serviço.
-// TMDB/JustWatch não expõe deep link por título, então caímos sempre na home.
-// IDs estáveis verificáveis em /watch/providers/movie?watch_region=BR.
-const PROVIDER_URLS = {
-  // Amazon Prime Video — afiliado ativo
+const URL_BY_ID = {
   9:    PRIME_VIDEO_URL,
   10:   PRIME_VIDEO_URL,
   119:  PRIME_VIDEO_URL,
-  // Netflix
   8:    'https://www.netflix.com',
   1796: 'https://www.netflix.com',
-  // Disney+
   337:  'https://www.disneyplus.com',
-  // Max (ex-HBO Max)
   1899: 'https://www.max.com',
   384:  'https://www.max.com',
-  // Apple TV / Apple TV+
   2:    'https://tv.apple.com',
   350:  'https://tv.apple.com',
-  // Paramount+
   531:  'https://www.paramountplus.com',
-  // Globoplay
   167:  'https://globoplay.globo.com',
-  // Crunchyroll
   283:  'https://www.crunchyroll.com',
-  // Looke
   47:   'https://www.looke.com.br',
-  // Telecine
   227:  'https://www.telecineplay.com.br',
-  // Star+ (migrado pro Disney+, mantido por compatibilidade de dados antigos)
   619:  'https://www.disneyplus.com',
 }
 
-export const providerUrl = (providerId) => PROVIDER_URLS[providerId] || null
+const URL_BY_NAME = {
+  'amazon prime video':          PRIME_VIDEO_URL,
+  'amazon video':                PRIME_VIDEO_URL,
+  'amazon prime video with ads': PRIME_VIDEO_URL,
+  'prime video with ads':        PRIME_VIDEO_URL,
+  'netflix':                     'https://www.netflix.com',
+  'netflix standard with ads':   'https://www.netflix.com',
+  'disney plus':                 'https://www.disneyplus.com',
+  'disney+':                     'https://www.disneyplus.com',
+  'max':                         'https://www.max.com',
+  'hbo max':                     'https://www.max.com',
+  'apple tv':                    'https://tv.apple.com',
+  'apple tv plus':               'https://tv.apple.com',
+  'apple tv+':                   'https://tv.apple.com',
+  'paramount plus':              'https://www.paramountplus.com',
+  'paramount+':                  'https://www.paramountplus.com',
+  'globoplay':                   'https://globoplay.globo.com',
+  'crunchyroll':                 'https://www.crunchyroll.com',
+  'looke':                       'https://www.looke.com.br',
+  'telecine':                    'https://www.telecineplay.com.br',
+  'telecine play':               'https://www.telecineplay.com.br',
+  'mercado play':                'https://www.mercadolivre.com.br/play',
+  'mercado livre':               'https://www.mercadolivre.com.br/play',
+  'claro tv+':                   'https://www.clarotvmais.com.br',
+  'claro tv':                    'https://www.clarotvmais.com.br',
+  'claro video':                 'https://www.clarovideo.com',
+  'universal+':                  'https://www.universalplus.com',
+  'universal plus':              'https://www.universalplus.com',
+  'universal':                   'https://www.universalplus.com',
+  'nbcuniversal':                'https://www.universalplus.com',
+  'universal pictures':          'https://www.universalplus.com',
+}
+
+export const providerUrl = (provider) => {
+  if (!provider) return null
+  const byId = URL_BY_ID[provider.id]
+  if (byId) return byId
+  const key = String(provider.name || '').toLowerCase().trim()
+  // Amazon Channels (Universal+/HBO/AMC+/etc) são add-ons do Prime Video
+  if (key.includes('amazon channel')) return PRIME_VIDEO_URL
+  return URL_BY_NAME[key] || null
+}

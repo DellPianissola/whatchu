@@ -6,7 +6,6 @@ import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import CardModal from '../components/CardModal.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
-import PriorityPicker from '../components/PriorityPicker.jsx'
 import PriorityIndicator from '../components/PriorityIndicator.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import './MyList.css'
@@ -281,17 +280,17 @@ const MyList = () => {
             </button>
           }
           actions={
-            <div className="modal-actions-stack">
-              <PriorityPicker
-                value={expandedItem.priority}
-                onChange={(priority) => handleChangePriority(expandedItem, priority)}
-              />
+            <div className="modal-actions-row">
               <button
                 onClick={() => handleDelete(expandedItem.id)}
                 className="btn-remove-from-list"
               >
-                🗑️ Remover da lista
+                🗑️ Remover
               </button>
+              <PriorityIndicator
+                value={expandedItem.priority}
+                onChange={(priority) => handleChangePriority(expandedItem, priority)}
+              />
             </div>
           }
         />

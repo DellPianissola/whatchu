@@ -33,7 +33,8 @@ export const useRichDetails = (item) => {
       return
     }
 
-    const cacheKey = `${item.type}:${item.externalId}`
+    const normalizedType = String(item.type).toUpperCase()
+    const cacheKey = `${normalizedType}:${item.externalId}`
     if (detailsCache.has(cacheKey)) {
       setRichDetails(detailsCache.get(cacheKey))
       setRichDetailsLoading(false)
@@ -48,7 +49,7 @@ export const useRichDetails = (item) => {
 
     const fetchDetails = async () => {
       try {
-        const response = item.type === 'SERIES'
+        const response = normalizedType === 'SERIES'
           ? await getSeriesDetails(item.externalId)
           : await getMovieDetails(item.externalId)
 

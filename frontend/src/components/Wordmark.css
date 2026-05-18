@@ -1,0 +1,23 @@
+.ui-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ui-wordmark-text {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.ui-wordmark-accent {
+  background: var(--gradient-wordmark);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ui-wordmark--nav .ui-wordmark-text  { font-size: 1.25rem; }
+.ui-wordmark--auth .ui-wordmark-text { font-size: 2rem; }
+.ui-wordmark--hero .ui-wordmark-text { font-size: 2.5rem; }

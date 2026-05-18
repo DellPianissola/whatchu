@@ -1,0 +1,19 @@
+.ui-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.ui-icon-btn:hover { background: var(--surface-light); }
+.ui-icon-btn:active { transform: scale(0.94); }
+
+.ui-icon-btn--sm { width: 28px; height: 28px; font-size: 0.85rem; }
+.ui-icon-btn--md { width: 36px; height: 36px; font-size: 1rem; }
+.ui-icon-btn--lg { width: 44px; height: 44px; font-size: 1.15rem; }

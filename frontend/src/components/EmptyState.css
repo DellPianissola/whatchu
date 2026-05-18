@@ -1,0 +1,32 @@
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.ui-empty-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.ui-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.ui-empty-description {
+  font-size: 0.9rem;
+  margin: 0;
+  max-width: 400px;
+}
+
+.ui-empty-action {
+  margin-top: var(--space-3);
+}

@@ -1,0 +1,35 @@
+.ui-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--surface-light) 0%,
+    var(--surface) 50%,
+    var(--surface-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: ui-skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes ui-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ui-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ui-skeleton-card-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+}
+
+.ui-skeleton-card-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.ui-skeleton-card-line--short { width: 60%; }

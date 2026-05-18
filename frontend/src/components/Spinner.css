@@ -1,0 +1,16 @@
+.ui-spinner {
+  display: inline-block;
+  border-radius: var(--radius-pill);
+  border-style: solid;
+  border-color: rgba(var(--primary-rgb), 0.2);
+  border-top-color: var(--primary);
+  animation: ui-spinner-rotate 0.8s linear infinite;
+}
+
+.ui-spinner--sm { width: 16px; height: 16px; border-width: 2px; }
+.ui-spinner--md { width: 24px; height: 24px; border-width: 3px; }
+.ui-spinner--lg { width: 40px; height: 40px; border-width: 4px; }
+
+@keyframes ui-spinner-rotate {
+  to { transform: rotate(360deg); }
+}

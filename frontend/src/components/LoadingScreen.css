@@ -1,0 +1,15 @@
+.ui-loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  background: var(--background);
+  color: var(--text);
+}
+
+.ui-loading-screen-label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}

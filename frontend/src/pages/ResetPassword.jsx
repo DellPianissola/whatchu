@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { resetPassword as resetPasswordApi } from '../services/api.js'
-import WatchuLogo from '../components/WatchuLogo.jsx'
+import { resetPassword as resetPasswordApi, apiErrorMessage } from '../services/api.js'
+import AuthShell from '../components/AuthShell.jsx'
+import AuthSuccessMessage from '../components/AuthSuccessMessage.jsx'
+import FormField from '../components/FormField.jsx'
+import ErrorMessage from '../components/ErrorMessage.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { validatePassword } from '../utils/validation.js'
+import { ROUTES } from '../constants/routes.js'
+import { MIN_PASSWORD_LENGTH } from '../constants/ui.js'
 import './Login.css'
 
-const MIN_LENGTH = 8
+const FALLBACK_ERROR = 'Não foi possível redefinir a senha. O link pode ter expirado.'
+const REDIRECT_DELAY_MS = 2500
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
@@ -18,26 +25,13 @@ const ResetPassword = () => {
   const [loading, setLoading]                 = useState(false)
   const [done, setDone]                       = useState(false)
 
+  const loginFooter = <p><Link to={ROUTES.LOGIN}>← Voltar para o login</Link></p>
+
   if (!token) {
     return (
-      <div className="login-page">
-        <div className="login-container">
-          <div className="login-card">
-            <div className="login-header">
-              <div className="auth-brand">
-                <WatchuLogo size={44} />
-                <h1>What<span className="auth-chu">chu</span></h1>
-              </div>
-            </div>
-            <div className="error-message">
-              Link inválido. Solicite uma nova redefinição de senha.
-            </div>
-            <div className="login-footer">
-              <p><Link to="/forgot-password">Solicitar novo link</Link></p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AuthShell footer={<p><Link to={ROUTES.FORGOT_PASSWORD}>Solicitar novo link</Link></p>}>
+        <ErrorMessage>Link inválido. Solicite uma nova redefinição de senha.</ErrorMessage>
+      </AuthShell>
     )
   }
 
@@ -45,12 +39,9 @@ const ResetPassword = () => {
     e.preventDefault()
     setError('')
 
-    if (password.length < MIN_LENGTH) {
-      setError(`A senha deve ter no mínimo ${MIN_LENGTH} caracteres`)
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+    const passwordError = validatePassword(password, confirmPassword)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
 
@@ -58,73 +49,64 @@ const ResetPassword = () => {
     try {
       await resetPasswordApi(token, password)
       setDone(true)
-      setTimeout(() => navigate('/login'), 2500)
+      setTimeout(() => navigate(ROUTES.LOGIN), REDIRECT_DELAY_MS)
     } catch (err) {
-      setError(err.response?.data?.error || 'Não foi possível redefinir a senha. O link pode ter expirado.')
+      setError(apiErrorMessage(err, FALLBACK_ERROR))
     } finally {
       setLoading(false)
     }
   }
 
+  if (done) {
+    return (
+      <AuthShell subtitle="Definir nova senha" footer={loginFooter}>
+        <AuthSuccessMessage title="Senha redefinida com sucesso!">
+          <p className="forgot-hint">Redirecionando para o login...</p>
+        </AuthSuccessMessage>
+      </AuthShell>
+    )
+  }
+
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-card">
-          <div className="login-header">
-            <div className="auth-brand">
-              <WatchuLogo size={44} />
-              <h1>What<span className="auth-chu">chu</span></h1>
-            </div>
-            <p>Definir nova senha</p>
-          </div>
+    <AuthShell subtitle="Definir nova senha" footer={loginFooter}>
+      <ErrorMessage>{error}</ErrorMessage>
 
-          {done ? (
-            <div className="forgot-success">
-              <p>Senha redefinida com sucesso!</p>
-              <p className="forgot-hint">Redirecionando para o login...</p>
-            </div>
-          ) : (
-            <>
-              {error && <div className="error-message">{error}</div>}
-              <form onSubmit={handleSubmit} className="login-form">
-                <div className="form-group">
-                  <label htmlFor="password">Nova senha</label>
-                  <PasswordInput
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    minLength={MIN_LENGTH}
-                    autoComplete="new-password"
-                  />
-                  <small className="form-hint">Mínimo de {MIN_LENGTH} caracteres</small>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirmar nova senha</label>
-                  <PasswordInput
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={loading}
-                    minLength={MIN_LENGTH}
-                    autoComplete="new-password"
-                  />
-                </div>
-
-                <button type="submit" disabled={loading} className="btn-login">
-                  {loading ? 'Redefinindo...' : 'Redefinir senha'}
-                </button>
-              </form>
-            </>
+      <form onSubmit={handleSubmit} className="login-form">
+        <FormField
+          id="password"
+          label="Nova senha"
+          hint={`Mínimo de ${MIN_PASSWORD_LENGTH} caracteres`}
+        >
+          {(fieldProps) => (
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              {...fieldProps}
+            />
           )}
+        </FormField>
 
-          <div className="login-footer">
-            <p><Link to="/login">← Voltar para o login</Link></p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <FormField id="confirmPassword" label="Confirmar nova senha">
+          {(fieldProps) => (
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              {...fieldProps}
+            />
+          )}
+        </FormField>
+
+        <button type="submit" disabled={loading} className="btn-login">
+          {loading ? 'Redefinindo...' : 'Redefinir senha'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }
 

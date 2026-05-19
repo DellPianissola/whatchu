@@ -4,6 +4,7 @@ import './FormField.css'
 const FormField = ({
   id,
   label,
+  labelAddon,
   type = 'text',
   value,
   onChange,
@@ -25,10 +26,13 @@ const FormField = ({
   return (
     <div className={`ui-field ${className}`.trim()}>
       {label && (
-        <label htmlFor={fieldId} className="ui-field-label">
-          {label}
-          {required && <span className="ui-field-required" aria-hidden="true"> *</span>}
-        </label>
+        <div className="ui-field-label-row">
+          <label htmlFor={fieldId} className="ui-field-label">
+            {label}
+            {required && <span className="ui-field-required" aria-hidden="true"> *</span>}
+          </label>
+          {labelAddon && <span className="ui-field-label-addon">{labelAddon}</span>}
+        </div>
       )}
 
       {children ? (

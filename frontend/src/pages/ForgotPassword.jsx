@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { requestPasswordReset } from '../services/api.js'
-import WatchuLogo from '../components/WatchuLogo.jsx'
+import { requestPasswordReset, apiErrorMessage } from '../services/api.js'
+import AuthShell from '../components/AuthShell.jsx'
+import AuthSuccessMessage from '../components/AuthSuccessMessage.jsx'
+import FormField from '../components/FormField.jsx'
+import ErrorMessage from '../components/ErrorMessage.jsx'
+import { ROUTES } from '../constants/routes.js'
 import './Login.css'
+
+const FALLBACK_ERROR = 'Não foi possível processar a solicitação. Tente novamente.'
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
@@ -18,67 +24,52 @@ const ForgotPassword = () => {
       await requestPasswordReset(email)
       setSubmitted(true)
     } catch (err) {
-      setError(err.response?.data?.error || 'Não foi possível processar a solicitação. Tente novamente.')
+      setError(apiErrorMessage(err, FALLBACK_ERROR))
     } finally {
       setLoading(false)
     }
   }
 
+  const footer = <p><Link to={ROUTES.LOGIN}>← Voltar para o login</Link></p>
+
+  if (submitted) {
+    return (
+      <AuthShell subtitle="Recuperar acesso" footer={footer}>
+        <AuthSuccessMessage title="Verifique seu email">
+          <p>
+            Se o email <strong>{email}</strong> estiver cadastrado, enviaremos um link
+            para redefinir sua senha em alguns instantes.
+          </p>
+          <p className="forgot-hint">
+            Verifique também sua caixa de spam. O link expira em 30 minutos.
+          </p>
+        </AuthSuccessMessage>
+      </AuthShell>
+    )
+  }
+
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-card">
-          <div className="login-header">
-            <div className="auth-brand">
-              <WatchuLogo size={44} />
-              <h1>What<span className="auth-chu">chu</span></h1>
-            </div>
-            <p>Recuperar acesso</p>
-          </div>
+    <AuthShell subtitle="Recuperar acesso" footer={footer}>
+      <ErrorMessage>{error}</ErrorMessage>
 
-          {submitted ? (
-            <div className="forgot-success">
-              <p>
-                Se o email <strong>{email}</strong> estiver cadastrado, enviaremos um link
-                para redefinir sua senha em alguns instantes.
-              </p>
-              <p className="forgot-hint">
-                Verifique também sua caixa de spam. O link expira em 30 minutos.
-              </p>
-            </div>
-          ) : (
-            <>
-              {error && <div className="error-message">{error}</div>}
-              <form onSubmit={handleSubmit} className="login-form">
-                <div className="form-group">
-                  <label htmlFor="email">Email da conta</label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    required
-                    disabled={loading}
-                    autoComplete="email"
-                  />
-                </div>
+      <form onSubmit={handleSubmit} className="login-form">
+        <FormField
+          id="email"
+          type="email"
+          label="Email da conta"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="seu@email.com"
+          required
+          disabled={loading}
+          autoComplete="email"
+        />
 
-                <button type="submit" disabled={loading} className="btn-login">
-                  {loading ? 'Enviando...' : 'Enviar link de redefinição'}
-                </button>
-              </form>
-            </>
-          )}
-
-          <div className="login-footer">
-            <p>
-              <Link to="/login">← Voltar para o login</Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <button type="submit" disabled={loading} className="btn-login">
+          {loading ? 'Enviando...' : 'Enviar link de redefinição'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }
 

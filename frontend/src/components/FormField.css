@@ -5,10 +5,21 @@
   width: 100%;
 }
 
+.ui-field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .ui-field-label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
+}
+
+.ui-field-label-addon {
+  font-size: 0.8rem;
 }
 
 .ui-field-required {

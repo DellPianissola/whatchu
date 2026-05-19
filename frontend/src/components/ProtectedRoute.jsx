@@ -1,33 +1,24 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import Footer from './Footer.jsx'
+import LoadingScreen from './LoadingScreen.jsx'
+import { ROUTES } from '../constants/routes.js'
 
 const ProtectedRoute = ({ children, requireOnboarding = true }) => {
   const { isAuthenticated, loading, profile } = useAuth()
 
   if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--background)',
-        color: 'var(--text)'
-      }}>
-        Carregando...
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={ROUTES.LOGIN} replace />
   }
 
   // Onboarding pendente → força o usuário pra rota /onboarding.
   // A própria rota /onboarding usa requireOnboarding={false} pra não loopar.
   if (requireOnboarding && profile && !profile.onboardedAt) {
-    return <Navigate to="/onboarding" replace />
+    return <Navigate to={ROUTES.ONBOARDING} replace />
   }
 
   return (

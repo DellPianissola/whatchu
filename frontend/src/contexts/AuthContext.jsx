@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import api from '../services/api.js'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import api, { apiErrorMessage } from '../services/api.js'
+import { STORAGE_KEYS } from '../constants/storageKeys.js'
 
 const AuthContext = createContext({})
 
@@ -11,36 +12,37 @@ export const useAuth = () => {
   return context
 }
 
+const setTokens = (accessToken, refreshToken) => {
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken)
+  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
+}
+
+const clearStoredTokens = () => {
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(localStorage.getItem('accessToken'))
 
   const logout = () => {
     setUser(null)
     setProfile(null)
-    setToken(null)
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    delete api.defaults.headers.common['Authorization']
+    clearStoredTokens()
   }
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('accessToken', token)
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    } else {
-      localStorage.removeItem('accessToken')
-      delete api.defaults.headers.common['Authorization']
-    }
-  }, [token])
+  // Guard contra double-invoke do useEffect em React StrictMode (dev).
+  const checkAuthAttempted = useRef(false)
 
   useEffect(() => {
+    if (checkAuthAttempted.current) return
+    checkAuthAttempted.current = true
+
     const checkAuth = async () => {
-      const storedToken = localStorage.getItem('accessToken')
+      const storedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
       if (storedToken) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
         try {
           const response = await api.get('/auth/me')
           setUser(response.data.user)
@@ -49,7 +51,7 @@ export const AuthProvider = ({ children }) => {
           // interceptor já tenta refresh; se chegar aqui, ambos falharam
           setUser(null)
           setProfile(null)
-          setToken(null)
+          clearStoredTokens()
         }
       }
       setLoading(false)
@@ -63,13 +65,12 @@ export const AuthProvider = ({ children }) => {
       const { user, profile, accessToken, refreshToken } = response.data
       setUser(user)
       setProfile(profile)
-      setToken(accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
+      setTokens(accessToken, refreshToken)
       return { success: true }
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Erro ao fazer login',
+        error: apiErrorMessage(error, 'Erro ao fazer login'),
       }
     }
   }
@@ -82,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Erro ao registrar',
+        error: apiErrorMessage(error, 'Erro ao registrar'),
       }
     }
   }
@@ -93,13 +94,12 @@ export const AuthProvider = ({ children }) => {
       const { user, profile, accessToken, refreshToken } = response.data
       setUser(user)
       setProfile(profile)
-      setToken(accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
+      setTokens(accessToken, refreshToken)
       return { success: true }
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Não foi possível verificar o email',
+        error: apiErrorMessage(error, 'Não foi possível verificar o email'),
         code:  error.response?.data?.code,
       }
     }

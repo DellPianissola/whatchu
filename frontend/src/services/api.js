@@ -1,5 +1,7 @@
 import axios from 'axios'
 import { ERROR_CODES } from '../constants/errorCodes'
+import { STORAGE_KEYS } from '../constants/storageKeys'
+import { ROUTES } from '../constants/routes'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -24,6 +26,12 @@ const api = axios.create({
   },
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 let isRefreshing = false
 let failedQueue = []
 
@@ -41,7 +49,7 @@ api.interceptors.response.use(
     const original = error.config
 
     if (error.response?.status === 401 && !original._retry) {
-      const refreshToken = localStorage.getItem('refreshToken')
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
 
       if (!refreshToken) {
         return Promise.reject(error)
@@ -63,19 +71,17 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken })
         const { accessToken, refreshToken: newRefreshToken } = data
 
-        localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', newRefreshToken)
-        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken)
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken)
 
         processQueue(null, accessToken)
         original.headers['Authorization'] = `Bearer ${accessToken}`
         return api(original)
       } catch (refreshError) {
         processQueue(refreshError, null)
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        delete api.defaults.headers.common['Authorization']
-        window.location.href = '/login'
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+        window.location.href = ROUTES.LOGIN
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

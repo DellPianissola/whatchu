@@ -1,26 +1,58 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { getMovies, deleteMovie, updateMovie } from '../services/api.js'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useNotify } from '../contexts/NotificationContext.jsx'
-import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
+import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import CardModal from '../components/CardModal.jsx'
+import MovieCard from '../components/MovieCard.jsx'
+import WatchedToggle from '../components/WatchedToggle.jsx'
+import MovieListActions from '../components/MovieListActions.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
-import PriorityIndicator from '../components/PriorityIndicator.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
+import { ROUTES } from '../constants/routes.js'
 import './MyList.css'
+
+const WATCHED_OPTIONS = [
+  { value: '',      label: 'Todos' },
+  { value: 'false', label: 'Não assistidos' },
+  { value: 'true',  label: 'Assistidos' },
+]
+
+const parseTypesParam = (csv) => {
+  if (!csv) return ALL_TYPES
+  const list = csv.split(',').filter((t) => ALL_TYPES.includes(t))
+  return list.length > 0 ? list : ALL_TYPES
+}
 
 const MyList = () => {
   const navigate = useNavigate()
   const { toast } = useNotify()
-  const [movies, setMovies] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState({ types: ALL_TYPES, watched: '' })
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { userMovies, isLoading, removeFromList, changePriority, toggleWatched } = useUserMovies()
+
+  const types   = parseTypesParam(searchParams.get('types'))
+  const watched = searchParams.get('watched') ?? ''
+
+  const setTypes = (next) => {
+    const params = new URLSearchParams(searchParams)
+    if (next.length === ALL_TYPES.length) params.delete('types')
+    else                                  params.set('types', next.join(','))
+    setSearchParams(params, { replace: true })
+  }
+
+  const setWatched = (next) => {
+    const params = new URLSearchParams(searchParams)
+    if (!next) params.delete('watched')
+    else       params.set('watched', next)
+    setSearchParams(params, { replace: true })
+  }
+
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
 
   // expandedItem derivado do array — reage automaticamente a toggles e deletes
-  const expandedItem = movies.find(m => m.id === expandedItemId) ?? null
+  const expandedItem = userMovies.find((m) => m.id === expandedItemId) ?? null
 
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
 
@@ -34,35 +66,25 @@ const MyList = () => {
     return () => document.removeEventListener('mousedown', handler)
   }, [confirmingDeleteId])
 
-  useEffect(() => {
-    loadMovies()
-  }, [filter.watched])
+  const visibleMovies = useMemo(() => {
+    const byType = types.length === ALL_TYPES.length
+      ? userMovies
+      : userMovies.filter((m) => types.includes(m.type))
+    if (!watched) return byType
+    const want = watched === 'true'
+    return byType.filter((m) => Boolean(m.watched) === want)
+  }, [userMovies, types, watched])
 
-  const loadMovies = async () => {
-    setLoading(true)
-    try {
-      const params = {}
-      if (filter.watched !== '') params.watched = filter.watched
-      const response = await getMovies(params)
-      setMovies(response.data.movies)
-    } catch (error) {
-      console.error('Erro ao carregar filmes:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // tipo é client-side: multi-seleção; backend só aceita watched como filtro
-  const visibleMovies = filter.types.length === ALL_TYPES.length
-    ? movies
-    : movies.filter(m => filter.types.includes(m.type))
+  const moviesByCategory = useMemo(() => ({
+    movies: visibleMovies.filter((m) => m.type === 'MOVIE'),
+    series: visibleMovies.filter((m) => m.type === 'SERIES'),
+  }), [visibleMovies])
 
   const performDelete = async (id) => {
     try {
-      await deleteMovie(id)
+      await removeFromList(id)
       setExpandedItemId(null)
       setConfirmingDeleteId(null)
-      setMovies(prev => prev.filter(m => m.id !== id))
       toast.success('Item removido da lista')
     } catch (error) {
       console.error('Erro ao remover:', error)
@@ -75,16 +97,10 @@ const MyList = () => {
     else                            setConfirmingDeleteId(id)
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja remover este item?')) return
-    await performDelete(id)
-  }
-
   const handleChangePriority = async (movie, priority) => {
     if (movie.priority === priority) return
     try {
-      await updateMovie(movie.id, { priority })
-      setMovies(prev => prev.map(m => m.id === movie.id ? { ...m, priority } : m))
+      await changePriority(movie.id, priority)
     } catch (error) {
       console.error('Erro ao atualizar prioridade:', error)
       toast.error('Erro ao atualizar prioridade')
@@ -92,35 +108,32 @@ const MyList = () => {
   }
 
   const handleToggleWatched = async (movie) => {
-    const newWatched = !movie.watched
     try {
-      await updateMovie(movie.id, { watched: newWatched })
-      setMovies(prev => {
-        // filtro ativo e novo estado diverge → retira da view sem refetch
-        if (filter.watched !== '' && String(newWatched) !== filter.watched) {
-          return prev.filter(m => m.id !== movie.id)
-        }
-        return prev.map(m => m.id === movie.id ? { ...m, watched: newWatched } : m)
-      })
+      await toggleWatched(movie)
     } catch (error) {
       console.error('Erro ao atualizar:', error)
       toast.error('Erro ao atualizar item')
     }
   }
 
-  const moviesByCategory = {
-    movies: visibleMovies.filter(m => m.type === 'MOVIE'),
-    series: visibleMovies.filter(m => m.type === 'SERIES'),
-  }
+  const isFiltered = types.length < ALL_TYPES.length || watched !== ''
 
-  const renderMovieCard = (movie) => {
-    const genresText = movie.genres?.length > 0 ? movie.genres.join(', ') : 'Sem gênero'
+  const emptyMessage = (() => {
+    if (!isFiltered) return null
+    if (watched === 'true')  return 'Você ainda não marcou nenhum item como assistido.'
+    if (watched === 'false') return 'Nenhum item pendente para assistir.'
+    return 'Nenhum item corresponde ao filtro selecionado.'
+  })()
 
-    return (
-      <div
-        key={movie.id}
-        data-card-id={movie.id}
-        className={`movie-card ${movie.watched ? 'watched' : ''} ${confirmingDeleteId === movie.id ? 'movie-card--deleting' : ''}`}
+  const renderMovieCard = (movie) => (
+    <div
+      key={movie.id}
+      data-card-id={movie.id}
+      className={confirmingDeleteId === movie.id ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
+    >
+      <MovieCard
+        item={movie}
+        watched={movie.watched}
         onClick={() => {
           if (confirmingDeleteId === movie.id) {
             setConfirmingDeleteId(null)
@@ -128,118 +141,64 @@ const MyList = () => {
           }
           setExpandedItemId(movie.id)
         }}
-      >
-        <div className="movie-poster-container">
-          {movie.poster ? (
-            <img src={movie.poster} alt={movie.title} className="movie-poster" />
-          ) : (
-            <PosterPlaceholder title={movie.title} type={movie.type} className="movie-poster" />
-          )}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleToggleWatched(movie) }}
-            className={`card-overlay-btn card-overlay-btn--watched ${movie.watched ? 'card-overlay-btn--watched-on' : ''}`}
-            title={movie.watched ? 'Marcar como não assistido' : 'Marcar como assistido'}
-          >
-            {movie.watched ? '✓' : '👁'}
-          </button>
-        </div>
-        <div className="movie-info">
-          <div className="movie-header">
-            <h3>{movie.title}</h3>
-            {movie.isNew && <span className="new-badge">NOVO</span>}
-          </div>
-          <div className="movie-footer">
-            <div className="movie-meta">
-              <span>📅 {movie.year || 'Sem data'}</span>
-              <span>⭐ {movie.rating || 'Sem nota'}</span>
-              <span className="genres-span" title={genresText}>🎭 {genresText}</span>
-            </div>
-            <div className="movie-card-actions">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleRequestDelete(movie.id) }}
-                className={`btn-remove-from-list ${confirmingDeleteId === movie.id ? 'btn-remove-from-list--confirming' : ''}`}
-              >
-                {confirmingDeleteId === movie.id ? 'Confirmar' : '🗑️ Remover'}
-              </button>
-              <PriorityIndicator
-                value={movie.priority}
-                onChange={(priority) => handleChangePriority(movie, priority)}
-              />
-            </div>
-          </div>
-        </div>
-        {confirmingDeleteId === movie.id && (
-          <div className="card-delete-overlay">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); performDelete(movie.id) }}
-              className="card-delete-icon"
-              title="Confirmar remoção"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
+        posterOverlay={
+          <WatchedToggle watched={movie.watched} onToggle={() => handleToggleWatched(movie)} />
+        }
+        titleBadge={movie.isNew && <span className="new-badge">NOVO</span>}
+        actions={
+          <MovieListActions
+            movie={movie}
+            isConfirmingDelete={confirmingDeleteId === movie.id}
+            onRequestDelete={() => handleRequestDelete(movie.id)}
+            onRemove={() => performDelete(movie.id)}
+            onChangePriority={(p) => handleChangePriority(movie, p)}
+          />
+        }
+      />
+    </div>
+  )
 
   return (
     <div className="mylist-page">
       <div className="mylist-container">
         <div className="mylist-header">
           <h2>Minha Lista</h2>
-          <button className="btn-add-new" onClick={() => navigate('/search')}>
+          <button className="btn-add-new" onClick={() => navigate(ROUTES.SEARCH)}>
             ➕ Adicionar
           </button>
         </div>
 
         <div className="filters">
           <div className="filter-pills-row">
-            <TypeFilterPills
-              value={filter.types}
-              onChange={(types) => setFilter({ ...filter, types })}
-            />
+            <TypeFilterPills value={types} onChange={setTypes} />
           </div>
 
           <Dropdown
             trigger="button"
             align="left"
             label="Status"
-            value={filter.watched}
-            onChange={(watched) => setFilter({ ...filter, watched })}
-            options={[
-              { value: '',      label: 'Todos' },
-              { value: 'false', label: 'Não assistidos' },
-              { value: 'true',  label: 'Assistidos' },
-            ]}
+            value={watched}
+            onChange={setWatched}
+            options={WATCHED_OPTIONS}
           />
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="loading">Carregando...</div>
         ) : visibleMovies.length === 0 ? (
-          <div className="empty-state">
-            {filter.types.length < ALL_TYPES.length || filter.watched ? (
-              <p>
-                {filter.watched === 'true'
-                  ? 'Você ainda não marcou nenhum item como assistido.'
-                  : filter.watched === 'false'
-                  ? 'Nenhum item pendente para assistir.'
-                  : 'Nenhum item corresponde ao filtro selecionado.'}
-              </p>
-            ) : (
-              <>
-                <p>Nenhum item adicionado ainda</p>
-                <p className="empty-hint">Clique em "Adicionar" para buscar filmes e séries!</p>
-                <button className="btn-add-empty" onClick={() => navigate('/search')}>
+          isFiltered ? (
+            <EmptyState description={emptyMessage} />
+          ) : (
+            <EmptyState
+              title="Nenhum item adicionado ainda"
+              description='Clique em "Adicionar" para buscar filmes e séries!'
+              action={
+                <button className="btn-add-empty" onClick={() => navigate(ROUTES.SEARCH)}>
                   ➕ Adicionar Primeiro Item
                 </button>
-              </>
-            )}
-          </div>
+              }
+            />
+          )
         ) : (
           <div className="movies-by-category">
             {moviesByCategory.movies.length > 0 && (
@@ -270,28 +229,16 @@ const MyList = () => {
           richDetailsError={richDetailsError}
           onClose={() => setExpandedItemId(null)}
           posterOverlay={
-            <button
-              type="button"
-              onClick={() => handleToggleWatched(expandedItem)}
-              className={`card-overlay-btn card-overlay-btn--watched ${expandedItem.watched ? 'card-overlay-btn--watched-on' : ''}`}
-              title={expandedItem.watched ? 'Marcar como não assistido' : 'Marcar como assistido'}
-            >
-              {expandedItem.watched ? '✓' : '👁'}
-            </button>
+            <WatchedToggle watched={expandedItem.watched} onToggle={() => handleToggleWatched(expandedItem)} />
           }
           actions={
-            <div className="modal-actions-row">
-              <button
-                onClick={() => handleDelete(expandedItem.id)}
-                className="btn-remove-from-list"
-              >
-                🗑️ Remover
-              </button>
-              <PriorityIndicator
-                value={expandedItem.priority}
-                onChange={(priority) => handleChangePriority(expandedItem, priority)}
-              />
-            </div>
+            <MovieListActions
+              movie={expandedItem}
+              isConfirmingDelete={confirmingDeleteId === expandedItem.id}
+              onRequestDelete={() => handleRequestDelete(expandedItem.id)}
+              onRemove={() => performDelete(expandedItem.id)}
+              onChangePriority={(p) => handleChangePriority(expandedItem, p)}
+            />
           }
         />
       )}

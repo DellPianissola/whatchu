@@ -72,6 +72,12 @@
   cursor: pointer;
 }
 
+.profile-avatar--button {
+  background: none;
+  padding: 0;
+  display: block;
+}
+
 .profile-avatar img {
   width: 100%;
   height: 100%;

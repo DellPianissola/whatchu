@@ -8,14 +8,25 @@ const TMDB_URL = 'https://www.themoviedb.org/'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
+// Cache nível-módulo: /health roda 1x por sessão. Footer é renderizado em toda
+// rota protegida; sem cache, navegar dispara nova request a cada troca de página.
+let apiVersionPromise = null
+const getApiVersion = () => {
+  if (apiVersionPromise) return apiVersionPromise
+  apiVersionPromise = checkHealth()
+    .then(({ data }) => data?.version ?? null)
+    .catch(() => null)
+  return apiVersionPromise
+}
+
 const Footer = () => {
   const [apiVersion, setApiVersion] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    checkHealth()
-      .then(({ data }) => { if (!cancelled) setApiVersion(data?.version ?? null) })
-      .catch(() => {})
+    getApiVersion().then((version) => {
+      if (!cancelled) setApiVersion(version)
+    })
     return () => { cancelled = true }
   }, [])
 

@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useTheme } from '../hooks/useTheme.js'
-import WatchuLogo from './WatchuLogo.jsx'
+import Wordmark from './Wordmark.jsx'
+import { ROUTES } from '../constants/routes.js'
 import './NavBar.css'
 
 const NavBar = () => {
@@ -14,7 +15,7 @@ const NavBar = () => {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate(ROUTES.LOGIN)
   }
 
   if (!isAuthenticated) {
@@ -22,24 +23,25 @@ const NavBar = () => {
   }
 
   // onboarding: sem navbar — usuário não deve sair do fluxo
-  if (location.pathname === '/onboarding') {
+  if (location.pathname === ROUTES.ONBOARDING) {
     return null
   }
 
+  const themeTitle = theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'
+
   return (
     <nav className="navbar">
-      <Link to="/" className="nav-logo">
-        <WatchuLogo size={32} />
-        <span className="nav-brand-text">What<span className="nav-brand-chu">chu</span></span>
+      <Link to={ROUTES.HOME} className="nav-logo">
+        <Wordmark variant="nav" logoSize={32} as="span" />
       </Link>
       <div className="nav-links">
-        <Link to="/" className={isActive('/') ? 'active' : ''}>
+        <Link to={ROUTES.HOME} className={isActive(ROUTES.HOME) ? 'active' : ''}>
           🏠 Início
         </Link>
-        <Link to="/search" className={isActive('/search') ? 'active' : ''}>
+        <Link to={ROUTES.SEARCH} className={isActive(ROUTES.SEARCH) ? 'active' : ''}>
           🔍 Buscar
         </Link>
-        <Link to="/list" className={isActive('/list') ? 'active' : ''}>
+        <Link to={ROUTES.LIST} className={isActive(ROUTES.LIST) ? 'active' : ''}>
           📋 Minha Lista
         </Link>
         <div className="nav-user">
@@ -47,12 +49,12 @@ const NavBar = () => {
             type="button"
             onClick={toggleTheme}
             className="btn-theme-toggle"
-            title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
-            aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            title={themeTitle}
+            aria-label={themeTitle}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <Link to="/profiles" className="nav-username-link">
+          <Link to={ROUTES.PROFILES} className="nav-username-link">
             {user?.username}
           </Link>
           <button onClick={handleLogout} className="btn-logout">

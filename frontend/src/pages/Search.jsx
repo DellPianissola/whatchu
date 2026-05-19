@@ -1,73 +1,87 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { searchExternal, createMovie, getMovies, deleteMovie, updateMovie, getPopularMovies, getPopularSeries, getExternalGenres } from '../services/api.js'
+import {
+  searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
+  apiErrorMessage, mapUpstreamError,
+} from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
-import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
+import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
-import PriorityIndicator from '../components/PriorityIndicator.jsx'
+import MovieCard from '../components/MovieCard.jsx'
+import MovieListActions from '../components/MovieListActions.jsx'
+import Pagination from '../components/Pagination.jsx'
+import { SkeletonCard } from '../components/Skeleton.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
+import { useDebounce } from '../hooks/useDebounce.js'
 import { TYPE_LABEL, PRIORITY_LABEL } from '../utils/content.js'
+import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
 import './Search.css'
+
+const MODE = { PAGE: 'page', ONBOARDING: 'onboarding' }
+
+const VALID_TYPES = ['movie', 'series']
+const VALID_SORTS = ['date_asc', 'date_desc', 'rating_asc', 'rating_desc']
 
 const parsePageParam = (value) => {
   const parsed = parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
 }
-
-const VALID_TYPES = ['movie', 'series']
-const parseTypeParam = (value) => {
-  return VALID_TYPES.includes(value) ? value : 'movie'
-}
-
-const VALID_SORTS = ['date_asc', 'date_desc', 'rating_asc', 'rating_desc']
-const parseSortParam = (value) => {
-  return VALID_SORTS.includes(value) ? value : null
-}
-
-const parseGenresParam = (value) => {
-  if (!value) return []
-  return value.split(',').map(s => s.trim()).filter(Boolean)
-}
+const parseTypeParam   = (value) => VALID_TYPES.includes(value) ? value : 'movie'
+const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : null
+const parseGenresParam = (value) => value ? value.split(',').map((s) => s.trim()).filter(Boolean) : []
 
 const splitSort = (sortBy) => {
-  if (sortBy === 'date_asc') return { sortDate: 'asc', sortRating: null }
-  if (sortBy === 'date_desc') return { sortDate: 'desc', sortRating: null }
-  if (sortBy === 'rating_asc') return { sortDate: null, sortRating: 'asc' }
-  if (sortBy === 'rating_desc') return { sortDate: null, sortRating: 'desc' }
+  if (sortBy === 'date_asc')    return { sortDate: 'asc',  sortRating: null  }
+  if (sortBy === 'date_desc')   return { sortDate: 'desc', sortRating: null  }
+  if (sortBy === 'rating_asc')  return { sortDate: null,   sortRating: 'asc' }
+  if (sortBy === 'rating_desc') return { sortDate: null,   sortRating: 'desc' }
   return { sortDate: null, sortRating: null }
 }
 
-const ONBOARDING_TARGET = 3
+const cycleSort = (current) => {
+  if (current === null)   return 'desc'
+  if (current === 'desc') return 'asc'
+  return null
+}
 
-const Search = ({ mode = 'page', onComplete, onSkip }) => {
+const getSortIcon = (sortState) => {
+  if (sortState === 'asc')  return '↑'
+  if (sortState === 'desc') return '↓'
+  return ''
+}
+
+const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const { profile } = useAuth()
   const { toast } = useNotify()
-  const isOnboarding = mode === 'onboarding'
+  const { userMovies, addToList, removeFromList, changePriority, findByItem } = useUserMovies()
+  const isOnboarding = mode === MODE.ONBOARDING
+
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [totalPages, setTotalPages] = useState(1)
-  const [addingMovie, setAddingMovie] = useState(null)
-  const [userMovies, setUserMovies] = useState([])
+  const [processingMovieId, setProcessingMovieId] = useState(null)
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
+
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
-  const debounceTimer = useRef(null)
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
   // URL é fonte de verdade — type/page/sortBy/genres nunca em useState
-  const type = parseTypeParam(searchParams.get('type'))
-  const currentPage = parsePageParam(searchParams.get('page'))
-  const sortBy = parseSortParam(searchParams.get('sortBy'))
+  const type           = parseTypeParam(searchParams.get('type'))
+  const currentPage    = parsePageParam(searchParams.get('page'))
+  const sortBy         = parseSortParam(searchParams.get('sortBy'))
   const selectedGenres = parseGenresParam(searchParams.get('genres'))
   const { sortDate, sortRating } = splitSort(sortBy)
 
   // TMDB /search não suporta sort/gênero — UI desabilitada durante busca textual
-  const textSearchActive = query.trim().length > 0
+  const textSearchActive    = debouncedQuery.trim().length > 0
   const sortAndGenreDisabled = textSearchActive
 
   const updateParams = (mutate, { resetPage = false } = {}) => {
@@ -107,157 +121,109 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   }
 
   useEffect(() => {
-    const loadUserMovies = async () => {
-      try {
-        const response = await getMovies()
-        setUserMovies(response.data.movies)
-      } catch (error) {
-        console.error('Erro ao carregar filmes do usuário:', error)
-      }
-    }
-    if (profile) {
-      loadUserMovies()
-    }
-  }, [profile])
-
-  useEffect(() => {
     let cancelled = false
-    const loadGenres = async () => {
-      try {
-        const response = await getExternalGenres(type)
-        if (!cancelled) setAvailableGenres(response.data.genres || [])
-      } catch (error) {
+    getExternalGenres(type)
+      .then((response) => { if (!cancelled) setAvailableGenres(response.data.genres || []) })
+      .catch((error) => {
         console.error('Erro ao carregar gêneros:', error)
         if (!cancelled) setAvailableGenres([])
-      }
-    }
-    loadGenres()
+      })
     return () => { cancelled = true }
   }, [type])
 
-  // reseta página ao mudar query; tipo/sort/gênero já resetam nos próprios setters
-  const prevQueryRef = useRef(query)
+  // reseta página ao mudar texto (debouncedQuery); type/sort/gênero já resetam nos setters
   useEffect(() => {
-    if (prevQueryRef.current === query) return
-    prevQueryRef.current = query
     if (currentPage !== 1) setCurrentPage(1)
-  }, [query])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery])
 
   const genresKey = selectedGenres.join(',')
   useEffect(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-    }
-
+    let cancelled = false
     const doFetch = async () => {
       setLoading(true)
       try {
-        if (!query.trim()) {
-          await loadPopular(currentPage, sortBy, selectedGenres)
-        } else {
-          await loadSearch(query, type, currentPage)
-        }
+        const q = debouncedQuery.trim()
+        const response = q
+          ? await searchExternal(q, type, currentPage)
+          : await (type === 'series' ? getPopularSeries : getPopularMovies)(currentPage, {
+              sortBy: sortBy || undefined,
+              genres: selectedGenres,
+            })
+        if (cancelled) return
+        setResults(response.data.results || [])
+        setTotalPages(response.data.totalPages || 1)
+      } catch (error) {
+        if (cancelled) return
+        console.error('Erro ao buscar:', error)
+        setResults([])
+        setTotalPages(1)
+        notifyExternalError(error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-
-    if (!query.trim()) {
-      doFetch()
-    } else {
-      debounceTimer.current = setTimeout(doFetch, 500) // debounce 500ms só na busca textual
-    }
-
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current)
-      }
-    }
-  }, [query, type, currentPage, sortBy, genresKey])
-
-  const loadPopular = async (page, sort, genres) => {
-    try {
-      const opts = { sortBy: sort || undefined, genres }
-      const fetcher = type === 'series' ? getPopularSeries : getPopularMovies
-      const response = await fetcher(page, opts)
-
-      setResults(response.data.results || [])
-      setTotalPages(response.data.totalPages || 1)
-    } catch (error) {
-      console.error('Erro ao carregar conteúdo popular:', error)
-      setResults([])
-      setTotalPages(1)
-      notifyExternalError(error)
-    }
-  }
-
-  const loadSearch = async (q, searchType, page) => {
-    try {
-      // TMDB /search não aceita sort/gênero — params extras são ignorados
-      const response = await searchExternal(q, searchType, page)
-      setResults(response.data.results || [])
-      setTotalPages(response.data.totalPages || 1)
-    } catch (error) {
-      console.error('Erro ao buscar:', error)
-      setResults([])
-      setTotalPages(1)
-      notifyExternalError(error)
-    }
-  }
+    doFetch()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery, type, currentPage, sortBy, genresKey])
 
   const notifyExternalError = (error) => {
-    const code = error.response?.data?.code
-
     if (!error.response) {
       toast.error('Sem conexão com o servidor. Tenta de novo em alguns segundos.')
-    } else if (code === 'UPSTREAM_RATE_LIMIT') {
-      toast.error('TMDB está limitando as requisições. Aguarda um momento e tenta de novo.')
-    } else if (code === 'UPSTREAM_DOWN') {
-      toast.error('TMDB está fora do ar agora. Tenta de novo daqui a pouco.')
-    } else {
-      toast.error('Erro ao buscar conteúdo. Tenta de novo.')
+      return
     }
+    const upstream = mapUpstreamError(error)
+    toast.error(upstream || 'Erro ao buscar conteúdo. Tenta de novo.')
   }
 
-  const handleSearch = async (e) => {
-    e.preventDefault()
+  const handleSearchSubmit = (e) => {
     // busca é automática via useEffect; form existe pra UX (Enter, mobile submit)
+    e.preventDefault()
   }
 
-  const findUserMovie = (movie) => userMovies.find(userMovie => {
-    // externalId preferível; fallback por título+tipo
-    if (movie.externalId && userMovie.externalId) {
-      return userMovie.externalId === movie.externalId.toString()
-    }
-    return userMovie.title.toLowerCase() === movie.title.toLowerCase() &&
-           userMovie.type === movie.type
-  })
+  const isMovieInList = (movie) => Boolean(findByItem(movie))
 
-  const isMovieInList = (movie) => Boolean(findUserMovie(movie))
+  const handleAddMovie = async (movie, priority = 'MEDIUM') => {
+    if (!profile) {
+      toast.error('Perfil não encontrado!')
+      return
+    }
+    if (isMovieInList(movie)) return
+
+    setProcessingMovieId(movie.id)
+    try {
+      await addToList(movie, priority)
+      toast.success(`"${movie.title}" adicionado à lista`)
+    } catch (error) {
+      console.error('Erro ao adicionar filme:', error)
+      toast.error(apiErrorMessage(error, 'Erro ao adicionar filme'))
+    } finally {
+      setProcessingMovieId(null)
+    }
+  }
 
   const handleRemoveMovie = async (movie) => {
-    const userMovie = findUserMovie(movie)
+    const userMovie = findByItem(movie)
     if (!userMovie) return
 
-    setAddingMovie(movie.id)
+    setProcessingMovieId(movie.id)
     try {
-      await deleteMovie(userMovie.id)
-      setUserMovies(userMovies.filter(m => m.id !== userMovie.id))
+      await removeFromList(userMovie.id)
       toast.success(`"${movie.title}" removido da lista`)
     } catch (error) {
       console.error('Erro ao remover filme:', error)
-      toast.error(error.response?.data?.error || 'Erro ao remover filme')
+      toast.error(apiErrorMessage(error, 'Erro ao remover filme'))
     } finally {
-      setAddingMovie(null)
+      setProcessingMovieId(null)
     }
   }
 
   const handleChangePriority = async (movie, priority) => {
-    const userMovie = findUserMovie(movie)
+    const userMovie = findByItem(movie)
     if (!userMovie || userMovie.priority === priority) return
     try {
-      await updateMovie(userMovie.id, { priority })
-      setUserMovies(prev => prev.map(m => m.id === userMovie.id ? { ...m, priority } : m))
+      await changePriority(userMovie.id, priority)
       toast.success(`Prioridade alterada para ${PRIORITY_LABEL[priority]}`)
     } catch (error) {
       console.error('Erro ao atualizar prioridade:', error)
@@ -265,53 +231,9 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
     }
   }
 
-  const handleAddMovie = async (movie, priority = 'MEDIUM') => {
-    if (!profile) {
-      toast.error('Perfil não encontrado!')
-      return
-    }
-
-    if (isMovieInList(movie)) return
-
-    setAddingMovie(movie.id)
-    try {
-      // normaliza tipo: API externa pode mandar lowercase, backend espera uppercase
-      const movieData = {
-        title: movie.title,
-        type: String(movie.type || '').toUpperCase(),
-        description: movie.description,
-        poster: movie.poster,
-        year: movie.year,
-        duration: movie.duration,
-        genres: movie.genres || [],
-        rating: movie.rating,
-        externalId: movie.externalId?.toString(),
-        priority,
-        isNew: true,
-      }
-
-      const response = await createMovie(movieData)
-      setUserMovies([...userMovies, response.data.movie])
-      toast.success(`"${movie.title}" adicionado à lista`)
-    } catch (error) {
-      console.error('Erro ao adicionar filme:', error)
-      toast.error(error.response?.data?.error || 'Erro ao adicionar filme')
-    } finally {
-      setAddingMovie(null)
-    }
-  }
-
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
-  const cycleSort = (current) => {
-    if (current === null) return 'desc'
-    if (current === 'desc') return 'asc'
-    return null
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const toggleSortDate = () => {
@@ -322,35 +244,6 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
   const toggleSortRating = () => {
     const next = cycleSort(sortRating)
     setSortBy(next === null ? null : `rating_${next}`)
-  }
-
-  const buildPageList = (current, total) => {
-    const WINDOW_SIZE = 5
-
-    if (total <= WINDOW_SIZE) {
-      return Array.from({ length: total }, (_, i) => i + 1)
-    }
-
-    // janela de 5 centralizada na página atual, clampada nas bordas
-    let start = current - Math.floor(WINDOW_SIZE / 2)
-    let end   = start + WINDOW_SIZE - 1
-
-    if (start < 1) {
-      start = 1
-      end = WINDOW_SIZE
-    }
-    if (end > total) {
-      end = total
-      start = total - WINDOW_SIZE + 1
-    }
-
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-  }
-
-  const getSortIcon = (sortState) => {
-    if (sortState === 'asc') return '↑'
-    if (sortState === 'desc') return '↓'
-    return ''
   }
 
   return (
@@ -365,7 +258,7 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
       )}
 
       <div className="search-container">
-        <form onSubmit={handleSearch} className="search-form">
+        <form onSubmit={handleSearchSubmit} className="search-form">
           <div className="search-header">
             <div className="search-type-filters">
               <button
@@ -433,140 +326,46 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
           </div>
         </form>
 
-
         {loading && (
           <div className="results-grid">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="result-card skeleton-card">
-                <div className="result-poster-container">
-                  <div className="skeleton-poster"></div>
-                </div>
-                <div className="result-info">
-                  <div className="skeleton-title"></div>
-                  <div className="result-footer">
-                    <div className="result-meta">
-                      <div className="skeleton-meta"></div>
-                      <div className="skeleton-meta"></div>
-                      <div className="skeleton-meta"></div>
-                    </div>
-                    <div className="skeleton-button"></div>
-                  </div>
-                </div>
-              </div>
+            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+              <SkeletonCard key={i} />
             ))}
           </div>
         )}
 
         {!loading && results.length > 0 && (
           <div className="results-grid">
-            {results.map((item) => {
-              const genresText = item.genres && item.genres.length > 0 
-                ? item.genres.join(', ') 
-                : 'Sem gênero'
-              const genresDisplay = item.genres && item.genres.length > 0 
-                ? item.genres.join(', ') 
-                : 'Sem gênero'
-
-              return (
-                <div key={item.id} className="result-card" onClick={() => setExpandedItem(item)}>
-                  <div className="result-poster-container">
-                    {item.poster ? (
-                      <img src={item.poster} alt={item.title} className="result-poster" />
-                    ) : (
-                      <PosterPlaceholder 
-                        title={item.title} 
-                        type={item.type}
-                        className="result-poster"
-                      />
-                    )}
-                    <span className="result-type-badge">
-                      {TYPE_LABEL[item.type] ?? item.type}
-                    </span>
-                  </div>
-                  <div className="result-info">
-                    <h3>{item.title}</h3>
-                    <div className="result-footer">
-                      <div className="result-meta">
-                        <span>📅 {item.year || 'Sem data'}</span>
-                        <span>⭐ {item.rating || 'Sem nota'}</span>
-                        <span 
-                          className="genres-span"
-                          title={genresText}
-                        >
-                          🎭 {genresDisplay}
-                        </span>
-                      </div>
-                      <AddToListButton
-                        inList={isMovieInList(item)}
-                        currentPriority={findUserMovie(item)?.priority}
-                        processing={addingMovie === item.id}
-                        disabled={!profile}
-                        onAdd={(priority) => handleAddMovie(item, priority)}
-                        onChangePriority={(priority) => handleChangePriority(item, priority)}
-                        onRemove={() => handleRemoveMovie(item)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            {results.map((item) => (
+              <MovieCard
+                key={item.id}
+                item={item}
+                onClick={() => setExpandedItem(item)}
+                posterBadge={TYPE_LABEL[item.type] ?? item.type}
+                actions={
+                  <AddToListButton
+                    inList={isMovieInList(item)}
+                    currentPriority={findByItem(item)?.priority}
+                    processing={processingMovieId === item.id}
+                    disabled={!profile}
+                    onAdd={(priority) => handleAddMovie(item, priority)}
+                    onChangePriority={(priority) => handleChangePriority(item, priority)}
+                    onRemove={() => handleRemoveMovie(item)}
+                  />
+                }
+              />
+            ))}
           </div>
         )}
 
-        {!loading && (
-          <div className="pagination">
-            <button
-              onClick={() => goToPage(1)}
-              disabled={currentPage === 1}
-              className="pagination-btn"
-            >
-              « Início
-            </button>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="pagination-btn"
-            >
-              ‹ Anterior
-            </button>
-
-            <div className="pagination-pages">
-              {buildPageList(currentPage, totalPages).map((entry, idx) =>
-                entry === '...'
-                  ? <span key={`ellipsis-${idx}`} className="pagination-ellipsis">...</span>
-                  : (
-                    <button
-                      key={entry}
-                      onClick={() => goToPage(entry)}
-                      className={`pagination-page ${currentPage === entry ? 'active' : ''}`}
-                    >
-                      {entry}
-                    </button>
-                  )
-              )}
-            </div>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="pagination-btn"
-            >
-              Próximo ›
-            </button>
-            <button
-              onClick={() => goToPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="pagination-btn"
-            >
-              Último »
-            </button>
-          </div>
+        {!loading && totalPages > 0 && (
+          <Pagination current={currentPage} total={totalPages} onChange={goToPage} />
         )}
 
         {!loading && results.length === 0 && (
-          <p className="no-results">
-            {query ? 'Nenhum resultado encontrado' : 'Nenhum conteúdo popular encontrado'}
-          </p>
+          <EmptyState
+            description={query ? 'Nenhum resultado encontrado' : 'Nenhum conteúdo popular encontrado'}
+          />
         )}
       </div>
 
@@ -578,11 +377,10 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
           richDetailsError={richDetailsError}
           onClose={() => setExpandedItem(null)}
           actions={(() => {
-            const inList = isMovieInList(expandedItem)
-            const userMovie = findUserMovie(expandedItem)
-            const busy = addingMovie === expandedItem.id
+            const userMovie = findByItem(expandedItem)
+            const busy = processingMovieId === expandedItem.id
 
-            if (!inList) {
+            if (!userMovie) {
               return (
                 <button
                   onClick={() => handleAddMovie(expandedItem)}
@@ -595,19 +393,11 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
             }
 
             return (
-              <div className="modal-actions-row">
-                <button
-                  onClick={() => handleRemoveMovie(expandedItem)}
-                  disabled={!profile || busy}
-                  className="btn-add btn-remove"
-                >
-                  {busy ? 'Processando...' : '🗑️ Remover'}
-                </button>
-                <PriorityIndicator
-                  value={userMovie?.priority}
-                  onChange={(p) => handleChangePriority(expandedItem, p)}
-                />
-              </div>
+              <MovieListActions
+                movie={userMovie}
+                onRemove={() => handleRemoveMovie(expandedItem)}
+                onChangePriority={(p) => handleChangePriority(expandedItem, p)}
+              />
             )
           })()}
         />
@@ -617,4 +407,3 @@ const Search = ({ mode = 'page', onComplete, onSkip }) => {
 }
 
 export default Search
-

@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { markOnboarded } from '../services/api.js'
 import Search from './Search.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import { ROUTES } from '../constants/routes.js'
+import { ONBOARDING_TRANSITION_MS } from '../constants/ui.js'
 import './Onboarding.css'
 
 const Onboarding = () => {
@@ -13,6 +16,8 @@ const Onboarding = () => {
   const [transitioning, setTransitioning] = useState(false)
   const [skipDialogOpen, setSkipDialogOpen] = useState(false)
 
+  const goHome = () => navigate(ROUTES.HOME, { replace: true })
+
   const finish = async ({ withTransition = true } = {}) => {
     try {
       const response = await markOnboarded()
@@ -20,9 +25,9 @@ const Onboarding = () => {
 
       if (withTransition) {
         setTransitioning(true)
-        setTimeout(() => navigate('/', { replace: true }), 1400)
+        setTimeout(goHome, ONBOARDING_TRANSITION_MS)
       } else {
-        navigate('/', { replace: true })
+        goHome()
       }
     } catch (error) {
       console.error('Erro ao concluir onboarding:', error)
@@ -43,36 +48,19 @@ const Onboarding = () => {
         onSkip={() => setSkipDialogOpen(true)}
       />
 
-      {skipDialogOpen && (
-        <div className="onboarding-modal-backdrop" onClick={() => setSkipDialogOpen(false)}>
-          <div className="onboarding-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Pular o onboarding?</h3>
-            <p>
-              Sem itens na lista, o sorteio não vai funcionar. Você pode adicionar
-              filmes a qualquer momento pela tela de busca.
-            </p>
-            <div className="onboarding-modal-actions">
-              <button
-                type="button"
-                className="onboarding-modal-secondary"
-                onClick={() => setSkipDialogOpen(false)}
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                className="onboarding-modal-primary"
-                onClick={handleSkipConfirm}
-              >
-                Pular mesmo assim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={skipDialogOpen}
+        title="Pular o onboarding?"
+        message="Sem itens na lista, o sorteio não vai funcionar. Você pode adicionar filmes a qualquer momento pela tela de busca."
+        confirmLabel="Pular mesmo assim"
+        cancelLabel="Voltar"
+        variant="primary"
+        onConfirm={handleSkipConfirm}
+        onCancel={() => setSkipDialogOpen(false)}
+      />
 
       {transitioning && (
-        <div className="onboarding-transition" onClick={() => navigate('/', { replace: true })}>
+        <div className="onboarding-transition" onClick={goHome}>
           <div className="onboarding-transition-content">
             <div className="onboarding-transition-emoji">🎉</div>
             <h2>Pronto pra começar!</h2>

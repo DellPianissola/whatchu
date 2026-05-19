@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
+import { UserMoviesProvider } from './contexts/UserMoviesContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -16,6 +17,7 @@ import ResetPassword from './pages/ResetPassword'
 import NavBar from './components/NavBar.jsx'
 import CookieBanner from './components/CookieBanner.jsx'
 import { initAnalytics, trackPageView } from './services/analytics.js'
+import { ROUTES } from './constants/routes.js'
 import './App.css'
 
 initAnalytics()
@@ -26,67 +28,37 @@ const PageViewTracker = () => {
   return null
 }
 
+const protect = (element, opts = {}) => (
+  <ProtectedRoute {...opts}>{element}</ProtectedRoute>
+)
+
 function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-      <Router>
-        <PageViewTracker />
-        <NavBar />
-        <CookieBanner />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <Search />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/list"
-            element={
-              <ProtectedRoute>
-                <MyList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profiles"
-            element={
-              <ProtectedRoute>
-                <Profiles />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute requireOnboarding={false}>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+        <UserMoviesProvider>
+          <Router>
+            <PageViewTracker />
+            <NavBar />
+            <CookieBanner />
+            <Routes>
+              <Route path={ROUTES.LOGIN}           element={<Login />} />
+              <Route path={ROUTES.REGISTER}        element={<Register />} />
+              <Route path={ROUTES.VERIFY_EMAIL}    element={<VerifyEmail />} />
+              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+              <Route path={ROUTES.RESET_PASSWORD}  element={<ResetPassword />} />
+              <Route path={ROUTES.HOME}            element={protect(<Home />)} />
+              <Route path={ROUTES.SEARCH}          element={protect(<Search />)} />
+              <Route path={ROUTES.LIST}            element={protect(<MyList />)} />
+              <Route path={ROUTES.PROFILES}        element={protect(<Profiles />)} />
+              <Route path={ROUTES.ONBOARDING}      element={protect(<Onboarding />, { requireOnboarding: false })} />
+              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            </Routes>
+          </Router>
+        </UserMoviesProvider>
       </NotificationProvider>
     </AuthProvider>
   )
 }
 
 export default App
-

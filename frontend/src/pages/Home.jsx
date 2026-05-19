@@ -1,23 +1,27 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getMovies, drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
+import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
+import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
-import WatchuLogo from '../components/WatchuLogo.jsx'
+import Wordmark from '../components/Wordmark.jsx'
+import IconButton from '../components/IconButton.jsx'
 import CardModal from '../components/CardModal.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import { useRichDetails } from '../hooks/useRichDetails.js'
-import { TYPE_LABEL, PRIORITY_LABEL, formatDuration } from '../utils/content.js'
+import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
+import { ERROR_CODES } from '../constants/errorCodes.js'
+import { ROUTES } from '../constants/routes.js'
+import { DRAW_DELAY_MS, GLOW_DOT_COUNT } from '../constants/ui.js'
 import './Home.css'
 
 const Home = () => {
   const { profile } = useAuth()
   const { toast } = useNotify()
+  const { userMovies, isLoading: userMoviesLoading } = useUserMovies()
   const [isLoaded, setIsLoaded] = useState(false)
-  const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [stats, setStats] = useState({ movies: 0, series: 0 })
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -27,36 +31,12 @@ const Home = () => {
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
-  // opções fixas — não dependem de dados da API
-  const PRIORITY_OPTIONS = [
-    { value: 'LOW',    label: PRIORITY_LABEL.LOW    },
-    { value: 'MEDIUM', label: PRIORITY_LABEL.MEDIUM },
-    { value: 'HIGH',   label: PRIORITY_LABEL.HIGH   },
-    { value: 'URGENT', label: PRIORITY_LABEL.URGENT },
-  ]
-
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(modalOpen ? selectedMovie : null)
 
   useEffect(() => {
     setIsLoaded(true)
-    loadStats()
     loadGenres()
   }, [])
-
-  const loadStats = async () => {
-    try {
-      const response = await getMovies()
-      const movies = response.data.movies
-      setStats({
-        movies: movies.filter(m => m.type === 'MOVIE').length,
-        series: movies.filter(m => m.type === 'SERIES').length,
-      })
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error)
-    } finally {
-      setIsLoadingStats(false)
-    }
-  }
 
   const loadGenres = async () => {
     try {
@@ -73,6 +53,11 @@ const Home = () => {
     }
   }
 
+  const stats = useMemo(() => ({
+    movies: userMovies.filter((m) => m.type === 'MOVIE').length,
+    series: userMovies.filter((m) => m.type === 'SERIES').length,
+  }), [userMovies])
+
   const availableGenres = useMemo(() => {
     const set = new Set()
     filterTypes.forEach(t => (genresByType[t] || []).forEach(g => set.add(g)))
@@ -83,7 +68,7 @@ const Home = () => {
     setIsDrawing(true)
     setSelectedMovie(null)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
       const response = await drawMovie({
         types: filterTypes,
         priorities: filterPriorities,
@@ -93,9 +78,9 @@ const Home = () => {
       setSelectedMovie(response.data.movie)
     } catch (error) {
       const code = error.response?.data?.code
-      if (code === 'EMPTY_LIST') {
+      if (code === ERROR_CODES.EMPTY_LIST) {
         toast.info('Sua lista está vazia — adicione filmes ou séries pra começar')
-      } else if (code === 'NO_MATCH') {
+      } else if (code === ERROR_CODES.NO_MATCH) {
         toast.info('Nenhum item da sua lista corresponde aos filtros selecionados')
       } else {
         toast.error('Erro ao sortear. Tente novamente.')
@@ -109,7 +94,7 @@ const Home = () => {
     setIsDrawing(true)
     setSelectedMovie(null)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
       const response = await luckyDraw({
         types: filterTypes,
         genres: filterGenres,
@@ -132,14 +117,14 @@ const Home = () => {
 
   const greeting = profile?.name ? `Olá, ${profile.name.split(' ')[0]}!` : 'Bem-vindo!'
   const totalItems = stats.movies + stats.series
-  const listIsEmpty = !isLoadingStats && totalItems === 0
+  const listIsEmpty = !userMoviesLoading && totalItems === 0
   const noTypeSelected = filterTypes.length === 0
   const drawDisabled = isDrawing || noTypeSelected
 
   return (
     <div className="home">
       <div className="cinema-bg">
-        {[...Array(18)].map((_, i) => (
+        {[...Array(GLOW_DOT_COUNT)].map((_, i) => (
           <div key={i} className={`glow-dot glow-dot-${i + 1}`} />
         ))}
       </div>
@@ -147,11 +132,8 @@ const Home = () => {
       <div className={`home-content ${isLoaded ? 'loaded' : ''}`}>
         <header className="home-header">
           <div className="logo">
-            <WatchuLogo size={72} />
-            <div className="logo-text-group">
-              <h1 className="logo-text">What<span className="logo-chu">chu</span></h1>
-              <p className="tagline">O que vamos assistir hoje?</p>
-            </div>
+            <Wordmark variant="hero" logoSize={72} />
+            <p className="tagline">O que vamos assistir hoje?</p>
           </div>
         </header>
 
@@ -164,12 +146,12 @@ const Home = () => {
 
             <div className="stats-preview">
               <div className="stat-item">
-                <div className="stat-value">{isLoadingStats ? '—' : stats.movies}</div>
+                <div className="stat-value">{userMoviesLoading ? '—' : stats.movies}</div>
                 <div className="stat-label">Filmes</div>
               </div>
               <div className="stat-divider" />
               <div className="stat-item">
-                <div className="stat-value">{isLoadingStats ? '—' : stats.series}</div>
+                <div className="stat-value">{userMoviesLoading ? '—' : stats.series}</div>
                 <div className="stat-label">Séries</div>
               </div>
             </div>
@@ -216,7 +198,7 @@ const Home = () => {
                   <p className="empty-list-text">
                     Sua lista está vazia. Pesquise filmes ou séries para começar.
                   </p>
-                  <Link to="/search" className="btn btn-primary btn-draw">
+                  <Link to={ROUTES.SEARCH} className="btn btn-primary btn-draw">
                     <span className="btn-icon">🔍</span>
                     <span className="btn-text">Pesquisar conteúdo</span>
                   </Link>
@@ -255,9 +237,19 @@ const Home = () => {
 
           <div className="card-right">
             {selectedMovie ? (
-              <div className="draw-result-panel" onClick={() => setModalOpen(true)}>
+              <button
+                type="button"
+                className="draw-result-panel"
+                onClick={() => setModalOpen(true)}
+              >
                 {selectedMovie.poster ? (
-                  <img src={selectedMovie.poster} alt={selectedMovie.title} className="draw-result-bg" />
+                  <img
+                    src={selectedMovie.poster}
+                    alt=""
+                    className="draw-result-bg"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <PosterPlaceholder
                     title={selectedMovie.title}
@@ -267,7 +259,12 @@ const Home = () => {
                 )}
                 <div className="draw-result-top">
                   <span className="draw-result-label">🎉 Sorteado!</span>
-                  <button className="btn-close-draw" onClick={(e) => { e.stopPropagation(); setSelectedMovie(null); setModalOpen(false) }}>✕</button>
+                  <IconButton
+                    icon="✕"
+                    label="Fechar sorteio"
+                    onClick={(e) => { e.stopPropagation(); setSelectedMovie(null); setModalOpen(false) }}
+                    className="btn-close-draw"
+                  />
                 </div>
                 <div className="draw-result-content">
                   <div className="draw-result-meta">
@@ -286,7 +283,7 @@ const Home = () => {
                     <p className="draw-result-description">{selectedMovie.description}</p>
                   )}
                 </div>
-              </div>
+              </button>
             ) : (
               <div className={`draw-placeholder ${isDrawing ? 'drawing' : ''}`}>
                 <div className="geo-ring geo-ring--1" />

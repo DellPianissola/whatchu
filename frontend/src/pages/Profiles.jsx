@@ -1,24 +1,36 @@
-import { useState, useEffect, useRef } from 'react'
-import { createProfile, updateProfile, changeEmail, uploadAvatar } from '../services/api.js'
+import { useState, useRef } from 'react'
+import { createProfile, updateProfile, changeEmail, uploadAvatar, apiErrorMessage } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
+import { pluralize, todayISODate } from '../utils/content.js'
+import { AVATAR_ACCEPT } from '../constants/ui.js'
 import './Profiles.css'
+
+const SECTIONS = { PROFILE: 'profile', EMAIL: 'email' }
 
 const Profiles = () => {
   const { user, profile, updateProfile: updateAuthProfile, refreshUser } = useAuth()
   const { toast } = useNotify()
   const [loading, setLoading] = useState(false)
-  const [section, setSection] = useState(null) // null | 'profile' | 'email'
+  const [editingSection, setEditingSection] = useState(null)
   const avatarInputRef = useRef(null)
 
   const [formName, setFormName]           = useState('')
   const [formBirthDate, setFormBirthDate] = useState('')
   const [formEmail, setFormEmail]         = useState('')
 
-  useEffect(() => {
-    if (profile) setFormName(profile.name)
-    if (user?.birthDate) setFormBirthDate(user.birthDate.split('T')[0])
-  }, [profile, user])
+  const closeSection = () => setEditingSection(null)
+
+  const openProfileSection = () => {
+    setFormName(profile?.name ?? '')
+    setFormBirthDate(user?.birthDate ? user.birthDate.split('T')[0] : '')
+    setEditingSection(SECTIONS.PROFILE)
+  }
+
+  const openEmailSection = () => {
+    setFormEmail(user?.email ?? '')
+    setEditingSection(SECTIONS.EMAIL)
+  }
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -32,10 +44,10 @@ const Profiles = () => {
         await createProfile(payload)
       }
       await refreshUser()
-      setSection(null)
+      closeSection()
       toast.success('Perfil salvo com sucesso')
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao salvar perfil')
+      toast.error(apiErrorMessage(err, 'Erro ao salvar perfil'))
     } finally {
       setLoading(false)
     }
@@ -47,10 +59,10 @@ const Profiles = () => {
     try {
       await changeEmail(formEmail)
       await refreshUser()
-      setSection(null)
+      closeSection()
       toast.success('Email atualizado. Verifique sua caixa de entrada.')
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao atualizar email')
+      toast.error(apiErrorMessage(err, 'Erro ao atualizar email'))
     } finally {
       setLoading(false)
     }
@@ -67,12 +79,14 @@ const Profiles = () => {
       updateAuthProfile(res.data.profile)
       toast.success('Foto atualizada')
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao enviar foto')
+      toast.error(apiErrorMessage(err, 'Erro ao enviar foto'))
     } finally {
       setLoading(false)
       e.target.value = ''
     }
   }
+
+  const movieCount = profile?._count?.movies ?? 0
 
   return (
     <div className="profiles-page">
@@ -81,27 +95,34 @@ const Profiles = () => {
 
         <div className="profile-section">
           <div className="profile-section-avatar">
-            <div className="profile-avatar" onClick={() => avatarInputRef.current?.click()} title="Trocar foto">
+            <button
+              type="button"
+              className="profile-avatar profile-avatar--button"
+              onClick={() => avatarInputRef.current?.click()}
+              title="Trocar foto"
+              aria-label="Trocar foto"
+            >
               {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="Avatar" />
+                <img src={profile.avatarUrl} alt="" />
               ) : (
                 <div className="avatar-placeholder">
                   {profile?.name?.charAt(0)?.toUpperCase() ?? '?'}
                 </div>
               )}
-              <div className="avatar-overlay">Trocar</div>
-            </div>
+              <div className="avatar-overlay" aria-hidden="true">Trocar</div>
+            </button>
             <input
               ref={avatarInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept={AVATAR_ACCEPT}
               style={{ display: 'none' }}
               onChange={handleAvatarChange}
               disabled={loading}
+              aria-label="Selecionar nova foto de perfil"
             />
             <p className="avatar-name">{profile?.name}</p>
             <p className="avatar-stats">
-              {profile?._count?.movies ?? 0} {profile?._count?.movies === 1 ? 'item' : 'itens'} na lista
+              {movieCount} {pluralize(movieCount, 'item', 'itens')} na lista
             </p>
           </div>
 
@@ -122,18 +143,19 @@ const Profiles = () => {
             <div className="email-actions">
               <button
                 className="btn-link-small"
-                onClick={() => { setFormEmail(user?.email ?? ''); setSection(section === 'email' ? null : 'email') }}
+                onClick={() => editingSection === SECTIONS.EMAIL ? closeSection() : openEmailSection()}
               >
                 Alterar
               </button>
             </div>
           </div>
 
-          {section === 'email' && (
+          {editingSection === SECTIONS.EMAIL && (
             <form onSubmit={handleChangeEmail} className="profile-form-inline profile-form-inline--inset">
               <div className="form-row">
-                <label>Novo email</label>
+                <label htmlFor="new-email">Novo email</label>
                 <input
+                  id="new-email"
                   type="email"
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
@@ -149,7 +171,7 @@ const Profiles = () => {
                 <button type="submit" disabled={loading} className="btn-save">
                   {loading ? 'Salvando...' : 'Confirmar troca'}
                 </button>
-                <button type="button" onClick={() => setSection(null)} disabled={loading} className="btn-cancel">
+                <button type="button" onClick={closeSection} disabled={loading} className="btn-cancel">
                   Cancelar
                 </button>
               </div>
@@ -160,16 +182,17 @@ const Profiles = () => {
         <div className="profile-section">
           <div className="section-header">
             <h3 className="section-title">Dados pessoais</h3>
-            {section !== 'profile' && (
-              <button className="btn-link-small" onClick={() => setSection('profile')}>Editar</button>
+            {editingSection !== SECTIONS.PROFILE && (
+              <button className="btn-link-small" onClick={openProfileSection}>Editar</button>
             )}
           </div>
 
-          {section === 'profile' ? (
+          {editingSection === SECTIONS.PROFILE ? (
             <form onSubmit={handleSaveProfile} className="profile-form-inline">
               <div className="form-row">
-                <label>Nome de exibição</label>
+                <label htmlFor="profile-name">Nome de exibição</label>
                 <input
+                  id="profile-name"
                   type="text"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
@@ -179,21 +202,22 @@ const Profiles = () => {
                 />
               </div>
               <div className="form-row">
-                <label>Data de nascimento</label>
+                <label htmlFor="profile-birth">Data de nascimento</label>
                 <input
+                  id="profile-birth"
                   type="date"
                   value={formBirthDate}
                   onChange={(e) => setFormBirthDate(e.target.value)}
                   className="form-input"
                   disabled={loading}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={todayISODate()}
                 />
               </div>
               <div className="form-actions">
                 <button type="submit" disabled={loading} className="btn-save">
                   {loading ? 'Salvando...' : 'Salvar'}
                 </button>
-                <button type="button" onClick={() => setSection(null)} disabled={loading} className="btn-cancel">
+                <button type="button" onClick={closeSection} disabled={loading} className="btn-cancel">
                   Cancelar
                 </button>
               </div>

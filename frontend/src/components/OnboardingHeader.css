@@ -3,7 +3,7 @@
 .onboarding-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-nav);
   background: linear-gradient(180deg, var(--background) 0%, rgba(var(--background-rgb), 0.95) 100%);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--surface-light);

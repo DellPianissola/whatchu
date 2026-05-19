@@ -12,6 +12,7 @@ const loadScript = () => {
   document.head.appendChild(script)
 
   window.dataLayer = window.dataLayer || []
+  // function declaration (não arrow): gtag depende de `arguments`, que não existe em arrow
   window.gtag = function () { window.dataLayer.push(arguments) }
   window.gtag('js', new Date())
   window.gtag('config', MEASUREMENT_ID, { send_page_view: false })

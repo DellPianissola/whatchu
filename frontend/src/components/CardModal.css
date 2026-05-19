@@ -126,17 +126,17 @@
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--age-rating-text);
   line-height: 1.2;
   background: var(--text-muted);
 }
 
-.age-rating--tier-1 { background: #2e7d32; } /* L     — verde */
-.age-rating--tier-2 { background: #0288d1; } /* 10    — azul */
-.age-rating--tier-3 { background: #f9a825; color: #1a1a1a; } /* 12 — amarelo */
-.age-rating--tier-4 { background: #ef6c00; } /* 14    — laranja */
-.age-rating--tier-5 { background: #c62828; } /* 16    — vermelho */
-.age-rating--tier-6 { background: #1a1a1a; } /* 18    — preto */
+.age-rating--tier-1 { background: var(--age-rating-tier-1); } /* L     — verde */
+.age-rating--tier-2 { background: var(--age-rating-tier-2); } /* 10    — azul */
+.age-rating--tier-3 { background: var(--age-rating-tier-3); color: var(--age-rating-tier-6); } /* 12 — amarelo (texto escuro pra contraste) */
+.age-rating--tier-4 { background: var(--age-rating-tier-4); } /* 14    — laranja */
+.age-rating--tier-5 { background: var(--age-rating-tier-5); } /* 16    — vermelho */
+.age-rating--tier-6 { background: var(--age-rating-tier-6); } /* 18    — preto */
 
 .card-modal-genres {
   color: var(--text-muted);

@@ -12,7 +12,7 @@
   align-items: center;
   gap: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: var(--z-modal);
 }
 
 .cookie-banner__text {
@@ -50,7 +50,7 @@
 
 .cookie-banner__btn--accept {
   background: var(--primary);
-  color: #fff;
+  color: var(--text-on-media);
 }
 
 @media (max-width: 540px) {

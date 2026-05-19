@@ -64,7 +64,7 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.45);
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
 }

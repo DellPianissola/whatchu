@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useId } from 'react'
 import Button from './Button.jsx'
+import { useClickOutside } from '../hooks/useClickOutside.js'
+import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import './Dropdown.css'
 
 /**
@@ -35,6 +37,10 @@ const Dropdown = ({
 }) => {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef(null)
+  const menuId = useId()
+
+  useClickOutside(wrapperRef, () => setOpen(false), open)
+  useEscapeKey(() => setOpen(false), open)
 
   const normalized = options.map(o =>
     typeof o === 'string' ? { value: o, label: o } : o
@@ -56,24 +62,6 @@ const Dropdown = ({
     }
   }
 
-  useEffect(() => {
-    if (!open) return
-    const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false)
-      }
-    }
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
-
   const selectedCount = multi ? (value ?? []).length : 0
   const selectedSingle = !multi
     ? normalized.find(o => o.value === value)?.label
@@ -84,6 +72,12 @@ const Dropdown = ({
     : (selectedSingle ?? label)
 
   const isActive = multi ? selectedCount > 0 : Boolean(value)
+
+  const triggerAria = {
+    'aria-haspopup': 'true',
+    'aria-expanded': open,
+    'aria-controls': menuId,
+  }
 
   return (
     <div className={`dropdown-wrapper ${className}`} ref={wrapperRef}>
@@ -97,6 +91,7 @@ const Dropdown = ({
           disabled={disabled}
           onClick={() => !disabled && setOpen(o => !o)}
           title={disabled ? disabledTitle : ''}
+          {...triggerAria}
         >
           {triggerLabel} <span className="dropdown-trigger-caret" aria-hidden>▾</span>
         </Button>
@@ -107,6 +102,7 @@ const Dropdown = ({
           onClick={() => !disabled && setOpen(o => !o)}
           disabled={disabled}
           title={disabled ? disabledTitle : ''}
+          {...triggerAria}
         >
           {icon && <span className="dropdown-trigger-icon">{icon}</span>}
           <span className="dropdown-trigger-label">{triggerLabel}</span>
@@ -115,7 +111,7 @@ const Dropdown = ({
       )}
 
       {open && (
-        <div className={`dropdown-menu dropdown-menu-${align}`}>
+        <div id={menuId} className={`dropdown-menu dropdown-menu-${align}`}>
           {normalized.length === 0 ? (
             <div className="dropdown-empty">{emptyMessage}</div>
           ) : (

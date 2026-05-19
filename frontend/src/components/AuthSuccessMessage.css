@@ -1,0 +1,30 @@
+.ui-auth-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+}
+
+.ui-auth-success-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.ui-auth-success-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.ui-auth-success-body {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.ui-auth-success-action {
+  margin-top: var(--space-3);
+  width: 100%;
+}

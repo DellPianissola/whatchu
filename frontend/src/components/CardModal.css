@@ -98,6 +98,16 @@
   margin: 0;
 }
 
+.card-modal-type-badge {
+  padding: 0.5rem 0.75rem;
+  background: rgba(var(--primary-rgb), 0.9);
+  color: var(--text-on-media);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
 .card-modal-meta {
   display: flex;
   gap: 1.25rem;

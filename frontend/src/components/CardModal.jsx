@@ -1,10 +1,15 @@
-import { useEffect } from 'react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
+import IconButton from './IconButton.jsx'
+import { Skeleton } from './Skeleton.jsx'
 import { trailerUrl } from '../utils/detailsCache.js'
-import { TYPE_LABEL, formatDuration } from '../utils/content.js'
+import { TYPE_LABEL, formatDuration, displayRating, displayGenres } from '../utils/content.js'
 import { providerUrl } from '../utils/providers.js'
 import { ageRatingTier } from '../utils/ageRating.js'
+import { useEscapeKey } from '../hooks/useEscapeKey.js'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
 import './CardModal.css'
+
+const TITLE_ID = 'card-modal-title'
 
 const PROVIDER_GROUPS = [
   { key: 'streaming', label: 'Streaming' },
@@ -83,39 +88,39 @@ const WatchProviders = ({ providers, trailer }) => {
   )
 }
 
+const buildYearLabel = (item, richDetails) => {
+  if (!item.year) return 'Sem data'
+  if (item.type !== 'SERIES' || !richDetails) return item.year
+  const end = richDetails.endYear
+  if (richDetails.hasEnded) return end && end !== item.year ? `${item.year} – ${end}` : item.year
+  return `${item.year} – ...`
+}
+
 const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions, posterOverlay }) => {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [onClose])
+  useEscapeKey(onClose, !!item)
+  useBodyScrollLock(!!item)
 
   if (!item) return null
 
   const duration = richDetails?.duration || item.duration
   const ageRating = richDetails?.ageRating
-
-  const yearLabel = (() => {
-    if (!item.year) return 'Sem data'
-    if (item.type !== 'SERIES' || !richDetails) return item.year
-    const end = richDetails.endYear
-    if (richDetails.hasEnded) return end && end !== item.year ? `${item.year} – ${end}` : item.year
-    return `${item.year} – ...`
-  })()
+  const yearLabel = buildYearLabel(item, richDetails)
 
   return (
     <div className="card-modal-backdrop" onClick={onClose}>
-      <div className="card-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="card-modal-close" onClick={onClose}>✕</button>
+      <div
+        className="card-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={TITLE_ID}
+      >
+        <IconButton icon="✕" label="Fechar" onClick={onClose} className="card-modal-close" />
         <div className="card-modal-body">
 
           <div className="card-modal-poster-col">
             {item.poster ? (
-              <img src={item.poster} alt={item.title} />
+              <img src={item.poster} alt={item.title} loading="lazy" decoding="async" />
             ) : (
               <PosterPlaceholder title={item.title} type={item.type} className="result-poster" />
             )}
@@ -124,15 +129,15 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
 
           <div className="card-modal-info">
             <div className="card-modal-title-row">
-              <h2>{item.title}</h2>
-              <span className="result-type-badge" style={{ position: 'static' }}>
+              <h2 id={TITLE_ID}>{item.title}</h2>
+              <span className="card-modal-type-badge">
                 {TYPE_LABEL[item.type] ?? item.type}
               </span>
             </div>
 
             <div className="card-modal-meta">
               <span>📅 {yearLabel}</span>
-              <span>⭐ {item.rating || 'Sem nota'}</span>
+              <span>⭐ {displayRating(item.rating)}</span>
               {item.type === 'MOVIE' && duration && <span>⏱ {formatDuration(duration)}</span>}
               {ageRating && (
                 <span
@@ -145,7 +150,7 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
             </div>
 
             <div className="card-modal-genres">
-              🎭 {item.genres?.length > 0 ? item.genres.join(', ') : 'Sem gênero'}
+              🎭 {displayGenres(item.genres)}
             </div>
 
             <p className="card-modal-description">
@@ -154,9 +159,9 @@ const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, on
 
             {richDetailsLoading && (
               <div className="card-modal-rich-skeleton">
-                <div className="skeleton-meta" style={{ width: '70%' }}></div>
-                <div className="skeleton-meta" style={{ width: '90%' }}></div>
-                <div className="skeleton-meta" style={{ width: '50%' }}></div>
+                <Skeleton width="70%" height={12} />
+                <Skeleton width="90%" height={12} />
+                <Skeleton width="50%" height={12} />
               </div>
             )}
 

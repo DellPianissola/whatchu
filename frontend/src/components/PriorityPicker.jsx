@@ -1,16 +1,16 @@
-import { PRIORITY_LABEL } from '../utils/content.js'
+import { PRIORITY_LABEL, PRIORITY_VALUES } from '../utils/content.js'
 import './PriorityPicker.css'
 
-const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
-
 const PriorityPicker = ({ value, onChange, label = 'Prioridade' }) => (
-  <div className="priority-picker">
+  <div className="priority-picker" role="radiogroup" aria-label={label}>
     {label && <span className="priority-picker-label">{label}</span>}
     <div className="priority-pills">
-      {PRIORITY_OPTIONS.map((option) => (
+      {PRIORITY_VALUES.map((option) => (
         <button
           key={option}
           type="button"
+          role="radio"
+          aria-checked={value === option}
           className={`priority-pill priority-pill--${option.toLowerCase()} ${value === option ? 'priority-pill--active' : ''}`}
           onClick={() => onChange?.(option)}
         >

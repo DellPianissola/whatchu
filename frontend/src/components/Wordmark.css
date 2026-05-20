@@ -4,20 +4,35 @@
   gap: var(--space-3);
 }
 
+.ui-wordmark-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .ui-wordmark-text {
   margin: 0;
+  font-family: 'Fredoka', sans-serif;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: 0.01em;
   background: var(--gradient-wordmark);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.ui-wordmark-accent {
-  color: inherit;
+.ui-wordmark-subtitle {
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--secondary);
+  text-align: center;
 }
 
-.ui-wordmark--nav .ui-wordmark-text  { font-size: 1.25rem; }
+.ui-wordmark--nav .ui-wordmark-text  { font-size: 1.4rem; }
 .ui-wordmark--auth .ui-wordmark-text { font-size: 2rem; }
-.ui-wordmark--hero .ui-wordmark-text { font-size: 2.5rem; }
+.ui-wordmark--hero .ui-wordmark-text { font-size: 3.5rem; }

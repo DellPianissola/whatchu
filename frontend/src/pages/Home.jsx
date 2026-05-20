@@ -132,8 +132,7 @@ const Home = () => {
       <div className={`home-content ${isLoaded ? 'loaded' : ''}`}>
         <header className="home-header">
           <div className="logo">
-            <Wordmark variant="hero" logoSize={72} />
-            <p className="tagline">O que vamos assistir hoje?</p>
+            <Wordmark variant="hero" logoSize={72} subtitle="O que vamos assistir hoje?" />
           </div>
         </header>
 

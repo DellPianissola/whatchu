@@ -150,6 +150,13 @@
 
 /* Resultado do sorteio — layout hero */
 .draw-result-panel {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  width: 100%;
   flex: 1;
   position: relative;
   overflow: hidden;

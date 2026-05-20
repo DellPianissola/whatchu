@@ -7,6 +7,7 @@ import { providerUrl } from '../utils/providers.js'
 import { ageRatingTier } from '../utils/ageRating.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
+import { useRichDetails } from '../hooks/useRichDetails.js'
 import './CardModal.css'
 
 const TITLE_ID = 'card-modal-title'
@@ -96,9 +97,10 @@ const buildYearLabel = (item, richDetails) => {
   return `${item.year} – ...`
 }
 
-const CardModal = ({ item, richDetails, richDetailsLoading, richDetailsError, onClose, actions, posterOverlay }) => {
+const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   useEscapeKey(onClose, !!item)
   useBodyScrollLock(!!item)
+  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(item)
 
   if (!item) return null
 

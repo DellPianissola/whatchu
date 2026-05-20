@@ -12,8 +12,12 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: width 0.25s ease, box-shadow 0.15s;
+  transition: width 0.25s ease, box-shadow 0.15s, transform 0.15s;
   background: var(--ind-color);
+}
+
+.priority-indicator--expanded:hover:not(:disabled) {
+  transform: scale(1.06);
 }
 
 .priority-indicator--low    { --ind-color: var(--priority-low); }
@@ -28,9 +32,6 @@
   box-shadow: 0 2px 8px rgba(var(--shadow-rgb), 0.25);
 }
 
-.priority-indicator--expanded {
-  height: 32px;
-}
 
 .priority-indicator:disabled {
   opacity: 0.6;

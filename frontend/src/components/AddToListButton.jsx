@@ -8,6 +8,7 @@ const AddToListButton = ({
   currentPriority = DEFAULT_PRIORITY,
   processing = false,
   disabled = false,
+  compactPriority = true,
   onAdd,
   onChangePriority,
   onRemove,
@@ -40,6 +41,7 @@ const AddToListButton = ({
         value={currentPriority}
         onChange={onChangePriority}
         disabled={disabled || processing}
+        compact={compactPriority}
       />
     </div>
   )

@@ -2,23 +2,22 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
-  apiErrorMessage, mapUpstreamError,
+  mapUpstreamError,
 } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
+import { useMovieActions } from '../hooks/useMovieActions.js'
 import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import MovieCard from '../components/MovieCard.jsx'
-import MovieListActions from '../components/MovieListActions.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
-import { useRichDetails } from '../hooks/useRichDetails.js'
 import { useDebounce } from '../hooks/useDebounce.js'
-import { TYPE_LABEL, PRIORITY_LABEL } from '../utils/content.js'
+import { TYPE_LABEL } from '../utils/content.js'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
 import './Search.css'
 
@@ -58,7 +57,8 @@ const getSortIcon = (sortState) => {
 const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const { profile } = useAuth()
   const { toast } = useNotify()
-  const { userMovies, addToList, removeFromList, changePriority, findByItem } = useUserMovies()
+  const { userMovies } = useUserMovies()
+  const { processingId, addMovie, removeMovie, setPriority, findByItem } = useMovieActions()
   const isOnboarding = mode === MODE.ONBOARDING
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -66,11 +66,9 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [totalPages, setTotalPages] = useState(1)
-  const [processingMovieId, setProcessingMovieId] = useState(null)
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
 
-  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
   // URL é fonte de verdade — type/page/sortBy/genres nunca em useState
@@ -183,53 +181,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   }
 
   const isMovieInList = (movie) => Boolean(findByItem(movie))
-
-  const handleAddMovie = async (movie, priority = 'MEDIUM') => {
-    if (!profile) {
-      toast.error('Perfil não encontrado!')
-      return
-    }
-    if (isMovieInList(movie)) return
-
-    setProcessingMovieId(movie.id)
-    try {
-      await addToList(movie, priority)
-      toast.success(`"${movie.title}" adicionado à lista`)
-    } catch (error) {
-      console.error('Erro ao adicionar filme:', error)
-      toast.error(apiErrorMessage(error, 'Erro ao adicionar filme'))
-    } finally {
-      setProcessingMovieId(null)
-    }
-  }
-
-  const handleRemoveMovie = async (movie) => {
-    const userMovie = findByItem(movie)
-    if (!userMovie) return
-
-    setProcessingMovieId(movie.id)
-    try {
-      await removeFromList(userMovie.id)
-      toast.success(`"${movie.title}" removido da lista`)
-    } catch (error) {
-      console.error('Erro ao remover filme:', error)
-      toast.error(apiErrorMessage(error, 'Erro ao remover filme'))
-    } finally {
-      setProcessingMovieId(null)
-    }
-  }
-
-  const handleChangePriority = async (movie, priority) => {
-    const userMovie = findByItem(movie)
-    if (!userMovie || userMovie.priority === priority) return
-    try {
-      await changePriority(userMovie.id, priority)
-      toast.success(`Prioridade alterada para ${PRIORITY_LABEL[priority]}`)
-    } catch (error) {
-      console.error('Erro ao atualizar prioridade:', error)
-      toast.error('Erro ao atualizar prioridade')
-    }
-  }
 
   const goToPage = (page) => {
     setCurrentPage(page)
@@ -346,11 +297,11 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                   <AddToListButton
                     inList={isMovieInList(item)}
                     currentPriority={findByItem(item)?.priority}
-                    processing={processingMovieId === item.id}
+                    processing={processingId === item.id}
                     disabled={!profile}
-                    onAdd={(priority) => handleAddMovie(item, priority)}
-                    onChangePriority={(priority) => handleChangePriority(item, priority)}
-                    onRemove={() => handleRemoveMovie(item)}
+                    onAdd={(priority) => addMovie(item, priority)}
+                    onChangePriority={(priority) => setPriority(item, priority)}
+                    onRemove={() => removeMovie(item)}
                   />
                 }
               />
@@ -372,34 +323,19 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       {expandedItem && (
         <CardModal
           item={expandedItem}
-          richDetails={richDetails}
-          richDetailsLoading={richDetailsLoading}
-          richDetailsError={richDetailsError}
           onClose={() => setExpandedItem(null)}
-          actions={(() => {
-            const userMovie = findByItem(expandedItem)
-            const busy = processingMovieId === expandedItem.id
-
-            if (!userMovie) {
-              return (
-                <button
-                  onClick={() => handleAddMovie(expandedItem)}
-                  disabled={!profile || busy}
-                  className="btn-add"
-                >
-                  {busy ? 'Processando...' : '➕ Adicionar à lista'}
-                </button>
-              )
-            }
-
-            return (
-              <MovieListActions
-                movie={userMovie}
-                onRemove={() => handleRemoveMovie(expandedItem)}
-                onChangePriority={(p) => handleChangePriority(expandedItem, p)}
-              />
-            )
-          })()}
+          actions={
+            <AddToListButton
+              inList={isMovieInList(expandedItem)}
+              currentPriority={findByItem(expandedItem)?.priority}
+              processing={processingId === expandedItem.id}
+              disabled={!profile}
+              compactPriority={false}
+              onAdd={(priority) => addMovie(expandedItem, priority)}
+              onChangePriority={(p) => setPriority(expandedItem, p)}
+              onRemove={() => removeMovie(expandedItem)}
+            />
+          }
         />
       )}
     </div>

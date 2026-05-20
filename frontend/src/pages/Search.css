@@ -135,27 +135,6 @@
   align-items: stretch;
 }
 
-.btn-add {
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--gradient-2);
-  color: var(--text-on-media);
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.btn-add:hover:not(:disabled) {
-  transform: scale(1.02);
-}
-
-.btn-add:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 @media (max-width: 768px) {
   .search-header {
     flex-direction: column;

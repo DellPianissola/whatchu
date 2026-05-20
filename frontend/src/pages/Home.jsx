@@ -4,13 +4,14 @@ import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
+import { useMovieActions } from '../hooks/useMovieActions.js'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import Wordmark from '../components/Wordmark.jsx'
 import IconButton from '../components/IconButton.jsx'
 import CardModal from '../components/CardModal.jsx'
+import AddToListButton from '../components/AddToListButton.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
-import { useRichDetails } from '../hooks/useRichDetails.js'
 import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
@@ -21,6 +22,7 @@ const Home = () => {
   const { profile } = useAuth()
   const { toast } = useNotify()
   const { userMovies, isLoading: userMoviesLoading } = useUserMovies()
+  const { processingId, addMovie, removeMovie, setPriority, findByItem } = useMovieActions()
   const [isLoaded, setIsLoaded] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -30,8 +32,6 @@ const Home = () => {
   const [filterGenres, setFilterGenres] = useState([])
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
   const [ignoreWatched, setIgnoreWatched] = useState(false)
-
-  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(modalOpen ? selectedMovie : null)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -113,6 +113,11 @@ const Home = () => {
 
   const handleGroup = () => {
     toast.info('Em breve — você vai poder sortear com os amigos!')
+  }
+
+  const onAddFromModal = async (priority) => {
+    const created = await addMovie(selectedMovie, priority)
+    if (created) setSelectedMovie(created)
   }
 
   const greeting = profile?.name ? `Olá, ${profile.name.split(' ')[0]}!` : 'Bem-vindo!'
@@ -307,11 +312,19 @@ const Home = () => {
       {modalOpen && selectedMovie && (
         <CardModal
           item={selectedMovie}
-          richDetails={richDetails}
-          richDetailsLoading={richDetailsLoading}
-          richDetailsError={richDetailsError}
           onClose={() => setModalOpen(false)}
-          actions={null}
+          actions={
+            <AddToListButton
+              inList={Boolean(findByItem(selectedMovie))}
+              currentPriority={findByItem(selectedMovie)?.priority}
+              processing={processingId === selectedMovie.id}
+              disabled={!profile}
+              compactPriority={false}
+              onAdd={onAddFromModal}
+              onChangePriority={(p) => setPriority(selectedMovie, p)}
+              onRemove={() => removeMovie(selectedMovie)}
+            />
+          }
         />
       )}
     </div>

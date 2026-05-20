@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
+import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
@@ -9,7 +9,6 @@ import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
-import { useRichDetails } from '../hooks/useRichDetails.js'
 import { ROUTES } from '../constants/routes.js'
 import './MyList.css'
 
@@ -27,9 +26,9 @@ const parseTypesParam = (csv) => {
 
 const MyList = () => {
   const navigate = useNavigate()
-  const { toast } = useNotify()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { userMovies, isLoading, removeFromList, changePriority, toggleWatched } = useUserMovies()
+  const { userMovies, isLoading } = useUserMovies()
+  const { addMovie, removeMovie, setPriority, setWatched } = useMovieActions()
 
   const types   = parseTypesParam(searchParams.get('types'))
   const watched = searchParams.get('watched') ?? ''
@@ -41,7 +40,7 @@ const MyList = () => {
     setSearchParams(params, { replace: true })
   }
 
-  const setWatched = (next) => {
+  const setWatchedFilter = (next) => {
     const params = new URLSearchParams(searchParams)
     if (!next) params.delete('watched')
     else       params.set('watched', next)
@@ -51,10 +50,20 @@ const MyList = () => {
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
 
-  // expandedItem derivado do array — reage automaticamente a toggles e deletes
-  const expandedItem = userMovies.find((m) => m.id === expandedItemId) ?? null
+  // expandedLive reage a toggles/priority; snapshot mantém o modal aberto após delete
+  // (permite re-adicionar) ou se a lista re-fetch e o item ainda não voltou.
+  const expandedLive = userMovies.find((m) => m.id === expandedItemId) ?? null
+  const [expandedSnapshot, setExpandedSnapshot] = useState(null)
+  const expandedItem = expandedLive ?? expandedSnapshot
 
-  const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(expandedItem)
+  useEffect(() => {
+    if (expandedLive) setExpandedSnapshot(expandedLive)
+  }, [expandedLive])
+
+  const closeExpanded = () => {
+    setExpandedItemId(null)
+    setExpandedSnapshot(null)
+  }
 
   useEffect(() => {
     if (!confirmingDeleteId) return
@@ -80,35 +89,14 @@ const MyList = () => {
     series: visibleMovies.filter((m) => m.type === 'SERIES'),
   }), [visibleMovies])
 
-  const performDelete = async (id) => {
-    try {
-      await removeFromList(id)
-      setExpandedItemId(null)
-      setConfirmingDeleteId(null)
-      toast.success('Item removido da lista')
-    } catch (error) {
-      console.error('Erro ao remover:', error)
-      toast.error('Erro ao remover item')
-    }
+  const performDelete = async (movie) => {
+    await removeMovie(movie)
+    setConfirmingDeleteId(null)
   }
 
-  const handleChangePriority = async (movie, priority) => {
-    if (movie.priority === priority) return
-    try {
-      await changePriority(movie.id, priority)
-    } catch (error) {
-      console.error('Erro ao atualizar prioridade:', error)
-      toast.error('Erro ao atualizar prioridade')
-    }
-  }
-
-  const handleToggleWatched = async (movie) => {
-    try {
-      await toggleWatched(movie)
-    } catch (error) {
-      console.error('Erro ao atualizar:', error)
-      toast.error('Erro ao atualizar item')
-    }
+  const onAddFromModal = async (priority) => {
+    const created = await addMovie(expandedItem, priority)
+    if (created) setExpandedItemId(created.id)
   }
 
   const isFiltered = types.length < ALL_TYPES.length || watched !== ''
@@ -139,14 +127,14 @@ const MyList = () => {
             setExpandedItemId(movie.id)
           }}
           posterOverlay={
-            <WatchedToggle watched={movie.watched} onToggle={() => handleToggleWatched(movie)} />
+            <WatchedToggle watched={movie.watched} onToggle={() => setWatched(movie)} />
           }
           actions={
             <AddToListButton
               inList
               currentPriority={movie.priority}
               onRemove={() => setConfirmingDeleteId(movie.id)}
-              onChangePriority={(p) => handleChangePriority(movie, p)}
+              onChangePriority={(p) => setPriority(movie, p)}
             />
           }
         />
@@ -154,7 +142,7 @@ const MyList = () => {
           <div className="card-delete-overlay">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); performDelete(movie.id) }}
+              onClick={(e) => { e.stopPropagation(); performDelete(movie) }}
               className="card-delete-icon"
               title="Confirmar remoção"
               aria-label="Confirmar remoção"
@@ -187,7 +175,7 @@ const MyList = () => {
             align="left"
             label="Status"
             value={watched}
-            onChange={setWatched}
+            onChange={setWatchedFilter}
             options={WATCHED_OPTIONS}
           />
         </div>
@@ -233,19 +221,20 @@ const MyList = () => {
       {expandedItem && (
         <CardModal
           item={expandedItem}
-          richDetails={richDetails}
-          richDetailsLoading={richDetailsLoading}
-          richDetailsError={richDetailsError}
-          onClose={() => setExpandedItemId(null)}
+          onClose={closeExpanded}
           posterOverlay={
-            <WatchedToggle watched={expandedItem.watched} onToggle={() => handleToggleWatched(expandedItem)} />
+            expandedLive
+              ? <WatchedToggle watched={expandedLive.watched} onToggle={() => setWatched(expandedLive)} />
+              : null
           }
           actions={
             <AddToListButton
-              inList
-              currentPriority={expandedItem.priority}
-              onRemove={() => performDelete(expandedItem.id)}
-              onChangePriority={(p) => handleChangePriority(expandedItem, p)}
+              inList={Boolean(expandedLive)}
+              currentPriority={expandedLive?.priority}
+              compactPriority={false}
+              onAdd={onAddFromModal}
+              onRemove={() => performDelete(expandedLive)}
+              onChangePriority={(p) => setPriority(expandedLive, p)}
             />
           }
         />

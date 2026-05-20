@@ -325,47 +325,6 @@ a.card-modal-provider-wrap:hover .card-modal-provider-logo {
   border-top: 1px solid var(--surface-light);
 }
 
-.modal-actions-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.modal-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-}
-
-.modal-actions-row .btn-add,
-.modal-actions-row .btn-remove-from-list {
-  flex: 1;
-}
-
-.modal-actions-row .priority-indicator-wrapper {
-  flex-shrink: 0;
-  height: 40px;
-}
-
-.modal-actions-row .priority-indicator,
-.modal-actions-row .priority-indicator:hover:not(:disabled) {
-  width: 110px;
-  box-shadow: none;
-  transition: transform 0.2s;
-}
-
-.modal-actions-row .priority-indicator:hover:not(:disabled) {
-  transform: scale(1.06);
-}
-
-.modal-actions-row .priority-indicator-label {
-  opacity: 1;
-  font-size: 0.85rem;
-}
-
-
 /* ── Mobile ── */
 @media (max-width: 640px) {
   .card-modal-backdrop {

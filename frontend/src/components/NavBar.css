@@ -17,21 +17,6 @@
   text-decoration: none;
 }
 
-.nav-brand-text {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  background: var(--gradient-wordmark);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav-brand-chu {
-  color: inherit;
-}
-
 .nav-links {
   display: flex;
   gap: 1.5rem;

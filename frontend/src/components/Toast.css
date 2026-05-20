@@ -124,7 +124,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .toast-container {
     bottom: 1rem;
     right: 1rem;

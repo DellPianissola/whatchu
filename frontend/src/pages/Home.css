@@ -81,20 +81,13 @@
 
 .logo {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 0;
 }
 
-.logo-text-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.logo > svg {
+.logo svg {
   animation: pulse 3s ease-in-out infinite;
   filter: drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.4));
 }
@@ -102,23 +95,6 @@
 @keyframes pulse {
   0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.4)); }
   50%       { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(var(--secondary-rgb), 0.5)); }
-}
-
-.logo-text {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 3.5rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  margin: 0;
-  line-height: 1;
-  background: var(--gradient-wordmark);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.logo-chu {
-  color: inherit;
 }
 
 .tagline {
@@ -734,7 +710,7 @@
 
 /* ── Responsivo ──────────────────────────────────── */
 
-@media (max-width: 660px) {
+@media (max-width: 640px) {
   .home { padding: 1rem; }
 
   .home-content { max-width: 100%; }
@@ -762,8 +738,6 @@
   .geo-ring--1 { width: 80px; height: 80px; }
   .geo-ring--2 { width: 52px; height: 52px; }
   .geo-ring--3 { width: 26px; height: 26px; }
-
-  .logo-text { font-size: 2.5rem; }
 
   .draw-result-panel {
     min-height: 280px;

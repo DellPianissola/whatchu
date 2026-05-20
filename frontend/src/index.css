@@ -95,7 +95,6 @@
 
   /* breakpoints — referência pra @media (valor literal precisa ser duplicado
      em cada @media, mas centralizar a fonte facilita auditoria) */
-  --breakpoint-xs: 540px;
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;

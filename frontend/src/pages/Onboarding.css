@@ -1,79 +1,7 @@
 /* Header e footer do modo onboarding ficam fixos pelo Search.css.
-   Aqui estão os componentes próprios da página: modal de skip e overlay de transição. */
+   Aqui está apenas o overlay de transição "Pronto pra começar!".
+   O modal de skip migrou para <ConfirmDialog>. */
 
-/* === Modal de skip === */
-.onboarding-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  background: rgba(var(--shadow-rgb), 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  animation: backdrop-in 0.2s ease-out;
-}
-
-.onboarding-modal {
-  background: var(--surface);
-  border: 1px solid var(--surface-light);
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 460px;
-  width: 100%;
-  box-shadow: 0 20px 60px rgba(var(--shadow-rgb), 0.5);
-  animation: modal-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.onboarding-modal h3 {
-  font-size: 1.4rem;
-  color: var(--text);
-  margin-bottom: 0.75rem;
-}
-
-.onboarding-modal p {
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-}
-
-.onboarding-modal-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-.onboarding-modal-secondary,
-.onboarding-modal-primary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s, opacity 0.15s;
-  border: none;
-}
-
-.onboarding-modal-secondary {
-  background: var(--surface-light);
-  color: var(--text);
-}
-
-.onboarding-modal-secondary:hover {
-  transform: translateY(-1px);
-}
-
-.onboarding-modal-primary {
-  background: var(--danger);
-  color: var(--text-on-media);
-}
-
-.onboarding-modal-primary:hover {
-  transform: translateY(-1px);
-  opacity: 0.92;
-}
-
-/* === Overlay de transição "Pronto pra começar!" === */
 .onboarding-transition {
   position: fixed;
   inset: 0;
@@ -109,22 +37,6 @@
 .onboarding-transition-content p {
   color: var(--text-muted);
   font-size: 1.1rem;
-}
-
-@keyframes backdrop-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 @keyframes transition-in {

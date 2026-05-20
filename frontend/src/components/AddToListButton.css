@@ -10,3 +10,11 @@
   flex: 1;
   width: auto;
 }
+
+.btn-add.btn-remove {
+  background: var(--danger);
+}
+
+.btn-add.btn-remove:hover:not(:disabled) {
+  filter: brightness(1.1);
+}

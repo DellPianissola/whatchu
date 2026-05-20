@@ -70,7 +70,6 @@ model Movie {
   genres      String[] // Array de gêneros
   rating      Decimal? @db.Decimal(3, 1) // Nota de 0 a 10
   priority    Priority @default(MEDIUM)
-  isNew       Boolean  @default(false)
   watched     Boolean  @default(false)
   watchedAt   DateTime?
   externalId  String?  // ID da API externa (TMDB, etc.)

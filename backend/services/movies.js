@@ -98,7 +98,6 @@ const buildUpdateData = (payload) => {
   }
   if (payload.rating !== undefined) data.rating = normalizeRating(payload.rating)
   if (payload.priority !== undefined) data.priority = normalizePriority(payload.priority)
-  if (payload.isNew !== undefined) data.isNew = Boolean(payload.isNew)
 
   // `watched` toggle: marcar como assistido seta watchedAt automaticamente;
   // desmarcar limpa watchedAt. watchedAt explícito no payload sobrescreve.
@@ -175,7 +174,6 @@ export const createMovie = async (userId, payload) => {
       genres: Array.isArray(payload.genres) ? payload.genres : [],
       rating,
       priority,
-      isNew: Boolean(payload.isNew),
       externalId: payload.externalId || null,
       addedById: profile.id,
     },

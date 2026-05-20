@@ -5,7 +5,7 @@ import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import CardModal from '../components/CardModal.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
-import MovieListActions from '../components/MovieListActions.jsx'
+import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
@@ -92,11 +92,6 @@ const MyList = () => {
     }
   }
 
-  const handleRequestDelete = (id) => {
-    if (confirmingDeleteId === id) performDelete(id)
-    else                            setConfirmingDeleteId(id)
-  }
-
   const handleChangePriority = async (movie, priority) => {
     if (movie.priority === priority) return
     try {
@@ -125,38 +120,52 @@ const MyList = () => {
     return 'Nenhum item corresponde ao filtro selecionado.'
   })()
 
-  const renderMovieCard = (movie) => (
-    <div
-      key={movie.id}
-      data-card-id={movie.id}
-      className={confirmingDeleteId === movie.id ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
-    >
-      <MovieCard
-        item={movie}
-        watched={movie.watched}
-        onClick={() => {
-          if (confirmingDeleteId === movie.id) {
-            setConfirmingDeleteId(null)
-            return
+  const renderMovieCard = (movie) => {
+    const isConfirming = confirmingDeleteId === movie.id
+    return (
+      <div
+        key={movie.id}
+        data-card-id={movie.id}
+        className={isConfirming ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
+      >
+        <MovieCard
+          item={movie}
+          watched={movie.watched}
+          onClick={() => {
+            if (isConfirming) {
+              setConfirmingDeleteId(null)
+              return
+            }
+            setExpandedItemId(movie.id)
+          }}
+          posterOverlay={
+            <WatchedToggle watched={movie.watched} onToggle={() => handleToggleWatched(movie)} />
           }
-          setExpandedItemId(movie.id)
-        }}
-        posterOverlay={
-          <WatchedToggle watched={movie.watched} onToggle={() => handleToggleWatched(movie)} />
-        }
-        titleBadge={movie.isNew && <span className="new-badge">NOVO</span>}
-        actions={
-          <MovieListActions
-            movie={movie}
-            isConfirmingDelete={confirmingDeleteId === movie.id}
-            onRequestDelete={() => handleRequestDelete(movie.id)}
-            onRemove={() => performDelete(movie.id)}
-            onChangePriority={(p) => handleChangePriority(movie, p)}
-          />
-        }
-      />
-    </div>
-  )
+          actions={
+            <AddToListButton
+              inList
+              currentPriority={movie.priority}
+              onRemove={() => setConfirmingDeleteId(movie.id)}
+              onChangePriority={(p) => handleChangePriority(movie, p)}
+            />
+          }
+        />
+        {isConfirming && (
+          <div className="card-delete-overlay">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); performDelete(movie.id) }}
+              className="card-delete-icon"
+              title="Confirmar remoção"
+              aria-label="Confirmar remoção"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="mylist-page">
@@ -232,10 +241,9 @@ const MyList = () => {
             <WatchedToggle watched={expandedItem.watched} onToggle={() => handleToggleWatched(expandedItem)} />
           }
           actions={
-            <MovieListActions
-              movie={expandedItem}
-              isConfirmingDelete={confirmingDeleteId === expandedItem.id}
-              onRequestDelete={() => handleRequestDelete(expandedItem.id)}
+            <AddToListButton
+              inList
+              currentPriority={expandedItem.priority}
               onRemove={() => performDelete(expandedItem.id)}
               onChangePriority={(p) => handleChangePriority(expandedItem, p)}
             />

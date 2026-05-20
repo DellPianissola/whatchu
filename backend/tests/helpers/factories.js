@@ -62,7 +62,6 @@ export const createMovie = async (profileId, overrides = {}) => {
       type:       'MOVIE',
       priority:   'MEDIUM',
       genres:     [],
-      isNew:      false,
       watched:    false,
       ...overrides,
       // type e priority precisam ser uppercase (enum do Prisma)

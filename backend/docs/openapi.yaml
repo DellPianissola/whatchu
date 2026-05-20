@@ -69,7 +69,6 @@ paths:
               genres: ["Ficção Científica", "Drama"]
               rating: 8.6
               priority: "high"
-              isNew: false
               addedBy: "507f1f77bcf86cd799439012"
       responses:
         '201':
@@ -340,10 +339,6 @@ components:
           enum: [low, medium, high, urgent]
           description: Nível de prioridade
           example: high
-        isNew:
-          type: boolean
-          description: Indica se é um conteúdo novo
-          example: false
         addedBy:
           type: string
           description: ID do perfil que adicionou

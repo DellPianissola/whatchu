@@ -105,18 +105,69 @@
   align-items: stretch;
 }
 
-/* wrapper neutro: data-card-id é necessário pro click-outside do confirmingDelete */
-.ui-movie-card-wrap { display: contents; }
+/* wrapper precisa ser positioned pro overlay de confirmação ficar absolute em cima do card.
+   data-card-id é necessário pro click-outside do confirmingDelete. */
+.ui-movie-card-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
 
-.new-badge {
-  background: var(--accent);
-  color: var(--text-on-media);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  flex-shrink: 0;
-  white-space: nowrap;
+.ui-movie-card-wrap > .ui-movie-card {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Card armado pra deletar: blur + overlay + glow ── */
+.ui-movie-card-wrap--deleting .ui-movie-card {
+  box-shadow: 0 0 0 2px var(--danger), 0 8px 28px rgba(var(--danger-rgb), 0.45);
+}
+
+.ui-movie-card-wrap--deleting .ui-movie-card-poster,
+.ui-movie-card-wrap--deleting .ui-movie-card-header,
+.ui-movie-card-wrap--deleting .ui-movie-card-meta {
+  filter: blur(3px);
+  opacity: 0.35;
+  pointer-events: none;
+  transition: filter 0.25s, opacity 0.25s;
+}
+
+.card-delete-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  animation: card-delete-overlay-in 0.2s ease;
+}
+
+.card-delete-icon {
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 6px 18px rgba(var(--danger-rgb), 0.65));
+  animation: card-delete-icon-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.15s;
+}
+
+.card-delete-icon:hover {
+  transform: scale(1.08);
+}
+
+@keyframes card-delete-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes card-delete-icon-pop {
+  from { transform: scale(0.45); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 @media (max-width: 768px) {

@@ -13,7 +13,6 @@ export const buildMoviePayload = (externalItem, priority = DEFAULT_PRIORITY) => 
   rating:      externalItem.rating ?? null,
   externalId:  externalItem.externalId ?? null,
   priority,
-  isNew:       true,
 })
 
 export const findUserMovie = (userMovies, item) => {

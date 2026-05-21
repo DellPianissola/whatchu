@@ -49,13 +49,13 @@ export const useRichDetails = (item) => {
 
     const fetchDetails = async () => {
       try {
-        const response = normalizedType === 'SERIES'
+        const details = normalizedType === 'SERIES'
           ? await getSeriesDetails(item.externalId)
           : await getMovieDetails(item.externalId)
 
         if (!cancelled) {
-          detailsCache.set(cacheKey, response.data)
-          setRichDetails(response.data)
+          detailsCache.set(cacheKey, details)
+          setRichDetails(details)
         }
       } catch (error) {
         if (!cancelled) {

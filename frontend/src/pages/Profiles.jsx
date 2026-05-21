@@ -75,8 +75,8 @@ const Profiles = () => {
     formData.append('avatar', file)
     setLoading(true)
     try {
-      const res = await uploadAvatar(formData)
-      updateAuthProfile(res.data.profile)
+      const updatedProfile = await uploadAvatar(formData)
+      updateAuthProfile(updatedProfile)
       toast.success('Foto atualizada')
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Erro ao enviar foto'))

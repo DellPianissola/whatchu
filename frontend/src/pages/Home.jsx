@@ -44,10 +44,7 @@ const Home = () => {
         getExternalGenres('movie'),
         getExternalGenres('series'),
       ])
-      setGenresByType({
-        MOVIE:  movie.data.genres,
-        SERIES: series.data.genres,
-      })
+      setGenresByType({ MOVIE: movie, SERIES: series })
     } catch (error) {
       console.error('Erro ao carregar gêneros:', error)
     }
@@ -69,13 +66,13 @@ const Home = () => {
     setSelectedMovie(null)
     try {
       await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
-      const response = await drawMovie({
+      const movie = await drawMovie({
         types: filterTypes,
         priorities: filterPriorities,
         genres: filterGenres,
         ignoreWatched,
       })
-      setSelectedMovie(response.data.movie)
+      setSelectedMovie(movie)
     } catch (error) {
       const code = error.response?.data?.code
       if (code === ERROR_CODES.EMPTY_LIST) {
@@ -95,12 +92,12 @@ const Home = () => {
     setSelectedMovie(null)
     try {
       await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
-      const response = await luckyDraw({
+      const movie = await luckyDraw({
         types: filterTypes,
         genres: filterGenres,
       })
-      if (response.data.movie) {
-        setSelectedMovie(response.data.movie)
+      if (movie) {
+        setSelectedMovie(movie)
       } else {
         toast.info('Não rolou achar nada com esses filtros. Tente outros gêneros ou tipos.')
       }

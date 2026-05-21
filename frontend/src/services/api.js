@@ -92,36 +92,28 @@ api.interceptors.response.use(
   }
 )
 
-// Health check
-export const checkHealth = () => api.get('/health')
+// Health
+export const checkHealth = async () => (await api.get('/health')).data
 
 // Movies
-export const getMovies = (params = {}) => api.get('/movies', { params })
-export const getMovieById = (id) => api.get(`/movies/${id}`)
-export const createMovie = (data) => api.post('/movies', data)
-export const updateMovie = (id, data) => api.put(`/movies/${id}`, data)
-export const deleteMovie = (id) => api.delete(`/movies/${id}`)
-export const drawMovie = (filters = {}) => api.post('/movies/draw', filters)
+export const getMovies     = async (params = {})   => (await api.get('/movies', { params })).data.movies
+export const createMovie   = async (data)          => (await api.post('/movies', data)).data.movie
+export const updateMovie   = async (id, data)      => (await api.put(`/movies/${id}`, data)).data.movie
+export const deleteMovie   = async (id)            => { await api.delete(`/movies/${id}`) }
+export const drawMovie     = async (filters = {})  => (await api.post('/movies/draw', filters)).data.movie
 
-// Auth
-export const login = (identifier, password) => api.post('/auth/login', { identifier, password })
-export const register = (email, username, password, birthDate) =>
-  api.post('/auth/register', { email, username, password, birthDate })
-export const getMe = () => api.get('/auth/me')
-// verifyEmail é POST (e não GET) pra evitar consumo de token por scanners de email / pré-fetch.
-export const verifyEmail = (token) => api.post('/auth/verify-email', { token })
-export const resendVerificationPublic = (email) => api.post('/auth/resend-verification-public', { email })
-export const requestPasswordReset = (email) => api.post('/auth/request-password-reset', { email })
-export const resetPassword = (token, password) => api.post('/auth/reset-password', { token, password })
+// Auth (público — chamadas autenticadas vivem no AuthContext via api.post direto)
+export const resendVerificationPublic = async (email)          => { await api.post('/auth/resend-verification-public', { email }) }
+export const requestPasswordReset     = async (email)          => { await api.post('/auth/request-password-reset', { email }) }
+export const resetPassword            = async (token, password) => { await api.post('/auth/reset-password', { token, password }) }
 
 // Profiles
-export const getProfiles = () => api.get('/profiles')
-export const createProfile = (data) => api.post('/profiles', data)
-export const updateProfile = (id, data) => api.put('/profiles', data)
-export const markOnboarded = () => api.post('/profiles/onboarded')
-export const changeEmail = (email) => api.put('/profiles/email', { email })
-export const uploadAvatar = (formData) =>
-  api.put('/profiles/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const createProfile  = async (data)     => { await api.post('/profiles', data) }
+export const updateProfile  = async (id, data) => { await api.put('/profiles', data) }
+export const markOnboarded  = async ()         => (await api.post('/profiles/onboarded')).data.profile
+export const changeEmail    = async (email)    => { await api.put('/profiles/email', { email }) }
+export const uploadAvatar   = async (formData) =>
+  (await api.put('/profiles/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data.profile
 
 // External APIs
 const buildExtParams = ({ page, sortBy, genres } = {}) => {
@@ -132,26 +124,23 @@ const buildExtParams = ({ page, sortBy, genres } = {}) => {
   return params
 }
 
-export const searchExternal = (query, type, page = 1, opts = {}) =>
-  api.get('/external/search', {
+export const searchExternal = async (query, type, page = 1, opts = {}) =>
+  (await api.get('/external/search', {
     params: { q: query, type, ...buildExtParams({ page, ...opts }) },
-  })
+  })).data
 
-export const getPopularMovies = (page = 1, opts = {}) =>
-  api.get('/external/movies', { params: buildExtParams({ page, ...opts }) })
+export const getPopularMovies = async (page = 1, opts = {}) =>
+  (await api.get('/external/movies', { params: buildExtParams({ page, ...opts }) })).data
 
-export const getPopularSeries = (page = 1, opts = {}) =>
-  api.get('/external/series', { params: buildExtParams({ page, ...opts }) })
+export const getPopularSeries = async (page = 1, opts = {}) =>
+  (await api.get('/external/series', { params: buildExtParams({ page, ...opts }) })).data
 
-export const getExternalGenres = (type) =>
-  api.get('/external/genres', { params: { type } })
+export const getExternalGenres = async (type) =>
+  (await api.get('/external/genres', { params: { type } })).data.genres
 
-export const luckyDraw = (filters = {}) => api.post('/external/lucky', filters)
+export const luckyDraw = async (filters = {}) => (await api.post('/external/lucky', filters)).data.movie
 
-export const getMovieDetails = (id) =>
-  api.get(`/external/movies/${id}`)
-
-export const getSeriesDetails = (id) =>
-  api.get(`/external/series/${id}`)
+export const getMovieDetails  = async (id) => (await api.get(`/external/movies/${id}`)).data
+export const getSeriesDetails = async (id) => (await api.get(`/external/series/${id}`)).data
 
 export default api

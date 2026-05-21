@@ -26,20 +26,13 @@ export const findUserMovie = (userMovies, item) => {
   return userMovies.find((m) => m.title === item.title && m.type === type) || null
 }
 
-export const addUserMovie = async (externalItem, priority = DEFAULT_PRIORITY) => {
-  const payload = buildMoviePayload(externalItem, priority)
-  const response = await createMovie(payload)
-  return response.data.movie
-}
+export const addUserMovie = (externalItem, priority = DEFAULT_PRIORITY) =>
+  createMovie(buildMoviePayload(externalItem, priority))
 
 export const removeUserMovie = (id) => deleteMovie(id)
 
-export const changeUserMoviePriority = async (id, priority) => {
-  const response = await updateMovie(id, { priority })
-  return response.data.movie
-}
+export const changeUserMoviePriority = (id, priority) =>
+  updateMovie(id, { priority })
 
-export const toggleUserMovieWatched = async (movie) => {
-  const response = await updateMovie(movie.id, { watched: !movie.watched })
-  return response.data.movie
-}
+export const toggleUserMovieWatched = (movie) =>
+  updateMovie(movie.id, { watched: !movie.watched })

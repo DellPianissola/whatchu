@@ -121,7 +121,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   useEffect(() => {
     let cancelled = false
     getExternalGenres(type)
-      .then((response) => { if (!cancelled) setAvailableGenres(response.data.genres || []) })
+      .then((genres) => { if (!cancelled) setAvailableGenres(genres || []) })
       .catch((error) => {
         console.error('Erro ao carregar gêneros:', error)
         if (!cancelled) setAvailableGenres([])
@@ -142,15 +142,15 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       setLoading(true)
       try {
         const q = debouncedQuery.trim()
-        const response = q
+        const data = q
           ? await searchExternal(q, type, currentPage)
           : await (type === 'series' ? getPopularSeries : getPopularMovies)(currentPage, {
               sortBy: sortBy || undefined,
               genres: selectedGenres,
             })
         if (cancelled) return
-        setResults(response.data.results || [])
-        setTotalPages(response.data.totalPages || 1)
+        setResults(data.results || [])
+        setTotalPages(data.totalPages || 1)
       } catch (error) {
         if (cancelled) return
         console.error('Erro ao buscar:', error)

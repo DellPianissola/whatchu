@@ -20,8 +20,8 @@ const Onboarding = () => {
 
   const finish = async ({ withTransition = true } = {}) => {
     try {
-      const response = await markOnboarded()
-      updateProfile(response.data.profile)
+      const updatedProfile = await markOnboarded()
+      updateProfile(updatedProfile)
 
       if (withTransition) {
         setTransitioning(true)

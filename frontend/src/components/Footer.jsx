@@ -14,7 +14,7 @@ let apiVersionPromise = null
 const getApiVersion = () => {
   if (apiVersionPromise) return apiVersionPromise
   apiVersionPromise = checkHealth()
-    .then(({ data }) => data?.version ?? null)
+    .then((data) => data?.version ?? null)
     .catch(() => null)
   return apiVersionPromise
 }

@@ -33,8 +33,8 @@ export const UserMoviesProvider = ({ children }) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await getMovies()
-      setUserMovies(response.data.movies || [])
+      const movies = await getMovies()
+      setUserMovies(movies || [])
     } catch (err) {
       setError(err)
       setUserMovies([])

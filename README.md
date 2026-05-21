@@ -30,22 +30,41 @@ Plataforma multi-usuário para gerenciar listas de filmes e séries. Cada usuár
 whatchu/
 ├── frontend/           # React + Vite
 │   └── src/
-│       ├── pages/
-│       ├── components/
-│       ├── services/
-│       └── contexts/
+│       ├── pages/         # rotas (Home, Search, MyList, Profiles, Onboarding, auth)
+│       ├── components/    # design system (Modal, MovieCard, FormField, ...) — CSS co-located
+│       ├── contexts/      # AuthContext, UserMoviesContext, NotificationContext
+│       ├── hooks/         # custom hooks (useClickOutside, useDebounce, useMovieActions, ...)
+│       ├── services/      # api.js (axios), userMovies.js, analytics.js
+│       ├── utils/         # helpers puros (content, validation, providers, ageRating)
+│       └── constants/     # routes, storageKeys, errorCodes, ui (timings/limites)
 ├── backend/            # Node.js + Express
 │   ├── routes/
-│   ├── services/
+│   ├── services/         # inclui services/lottery/ (sorteio modular)
 │   ├── middleware/
 │   ├── lib/
 │   ├── config/
 │   ├── tests/
-│   └── prisma/
-├── docker-compose.yml
-├── docker-compose.prod.yml
+│   └── prisma/           # schema + migrations
+├── docker-compose.yml      # dev (bind mounts, hot reload)
+├── docker-compose.prod.yml # prod (imagens buildadas, sem mounts)
 └── README.md
 ```
+
+> Detalhes da arquitetura do frontend (camadas de estado, hooks reutilizáveis, design tokens, convenções de CSS) vivem no [`CLAUDE.md`](./CLAUDE.md) — seção **Frontend Architecture**.
+
+## Versioning
+
+A versão do app vive em **5 arquivos** que devem ser atualizados juntos. Formato: `MAJOR.MINOR.PATCH-alpha` enquanto pré-1.0.
+
+| Arquivo | O que atualizar |
+|---|---|
+| `package.json` (raiz) | campo `version` |
+| `frontend/package.json` | campo `version` (consumido pelo Vite em build, vira `__APP_VERSION__`, exibido no Footer) |
+| `frontend/package-lock.json` | `version` no topo + dentro de `packages.""` |
+| `backend/package.json` | campo `version` (exposto via `/health`) |
+| `backend/package-lock.json` | `version` no topo + dentro de `packages.""` |
+
+O Footer mostra ambas: **frontend** (build time) e **API** (runtime via `/health`, com cache de promise pra não refetch a cada navegação).
 
 ## Como rodar
 

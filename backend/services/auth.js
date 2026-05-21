@@ -9,6 +9,7 @@ import {
 } from '../lib/httpErrors.js'
 import { validatePassword } from '../lib/passwordPolicy.js'
 import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
+import { PUBLIC_USER_FIELDS } from '../lib/userSelectors.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -66,15 +67,6 @@ const upsertVerificationToken = async (userId, type) => {
   await prisma.verificationToken.deleteMany({ where: { userId, type } })
   await prisma.verificationToken.create({ data: { userId, token, type, expiresAt } })
   return token
-}
-
-const PUBLIC_USER_FIELDS = {
-  id: true,
-  email: true,
-  username: true,
-  birthDate: true,
-  isAdmin: true,
-  createdAt: true,
 }
 
 // Squat protection: múltiplos Pendings paralelos com mesmo email coexistem;

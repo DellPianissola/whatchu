@@ -11,6 +11,7 @@ const FormField = ({
   error,
   hint,
   required = false,
+  showRequiredMark = true,
   disabled = false,
   autoComplete,
   className = '',
@@ -29,7 +30,7 @@ const FormField = ({
         <div className="ui-field-label-row">
           <label htmlFor={fieldId} className="ui-field-label">
             {label}
-            {required && <span className="ui-field-required" aria-hidden="true"> *</span>}
+            {required && showRequiredMark && <span className="ui-field-required" aria-hidden="true"> *</span>}
           </label>
           {labelAddon && <span className="ui-field-label-addon">{labelAddon}</span>}
         </div>

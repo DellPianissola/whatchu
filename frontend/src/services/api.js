@@ -139,6 +139,9 @@ export const getPopularSeries = async (page = 1, opts = {}) =>
 export const getExternalGenres = async (type) =>
   (await api.get('/external/genres', { params: { type } })).data.genres
 
+export const getStreamingProviders = async () =>
+  (await api.get('/external/streaming-providers')).data.providers
+
 export const luckyDraw = async (filters = {}) => (await api.post('/external/lucky', filters)).data.movie
 
 export const getMovieDetails  = async (id) => (await api.get(`/external/movies/${id}`)).data

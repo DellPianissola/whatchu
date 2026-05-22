@@ -1,5 +1,6 @@
 import tmdbService from './tmdb.js'
 import { weightedPick } from './lottery/picker.js'
+import { resolveTmdbIds } from '../lib/streamingProviders.js'
 import { ValidationError } from '../lib/httpErrors.js'
 
 // Sorteia dentro do top ~400 populares de cada tipo: variedade sem descer
@@ -7,8 +8,8 @@ import { ValidationError } from '../lib/httpErrors.js'
 const PAGE_CAP = 20
 
 const TYPE_TO_FETCHER = {
-  MOVIE:  ({ page, genres }) => tmdbService.discover('movie', { page, sortBy: 'popularity', genres }),
-  SERIES: ({ page, genres }) => tmdbService.discover('tv',    { page, sortBy: 'popularity', genres }),
+  MOVIE:  (opts) => tmdbService.discover('movie', { sortBy: 'popularity', ...opts }),
+  SERIES: (opts) => tmdbService.discover('tv',    { sortBy: 'popularity', ...opts }),
 }
 
 const VALID_TYPES = Object.keys(TYPE_TO_FETCHER)
@@ -24,28 +25,28 @@ export const weightByRating = (item) => {
   return delta * delta + 1
 }
 
-const fetchCandidates = async (type, genres) => {
+const fetchCandidates = async (type, opts) => {
   const fetcher = TYPE_TO_FETCHER[type]
   const page    = randomPage()
-  let { results } = await fetcher({ page, genres })
+  let { results } = await fetcher({ ...opts, page })
 
-  // Gênero de nicho pode ter menos páginas que o cap — cai pra 1.
+  // Gênero/streaming de nicho pode ter menos páginas que o cap — cai pra 1.
   if (results.length === 0 && page > 1) {
-    ({ results } = await fetcher({ page: 1, genres }))
+    ({ results } = await fetcher({ ...opts, page: 1 }))
   }
   return results
 }
 
-const safeFetch = async (type, genres) => {
+const safeFetch = async (type, opts) => {
   try {
-    return await fetchCandidates(type, genres)
+    return await fetchCandidates(type, opts)
   } catch (error) {
     console.error(`Lucky: falha ao buscar ${type}:`, error.message)
     return []
   }
 }
 
-export const luckyDraw = async ({ types, genres = [] } = {}) => {
+export const luckyDraw = async ({ types, genres = [], providers = [] } = {}) => {
   const requested = Array.isArray(types) && types.length > 0 ? types : VALID_TYPES
   const validTypes = requested.filter(t => VALID_TYPES.includes(t))
 
@@ -53,8 +54,11 @@ export const luckyDraw = async ({ types, genres = [] } = {}) => {
     throw new ValidationError('Nenhum tipo válido informado (use MOVIE ou SERIES)')
   }
 
+  const providerTmdbIds = resolveTmdbIds(providers)
+  const fetchOpts = { genres, providers: providerTmdbIds }
+
   const candidatesByType = await Promise.all(
-    validTypes.map(t => safeFetch(t, genres))
+    validTypes.map(t => safeFetch(t, fetchOpts))
   )
   const candidates = candidatesByType.flat()
 

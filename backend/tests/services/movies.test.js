@@ -227,5 +227,19 @@ describe('movies service', () => {
       const result = await drawForUser(user.id)
       expect(result.title).toBe('Assistido')
     })
+
+    it('filtra por providers via keys de streaming', async () => {
+      await createMovieFactory(profile.id, { title: 'OnNetflix', providers: [8] })
+      await createMovieFactory(profile.id, { title: 'OnDisney',  providers: [337] })
+
+      const result = await drawForUser(user.id, { providers: ['netflix'] })
+      expect(result.title).toBe('OnNetflix')
+    })
+
+    it('keys de streaming inválidas são ignoradas (sem aplicar filtro)', async () => {
+      await createMovieFactory(profile.id, { title: 'Any', providers: [] })
+      const result = await drawForUser(user.id, { providers: ['fake-streaming'] })
+      expect(result.title).toBe('Any')
+    })
   })
 })

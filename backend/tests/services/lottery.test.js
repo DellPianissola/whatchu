@@ -93,4 +93,27 @@ describe('lottery: drawMovie', () => {
     expect(result.movie.addedBy).toBeDefined()
     expect(result.movie.addedBy.id).toBe(profile.id)
   })
+
+  it('filtro de providers só inclui movies com providers que batem', async () => {
+    await createMovie(profile.id, { title: 'Netflix',  providers: [8] })
+    await createMovie(profile.id, { title: 'Disney',   providers: [337] })
+    await createMovie(profile.id, { title: 'NaoVisto', providers: [] })
+
+    const result = await drawMovie(profile.id, { providerTmdbIds: [8, 1796] })
+    expect(result.movie.title).toBe('Netflix')
+  })
+
+  it('NO_MATCH quando providers não batem com nenhum movie', async () => {
+    await createMovie(profile.id, { title: 'Disney', providers: [337] })
+    const result = await drawMovie(profile.id, { providerTmdbIds: [8] })
+    expect(result.movie).toBeNull()
+    expect(result.reason).toBe('NO_MATCH')
+  })
+
+  it('movies sem providers (manual ou backfill pendente) ficam fora do filtro de streaming', async () => {
+    await createMovie(profile.id, { title: 'SemProvider', providers: [] })
+    const result = await drawMovie(profile.id, { providerTmdbIds: [8] })
+    expect(result.movie).toBeNull()
+    expect(result.reason).toBe('NO_MATCH')
+  })
 })

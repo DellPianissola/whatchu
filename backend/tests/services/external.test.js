@@ -109,7 +109,7 @@ describe('listGenres', () => {
 
 describe('getDetails', () => {
   it('lança ValidationError para tipo desconhecido', async () => {
-    await expect(getDetails('anime', '123')).rejects.toThrow(ValidationError)
+    await expect(getDetails('invalid', '123')).rejects.toThrow(ValidationError)
     await expect(getDetails('livro', '123')).rejects.toThrow(ValidationError)
   })
 

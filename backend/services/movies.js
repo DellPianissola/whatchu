@@ -1,9 +1,15 @@
 import { MovieType, Priority } from '@prisma/client'
 import { prisma } from '../config/database.js'
 import { drawMovie as drawFromLottery } from './lottery/index.js'
+import tmdbService from './tmdb.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
 import { toIntOrNull } from '../lib/parsers.js'
 import { INCLUDE_ADDED_BY } from '../lib/prismaIncludes.js'
+import {
+  extractStreamingProviderIds,
+  STREAMING_PROVIDER_KEYS,
+  resolveTmdbIds,
+} from '../lib/streamingProviders.js'
 import {
   ValidationError,
   NotFoundError,
@@ -58,6 +64,21 @@ const ensureNoTitleDuplicate = async (addedById, { title, type }) => {
   })
   if (byTitle) {
     throw new ConflictError('Este filme já está na sua lista')
+  }
+}
+
+const safeFetchProviders = async (type, externalId) => {
+  try {
+    const details = type === MovieType.SERIES
+      ? await tmdbService.getSeriesDetails(externalId)
+      : await tmdbService.getMovieDetails(externalId)
+    return {
+      providers: extractStreamingProviderIds(details.watchProviders),
+      providersUpdatedAt: new Date(),
+    }
+  } catch (err) {
+    console.error(`Falha ao buscar providers TMDB (${type} ${externalId}):`, err.message)
+    return { providers: [], providersUpdatedAt: null }
   }
 }
 
@@ -151,6 +172,10 @@ export const createMovie = async (userId, payload) => {
     await ensureNoTitleDuplicate(profile.id, { title: payload.title, type })
   }
 
+  const providerData = payload.externalId
+    ? await safeFetchProviders(type, payload.externalId.toString())
+    : { providers: [], providersUpdatedAt: null }
+
   try {
     return await prisma.movie.create({
       data: {
@@ -164,6 +189,8 @@ export const createMovie = async (userId, payload) => {
         rating,
         priority,
         externalId: payload.externalId ? payload.externalId.toString() : null,
+        providers: providerData.providers,
+        providersUpdatedAt: providerData.providersUpdatedAt,
         addedById: profile.id,
       },
       include: INCLUDE_ADDED_BY,
@@ -207,6 +234,11 @@ const normalizeDrawFilters = (filters = {}) => {
   }
   if (Array.isArray(filters.priorities) && filters.priorities.length > 0) {
     out.priorities = filters.priorities.map((p) => p.toUpperCase()).filter((p) => VALID_PRIORITIES.includes(p))
+  }
+  if (Array.isArray(filters.providers) && filters.providers.length > 0) {
+    const validKeys = filters.providers.filter((k) => STREAMING_PROVIDER_KEYS.includes(k))
+    const tmdbIds = resolveTmdbIds(validKeys)
+    if (tmdbIds.length > 0) out.providerTmdbIds = tmdbIds
   }
   if (filters.ignoreWatched) {
     out.ignoreWatched = true

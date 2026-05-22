@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
+import { drawMovie, luckyDraw, getExternalGenres, getStreamingProviders } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
@@ -30,12 +30,15 @@ const Home = () => {
   const [filterTypes, setFilterTypes] = useState(ALL_TYPES)
   const [filterPriorities, setFilterPriorities] = useState([])
   const [filterGenres, setFilterGenres] = useState([])
+  const [filterProviders, setFilterProviders] = useState([])
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
+  const [streamingProviders, setStreamingProviders] = useState([])
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
     loadGenres()
+    loadStreamingProviders()
   }, [])
 
   const loadGenres = async () => {
@@ -50,6 +53,14 @@ const Home = () => {
     }
   }
 
+  const loadStreamingProviders = async () => {
+    try {
+      setStreamingProviders(await getStreamingProviders())
+    } catch (error) {
+      console.error('Erro ao carregar streamings:', error)
+    }
+  }
+
   const stats = useMemo(() => ({
     movies: userMovies.filter((m) => m.type === 'MOVIE').length,
     series: userMovies.filter((m) => m.type === 'SERIES').length,
@@ -61,6 +72,11 @@ const Home = () => {
     return [...set].sort()
   }, [filterTypes, genresByType])
 
+  const streamingOptions = useMemo(
+    () => streamingProviders.map(p => ({ value: p.key, label: p.name })),
+    [streamingProviders]
+  )
+
   const handleDraw = async () => {
     setIsDrawing(true)
     setSelectedMovie(null)
@@ -70,6 +86,7 @@ const Home = () => {
         types: filterTypes,
         priorities: filterPriorities,
         genres: filterGenres,
+        providers: filterProviders,
         ignoreWatched,
       })
       setSelectedMovie(movie)
@@ -95,6 +112,7 @@ const Home = () => {
       const movie = await luckyDraw({
         types: filterTypes,
         genres: filterGenres,
+        providers: filterProviders,
       })
       if (movie) {
         setSelectedMovie(movie)
@@ -178,6 +196,17 @@ const Home = () => {
                     options={availableGenres}
                     value={filterGenres}
                     onChange={setFilterGenres}
+                  />
+                )}
+                {streamingOptions.length > 0 && (
+                  <Dropdown
+                    multi
+                    trigger="pill"
+                    align="left"
+                    label="Streaming"
+                    options={streamingOptions}
+                    value={filterProviders}
+                    onChange={setFilterProviders}
                   />
                 )}
               </div>

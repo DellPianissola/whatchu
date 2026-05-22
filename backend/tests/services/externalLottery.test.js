@@ -74,6 +74,35 @@ describe('luckyDraw', () => {
     )
   })
 
+  it('resolve provider keys pra tmdbIds e passa pro discover', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
+
+    await luckyDraw({ types: ['MOVIE'], providers: ['netflix', 'prime'] })
+
+    const [, opts] = tmdbService.discover.mock.calls[0]
+    expect(opts.providers).toEqual([8, 1796, 9, 10, 119, 2100])
+  })
+
+  it('providers vazio chega como [] no discover (sem with_watch_providers)', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
+
+    await luckyDraw({ types: ['MOVIE'] })
+
+    expect(tmdbService.discover).toHaveBeenCalledWith(
+      'movie',
+      expect.objectContaining({ providers: [] })
+    )
+  })
+
+  it('provider key inválida é filtrada silenciosamente', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
+
+    await luckyDraw({ types: ['MOVIE'], providers: ['netflix', 'fake-streaming'] })
+
+    const [, opts] = tmdbService.discover.mock.calls[0]
+    expect(opts.providers).toEqual([8, 1796])
+  })
+
   it('devolve um item quando há candidatos', async () => {
     const movie = mkItem({ id: 42, title: 'Sorteado' })
     tmdbService.discover.mockResolvedValue(tmdbPage([movie]))
@@ -137,7 +166,7 @@ describe('luckyDraw', () => {
   it('ignora tipos inválidos no input mas mantém os válidos', async () => {
     tmdbService.discover.mockResolvedValue(tmdbPage([mkItem()]))
 
-    await luckyDraw({ types: ['MOVIE', 'ANIME', 'GARBAGE'] })
+    await luckyDraw({ types: ['MOVIE', 'GARBAGE', 'WHATEVER'] })
 
     expect(tmdbService.discover).toHaveBeenCalledWith('movie', expect.any(Object))
     expect(tmdbService.discover).not.toHaveBeenCalledWith('tv', expect.any(Object))

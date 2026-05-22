@@ -12,6 +12,15 @@ const LANGUAGE            = 'pt-BR'
 const WATCH_REGION         = 'BR'
 const CERTIFICATION_REGION = 'BR'
 
+export const MONETIZATION_TYPES = {
+  FLATRATE: 'flatrate',
+  FREE:     'free',
+  ADS:      'ads',
+  RENT:     'rent',
+  BUY:      'buy',
+}
+const DEFAULT_MONETIZATION = [MONETIZATION_TYPES.FLATRATE]
+
 const toUpstreamError = makeUpstreamErrorFactory('TMDB')
 
 const roundRating = (v) => (v ? parseFloat(v.toFixed(1)) : null)
@@ -103,7 +112,13 @@ class TMDBService {
     return map[sortBy] || 'popularity.desc'
   }
 
-  async discover(type = 'movie', { page = 1, sortBy = 'popularity', genres = [] } = {}) {
+  async discover(type = 'movie', {
+    page = 1,
+    sortBy = 'popularity',
+    genres = [],
+    providers = [],
+    monetizationTypes = DEFAULT_MONETIZATION,
+  } = {}) {
     const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie'
     const { realGenres, extraTmdbGenreIds, tmdbOriginCountries } = extractVirtualGenres(genres)
     const realGenreIds = await this.getGenreIdsFromNames(realGenres, type)
@@ -118,6 +133,12 @@ class TMDBService {
     if (tmdbOriginCountries.length) params.with_origin_country  = tmdbOriginCountries.join(',')
     // Sort por nota com piso de votos — evita "10.0 com 1 voto" no topo.
     if (sortBy === 'rating_desc' || sortBy === 'rating_asc') params['vote_count.gte'] = 200
+    // Pipe (`|`) = OR no TMDB — item disponível em qualquer um dos providers selecionados.
+    if (providers.length) {
+      params.with_watch_providers          = providers.join('|')
+      params.watch_region                  = WATCH_REGION
+      params.with_watch_monetization_types = monetizationTypes.join('|')
+    }
 
     const data    = await this._request(endpoint, params, 'discover do TMDB')
     const results = await this.formatResults(data.results, type)

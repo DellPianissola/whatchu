@@ -2,6 +2,7 @@ import express from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import * as externalService from '../services/external.js'
 import { luckyDraw } from '../services/externalLottery.js'
+import { publicStreamingProviders } from '../lib/streamingProviders.js'
 
 const router = express.Router()
 
@@ -19,10 +20,15 @@ router.get('/genres', asyncHandler(async (req, res) => {
 }))
 
 // POST /api/external/lucky - Sorteia um item popular de fora da lista
-// Body: { types?: ('MOVIE'|'SERIES')[], genres?: string[] }
+// Body: { types?: ('MOVIE'|'SERIES')[], genres?: string[], providers?: string[] }
 router.post('/lucky', asyncHandler(async (req, res) => {
   const result = await luckyDraw(req.body || {})
   res.json(result)
+}))
+
+// GET /api/external/streaming-providers - Lista curada de streamings pro filtro do sorteio
+router.get('/streaming-providers', asyncHandler(async (_req, res) => {
+  res.json({ providers: publicStreamingProviders() })
 }))
 
 // GET /api/external/movies - Lista filmes (discover) com sort/gênero

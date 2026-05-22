@@ -48,6 +48,7 @@ const Login = () => {
           onChange={(e) => setIdentifier(e.target.value)}
           placeholder="seu@email.com ou seu_usuario"
           required
+          showRequiredMark={false}
           disabled={loading}
           autoComplete="username"
         />

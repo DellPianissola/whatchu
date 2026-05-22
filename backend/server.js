@@ -16,19 +16,28 @@ import externalRoutes from './routes/external.js'
 dotenv.config()
 
 const app = express()
-const PORT = process.env.PORT || 5000
-const IS_PROD = process.env.NODE_ENV === 'production'
+const PORT        = process.env.PORT || 5000
+const IS_PROD     = process.env.NODE_ENV === 'production'
+const TRUST_PROXY = process.env.TRUST_PROXY ?? '1'
+const JSON_LIMIT  = process.env.JSON_BODY_LIMIT || '100kb'
 
-app.set('trust proxy', 1)
+if (IS_PROD && !process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN é obrigatório em produção')
+}
 
-app.use(helmet())
+app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? parseInt(TRUST_PROXY, 10) : TRUST_PROXY)
+
+app.use(helmet({
+  contentSecurityPolicy: IS_PROD ? undefined : false,
+  hsts: IS_PROD ? { maxAge: 15552000, includeSubDomains: true, preload: true } : false,
+}))
 
 app.use(cors({
   origin: IS_PROD ? process.env.CORS_ORIGIN : '*',
   credentials: true,
 }))
 
-app.use(express.json())
+app.use(express.json({ limit: JSON_LIMIT }))
 
 if (!IS_PROD) {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

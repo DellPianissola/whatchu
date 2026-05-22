@@ -8,9 +8,10 @@ RUN apk add --no-cache openssl libc6-compat netcat-openbsd
 # Prisma CLI global
 RUN npm install -g prisma
 
-# Dependências (cache layer separado)
+# Dependências (cache layer separado). npm ci falha se package-lock.json
+# divergir de package.json — drift de dep aparece no build, não em runtime.
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 # Schema + Prisma Client
 COPY prisma ./prisma

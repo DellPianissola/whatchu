@@ -49,7 +49,6 @@ class TMDBService {
       })
       return response.data
     } catch (error) {
-      console.error(`Erro em ${operation}:`, describeAxiosError(error))
       throw toUpstreamError(error, operation)
     }
   }

@@ -19,15 +19,16 @@ npx prisma generate
 
 echo "[start] Aplicando migrations..."
 
-if [ -d "prisma/migrations" ] && [ -n "$(ls -A prisma/migrations 2>/dev/null)" ]; then
-  npx prisma migrate deploy
-else
-  echo "[start] Sem migrations — usando db push (criação inicial)"
-  npx prisma db push --accept-data-loss
+if [ ! -d "prisma/migrations" ] || [ -z "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+  echo "[start] ERRO: prisma/migrations vazio. Build do repo está quebrado." >&2
+  exit 1
 fi
+npx prisma migrate deploy
 
-echo "[start] Rodando seed (idempotente)..."
-node prisma/seed.js || echo "[start] Seed falhou ou foi pulado"
+if [ "$RUN_SEED" = "true" ]; then
+  echo "[start] Rodando seed (idempotente)..."
+  node prisma/seed.js || echo "[start] Seed falhou ou foi pulado"
+fi
 
 # Em dev usa node --watch (hot reload). Em prod, exec direto.
 if [ "$NODE_ENV" = "production" ]; then

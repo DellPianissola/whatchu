@@ -18,6 +18,7 @@ import { HttpError } from '../lib/httpErrors.js'
 export const errorHandler = (err, req, res, _next) => {
   // Erro tipado da nossa lib — confiável, devolve direto.
   if (err instanceof HttpError) {
+    if (err.statusCode >= 500) console.error(`[${err.name}]`, err.message, err.details ?? '')
     const body = { error: err.message }
     if (err.code) body.code = err.code
     if (err.details) body.details = err.details

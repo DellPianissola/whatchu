@@ -2,15 +2,33 @@ import axios from 'axios'
 import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
 import { extractVirtualGenres, VIRTUAL_GENRE_NAMES } from '../lib/virtualGenres.js'
 
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+const TMDB_BASE_URL       = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
-const TMDB_LOGO_BASE_URL = 'https://image.tmdb.org/t/p/w92'
+const TMDB_LOGO_BASE_URL  = 'https://image.tmdb.org/t/p/w92'
+const TMDB_MAX_PAGES      = 500
+const LANGUAGE            = 'pt-BR'
 
 // BR-only por enquanto; se virar multi-país, passa pra config de perfil.
-const WATCH_REGION = 'BR'
+const WATCH_REGION         = 'BR'
 const CERTIFICATION_REGION = 'BR'
 
 const toUpstreamError = makeUpstreamErrorFactory('TMDB')
+
+const roundRating = (v) => (v ? parseFloat(v.toFixed(1)) : null)
+
+const yearFromDate = (d) => (d ? new Date(d).getFullYear() : null)
+
+const trailerKey = (videos) =>
+  videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null
+
+const castNames = (credits, limit = 5) =>
+  credits?.cast?.slice(0, limit).map(a => a.name) || []
+
+const paginated = (data, results) => ({
+  results,
+  totalPages:   Math.min(data.total_pages || 1, TMDB_MAX_PAGES),
+  totalResults: data.total_results || 0,
+})
 
 class TMDBService {
   constructor() {
@@ -18,48 +36,49 @@ class TMDBService {
     if (!this.apiKey) {
       console.warn('⚠️ TMDB_API_KEY não configurada. Algumas funcionalidades podem não funcionar.')
     }
-    this.genreCache = {
-      movie: null,
-      tv: null,
+    this.genreCache = { movie: null, tv: null }
+  }
+
+  async _request(endpoint, params, operation) {
+    if (!this.apiKey) {
+      throw new Error('TMDB API Key não configurada')
+    }
+    try {
+      const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
+        params: { api_key: this.apiKey, language: LANGUAGE, ...params },
+      })
+      return response.data
+    } catch (error) {
+      console.error(`Erro em ${operation}:`, describeAxiosError(error))
+      throw toUpstreamError(error, operation)
     }
   }
 
   async getGenres(type = 'movie') {
-    if (this.genreCache[type]) {
-      return this.genreCache[type]
-    }
+    if (this.genreCache[type]) return this.genreCache[type]
 
     try {
       const endpoint = type === 'movie' ? '/genre/movie/list' : '/genre/tv/list'
-      const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
-        params: {
-          api_key: this.apiKey,
-          language: 'pt-BR',
-        },
-      })
-
-      this.genreCache[type] = response.data.genres.reduce((acc, genre) => {
-        acc[genre.id] = genre.name
+      const data = await this._request(endpoint, {}, `genres ${type}`)
+      this.genreCache[type] = data.genres.reduce((acc, g) => {
+        acc[g.id] = g.name
         return acc
       }, {})
-
       return this.genreCache[type]
-    } catch (error) {
+    } catch {
       // Falha em silêncio: search funciona sem nomes de gêneros.
-      console.error('Erro ao buscar gêneros:', describeAxiosError(error))
       return {}
     }
   }
 
   async mapGenreIds(genreIds, type = 'movie') {
-    if (!genreIds || genreIds.length === 0) return []
-
+    if (!genreIds?.length) return []
     const genres = await this.getGenres(type)
     return genreIds.map(id => genres[id]).filter(Boolean)
   }
 
   async getGenreIdsFromNames(names, type = 'movie') {
-    if (!names || names.length === 0) return []
+    if (!names?.length) return []
     const genres = await this.getGenres(type)
     const reverse = {}
     for (const [id, name] of Object.entries(genres)) {
@@ -76,220 +95,97 @@ class TMDBService {
   _buildSortParam(sortBy, type = 'movie') {
     const dateField = type === 'tv' ? 'first_air_date' : 'primary_release_date'
     const map = {
-      date_asc: `${dateField}.asc`,
-      date_desc: `${dateField}.desc`,
-      rating_asc: 'vote_average.asc',
+      date_asc:    `${dateField}.asc`,
+      date_desc:   `${dateField}.desc`,
+      rating_asc:  'vote_average.asc',
       rating_desc: 'vote_average.desc',
-      popularity: 'popularity.desc',
+      popularity:  'popularity.desc',
     }
     return map[sortBy] || 'popularity.desc'
   }
 
   async discover(type = 'movie', { page = 1, sortBy = 'popularity', genres = [] } = {}) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
+    const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie'
+    const { realGenres, extraTmdbGenreIds, tmdbOriginCountries } = extractVirtualGenres(genres)
+    const realGenreIds = await this.getGenreIdsFromNames(realGenres, type)
+    const allGenreIds  = [...realGenreIds, ...extraTmdbGenreIds]
+
+    const params = {
+      page,
+      sort_by: this._buildSortParam(sortBy, type),
+      include_adult: false,
     }
+    if (allGenreIds.length)         params.with_genres          = allGenreIds.join(',')
+    if (tmdbOriginCountries.length) params.with_origin_country  = tmdbOriginCountries.join(',')
+    // Sort por nota com piso de votos — evita "10.0 com 1 voto" no topo.
+    if (sortBy === 'rating_desc' || sortBy === 'rating_asc') params['vote_count.gte'] = 200
 
-    try {
-      const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie'
-      const sort = this._buildSortParam(sortBy, type)
-      const { realGenres, extraTmdbGenreIds, tmdbOriginCountries } = extractVirtualGenres(genres)
-      const realGenreIds = await this.getGenreIdsFromNames(realGenres, type)
-      const allGenreIds = [...realGenreIds, ...extraTmdbGenreIds]
-
-      const params = {
-        api_key: this.apiKey,
-        language: 'pt-BR',
-        page,
-        sort_by: sort,
-        include_adult: false,
-      }
-
-      if (allGenreIds.length > 0) {
-        params.with_genres = allGenreIds.join(',')
-      }
-
-      if (tmdbOriginCountries.length > 0) {
-        params.with_origin_country = tmdbOriginCountries.join(',')
-      }
-
-      // Para sort por nota, exigir um mínimo de votos para evitar resultados de 1 usuário com nota 10
-      if (sortBy === 'rating_desc' || sortBy === 'rating_asc') {
-        params['vote_count.gte'] = 200
-      }
-
-      const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, { params })
-      const results = await this.formatResults(response.data.results, type)
-
-      return {
-        results,
-        totalPages: Math.min(response.data.total_pages || 1, 500),
-        totalResults: response.data.total_results || 0,
-      }
-    } catch (error) {
-      console.error('Erro no discover do TMDB:', describeAxiosError(error))
-      throw toUpstreamError(error, 'discover do TMDB')
-    }
+    const data    = await this._request(endpoint, params, 'discover do TMDB')
+    const results = await this.formatResults(data.results, type)
+    return paginated(data, results)
   }
 
   async search(query, type = 'multi', page = 1) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
-    }
-
-    try {
-      const endpoint = type === 'movie'
-        ? '/search/movie'
-        : type === 'tv'
-        ? '/search/tv'
-        : '/search/multi'
-
-      const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
-        params: {
-          api_key: this.apiKey,
-          query,
-          page,
-          language: 'pt-BR',
-          include_adult: false,
-        },
-      })
-
-      const results = await this.formatResults(response.data.results, type)
-
-      return {
-        results,
-        totalPages: Math.min(response.data.total_pages || 1, 500),
-        totalResults: response.data.total_results || 0,
-      }
-    } catch (error) {
-      console.error('Erro ao buscar no TMDB:', describeAxiosError(error))
-      throw toUpstreamError(error, 'buscar no TMDB')
-    }
+    const endpoint = type === 'movie' ? '/search/movie'
+                   : type === 'tv'    ? '/search/tv'
+                                      : '/search/multi'
+    const data    = await this._request(endpoint, { query, page, include_adult: false }, 'buscar no TMDB')
+    const results = await this.formatResults(data.results, type)
+    return paginated(data, results)
   }
 
-  async getPopularMovies(page = 1) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
-    }
-
-    try {
-      const response = await axios.get(`${TMDB_BASE_URL}/movie/popular`, {
-        params: {
-          api_key: this.apiKey,
-          page,
-          language: 'pt-BR',
-          include_adult: false,
-        },
-      })
-
-      const results = await this.formatResults(response.data.results, 'movie')
-
-      return {
-        results,
-        totalPages: Math.min(response.data.total_pages || 1, 500),
-        totalResults: response.data.total_results || 0,
-      }
-    } catch (error) {
-      console.error('Erro ao buscar filmes populares:', describeAxiosError(error))
-      throw toUpstreamError(error, 'buscar filmes populares')
-    }
+  async _getPopular(type, page = 1) {
+    const endpoint = `/${type}/popular`
+    const data     = await this._request(endpoint, { page, include_adult: false }, `populares ${type}`)
+    const results  = await this.formatResults(data.results, type)
+    return paginated(data, results)
   }
 
-  async getPopularSeries(page = 1) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
-    }
+  getPopularMovies(page = 1) { return this._getPopular('movie', page) }
+  getPopularSeries(page = 1) { return this._getPopular('tv',    page) }
 
-    try {
-      const response = await axios.get(`${TMDB_BASE_URL}/tv/popular`, {
-        params: {
-          api_key: this.apiKey,
-          page,
-          language: 'pt-BR',
-          include_adult: false,
-        },
-      })
-
-      const results = await this.formatResults(response.data.results, 'tv')
-
-      return {
-        results,
-        totalPages: Math.min(response.data.total_pages || 1, 500),
-        totalResults: response.data.total_results || 0,
-      }
-    } catch (error) {
-      console.error('Erro ao buscar séries populares:', describeAxiosError(error))
-      throw toUpstreamError(error, 'buscar séries populares')
-    }
+  async _getDetails(type, id) {
+    const data = await this._request(`/${type}/${id}`, {
+      append_to_response: 'videos,credits,watch/providers,release_dates,content_ratings',
+    }, `detalhes ${type}`)
+    return type === 'movie' ? this.formatMovieDetails(data) : this.formatSeriesDetails(data)
   }
 
-  async getMovieDetails(id) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
-    }
-
-    try {
-      const response = await axios.get(`${TMDB_BASE_URL}/movie/${id}`, {
-        params: {
-          api_key: this.apiKey,
-          language: 'pt-BR',
-          append_to_response: 'videos,credits,watch/providers,release_dates,content_ratings',
-        },
-      })
-
-      return this.formatMovieDetails(response.data)
-    } catch (error) {
-      console.error('Erro ao buscar detalhes do filme:', describeAxiosError(error))
-      throw toUpstreamError(error, 'buscar detalhes do filme')
-    }
-  }
-
-  async getSeriesDetails(id) {
-    if (!this.apiKey) {
-      throw new Error('TMDB API Key não configurada')
-    }
-
-    try {
-      const response = await axios.get(`${TMDB_BASE_URL}/tv/${id}`, {
-        params: {
-          api_key: this.apiKey,
-          language: 'pt-BR',
-          append_to_response: 'videos,credits,watch/providers,release_dates,content_ratings',
-        },
-      })
-
-      return this.formatSeriesDetails(response.data)
-    } catch (error) {
-      console.error('Erro ao buscar detalhes da série:', describeAxiosError(error))
-      throw toUpstreamError(error, 'buscar detalhes da série')
-    }
-  }
+  getMovieDetails(id)  { return this._getDetails('movie', id) }
+  getSeriesDetails(id) { return this._getDetails('tv',    id) }
 
   async formatResults(results, type) {
-    const genreType = type === 'movie' ? 'movie' : type === 'tv' ? 'tv' : 'movie'
-    const genres = await this.getGenres(genreType)
-    
-    return Promise.all(results.map(async (item) => {
-      const itemType = type === 'movie' ? 'MOVIE' : type === 'tv' ? 'SERIES' : item.media_type === 'movie' ? 'MOVIE' : 'SERIES'
-      const itemGenreType = itemType === 'MOVIE' ? 'movie' : 'tv'
-      const genreNames = await this.mapGenreIds(item.genre_ids, itemGenreType)
-      
+    const isMulti = type !== 'movie' && type !== 'tv'
+
+    // Pré-busca os dois caches quando multi (cada item pode ser movie OU tv);
+    // pra type fixo basta o cache do próprio type.
+    const [movieGenres, tvGenres] = isMulti
+      ? await Promise.all([this.getGenres('movie'), this.getGenres('tv')])
+      : type === 'tv'
+        ? [null, await this.getGenres('tv')]
+        : [await this.getGenres('movie'), null]
+
+    return results.map((item) => {
+      const itemType = type === 'movie' ? 'MOVIE'
+                     : type === 'tv'    ? 'SERIES'
+                     : item.media_type === 'movie' ? 'MOVIE' : 'SERIES'
+      const genreMap   = itemType === 'MOVIE' ? movieGenres : tvGenres
+      const genreNames = (item.genre_ids || []).map(id => genreMap?.[id]).filter(Boolean)
+
       return {
         id: item.id,
         title: item.title || item.name,
         type: itemType,
         description: item.overview,
-        descriptionLanguage: 'pt-BR', // TMDB retorna em português quando language=pt-BR
+        descriptionLanguage: LANGUAGE,
         poster: item.poster_path ? `${TMDB_IMAGE_BASE_URL}${item.poster_path}` : null,
-        year: (item.release_date || item.first_air_date)
-          ? new Date(item.release_date || item.first_air_date).getFullYear()
-          : null,
-        rating: item.vote_average ? parseFloat(item.vote_average.toFixed(1)) : null,
+        year: yearFromDate(item.release_date || item.first_air_date),
+        rating: roundRating(item.vote_average),
         genres: genreNames,
         externalId: item.id.toString(),
         source: 'TMDB',
       }
-    }))
+    })
   }
 
   _formatAgeRating(data) {
@@ -310,13 +206,13 @@ class TMDBService {
   // Tiers "with Ads" compartilham catálogo com a versão principal — mantém só uma.
   _dedupeProviders(list) {
     const stripAds = (name) => String(name || '').replace(/\s*(standard\s+)?with\s+ads\s*$/i, '').trim()
-    const isAd = (name) => /with\s+ads\s*$/i.test(name || '')
+    const isAd     = (name) => /with\s+ads\s*$/i.test(name || '')
 
     const byKey = new Map()
     for (const p of list || []) {
-      const key = stripAds(p.provider_name).toLowerCase()
+      const key       = stripAds(p.provider_name).toLowerCase()
       const adVariant = isAd(p.provider_name)
-      const existing = byKey.get(key)
+      const existing  = byKey.get(key)
       if (!existing || (existing._ad && !adVariant)) {
         byKey.set(key, { ...p, _ad: adVariant })
       }
@@ -351,56 +247,49 @@ class TMDBService {
     }
   }
 
-  formatMovieDetails(data) {
+  _baseDetails(data) {
     return {
       id: data.id,
-      title: data.title,
-      type: 'MOVIE',
       description: data.overview,
-      descriptionLanguage: 'pt-BR', // TMDB retorna em português quando language=pt-BR
+      descriptionLanguage: LANGUAGE,
       poster: data.poster_path ? `${TMDB_IMAGE_BASE_URL}${data.poster_path}` : null,
-      year: data.release_date ? new Date(data.release_date).getFullYear() : null,
-      duration: data.runtime,
       genres: data.genres?.map(g => g.name) || [],
-      rating: data.vote_average ? parseFloat(data.vote_average.toFixed(1)) : null,
+      rating: roundRating(data.vote_average),
       externalId: data.id.toString(),
       source: 'TMDB',
-      director: data.credits?.crew?.find(c => c.job === 'Director')?.name || null,
-      cast: data.credits?.cast?.slice(0, 5).map(a => a.name) || [],
-      trailer: data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
+      cast: castNames(data.credits),
+      trailer: trailerKey(data.videos),
       watchProviders: this._formatWatchProviders(data['watch/providers']),
       ageRating: this._formatAgeRating(data),
     }
   }
 
-  formatSeriesDetails(data) {
-    // status vem traduzido pelo TMDB; in_production é o único bool cru
-    const hasEnded = data.in_production === false
-
+  formatMovieDetails(data) {
     return {
-      id: data.id,
+      ...this._baseDetails(data),
+      title: data.title,
+      type: 'MOVIE',
+      year: yearFromDate(data.release_date),
+      duration: data.runtime,
+      director: data.credits?.crew?.find(c => c.job === 'Director')?.name || null,
+    }
+  }
+
+  formatSeriesDetails(data) {
+    // in_production é o único bool cru — status do TMDB já vem traduzido.
+    const hasEnded = data.in_production === false
+    return {
+      ...this._baseDetails(data),
       title: data.name,
       type: 'SERIES',
-      description: data.overview,
-      descriptionLanguage: 'pt-BR', // TMDB retorna em português quando language=pt-BR
-      poster: data.poster_path ? `${TMDB_IMAGE_BASE_URL}${data.poster_path}` : null,
-      year: data.first_air_date ? new Date(data.first_air_date).getFullYear() : null,
-      endYear: data.last_air_date ? new Date(data.last_air_date).getFullYear() : null,
+      year: yearFromDate(data.first_air_date),
+      endYear: yearFromDate(data.last_air_date),
       hasEnded,
       duration: data.episode_run_time?.[0] || null,
-      genres: data.genres?.map(g => g.name) || [],
-      rating: data.vote_average ? parseFloat(data.vote_average.toFixed(1)) : null,
-      externalId: data.id.toString(),
-      source: 'TMDB',
       seasons: data.number_of_seasons,
       episodes: data.number_of_episodes,
-      cast: data.credits?.cast?.slice(0, 5).map(a => a.name) || [],
-      trailer: data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
-      watchProviders: this._formatWatchProviders(data['watch/providers']),
-      ageRating: this._formatAgeRating(data),
     }
   }
 }
 
 export default new TMDBService()
-

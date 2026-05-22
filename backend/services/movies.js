@@ -48,17 +48,10 @@ const normalizeRating = (rating) => {
   return parsed
 }
 
-// Verifica duplicata por externalId (preferencial) ou por title+type (fallback).
-const ensureNotDuplicate = async (addedById, { externalId, title, type }) => {
-  if (externalId) {
-    const byExternal = await prisma.movie.findFirst({
-      where: { addedById, externalId: externalId.toString() },
-    })
-    if (byExternal) {
-      throw new ConflictError('Este filme já está na sua lista')
-    }
-  }
-
+// Entrada manual (sem externalId): checa por título case-insensitive.
+// Quando vem externalId, a unicidade fica no banco (@@unique [addedById, externalId])
+// e a duplicata é capturada via P2002 no createMovie.
+const ensureNoTitleDuplicate = async (addedById, { title, type }) => {
   const byTitle = await prisma.movie.findFirst({
     where: {
       addedById,
@@ -157,28 +150,33 @@ export const createMovie = async (userId, payload) => {
 
   const profile = await requireUserProfile(userId)
 
-  await ensureNotDuplicate(profile.id, {
-    externalId: payload.externalId,
-    title: payload.title,
-    type,
-  })
+  if (!payload.externalId) {
+    await ensureNoTitleDuplicate(profile.id, { title: payload.title, type })
+  }
 
-  return prisma.movie.create({
-    data: {
-      title: payload.title,
-      type,
-      description: payload.description || null,
-      poster: payload.poster || null,
-      year: toIntOrNull(payload.year),
-      duration: toIntOrNull(payload.duration),
-      genres: Array.isArray(payload.genres) ? payload.genres : [],
-      rating,
-      priority,
-      externalId: payload.externalId || null,
-      addedById: profile.id,
-    },
-    include: INCLUDE_ADDED_BY,
-  })
+  try {
+    return await prisma.movie.create({
+      data: {
+        title: payload.title,
+        type,
+        description: payload.description || null,
+        poster: payload.poster || null,
+        year: toIntOrNull(payload.year),
+        duration: toIntOrNull(payload.duration),
+        genres: Array.isArray(payload.genres) ? payload.genres : [],
+        rating,
+        priority,
+        externalId: payload.externalId ? payload.externalId.toString() : null,
+        addedById: profile.id,
+      },
+      include: INCLUDE_ADDED_BY,
+    })
+  } catch (err) {
+    if (err.code === 'P2002') {
+      throw new ConflictError('Este filme já está na sua lista')
+    }
+    throw err
+  }
 }
 
 export const updateMovie = async (userId, movieId, payload) => {

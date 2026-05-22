@@ -343,10 +343,6 @@ components:
           type: string
           description: ID do perfil que adicionou
           example: '507f1f77bcf86cd799439012'
-        addedAt:
-          type: string
-          format: date-time
-          description: Data de adição
         watched:
           type: boolean
           description: Indica se já foi assistido

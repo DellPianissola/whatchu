@@ -66,21 +66,20 @@ model Movie {
   description String?
   poster      String?
   year        Int?
-  duration    Int?     // Duração em minutos (filmes) ou episódios (séries)
-  genres      String[] // Array de gêneros
-  rating      Decimal? @db.Decimal(3, 1) // Nota de 0 a 10
+  duration    Int?
+  genres      String[]
+  rating      Decimal? @db.Decimal(3, 1)
   priority    Priority @default(MEDIUM)
   watched     Boolean  @default(false)
   watchedAt   DateTime?
-  externalId  String?  // ID da API externa (TMDB, etc.)
+  externalId  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  // Relacionamentos
+
   addedById   String
   addedBy     Profile  @relation(fields: [addedById], references: [id], onDelete: Cascade)
-  addedAt     DateTime @default(now())
-  
+
+  @@unique([addedById, externalId])
   @@index([addedById])
   @@index([type])
   @@index([priority])

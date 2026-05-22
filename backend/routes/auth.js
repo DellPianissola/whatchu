@@ -37,6 +37,11 @@ router.post('/verify-email', authLimiter, asyncHandler(async (req, res) => {
   res.json({ message: 'Email verificado com sucesso', ...result })
 }))
 
+router.post('/verify-email-change', authLimiter, asyncHandler(async (req, res) => {
+  await authService.verifyEmailChange(req.body.token)
+  res.json({ message: 'Email atualizado com sucesso' })
+}))
+
 router.post('/resend-verification-public', emailDispatchLimiter, asyncHandler(async (req, res) => {
   await authService.resendVerificationEmailByEmail(req.body.email)
   res.json({ message: 'Se houver um cadastro pendente com este email, um novo link foi enviado' })

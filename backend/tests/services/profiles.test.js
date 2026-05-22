@@ -154,40 +154,65 @@ describe('profiles service', () => {
   // ─── changeEmail ──────────────────────────────────────────────────────────
 
   describe('changeEmail', () => {
-    it('atualiza o email e cria token EMAIL_CHANGE', async () => {
-      const user = await createUser({ email: 'antigo@t.com' })
+    it('NÃO altera o email — cria token EMAIL_CHANGE com newEmail', async () => {
+      const user = await createUser({ email: 'antigo@t.com', password: 'senha123' })
       await createProfileFactory(user.id)
-      await changeEmail(user.id, 'novo@t.com')
-      const updated = await prisma.user.findUnique({ where: { id: user.id } })
-      expect(updated.email).toBe('novo@t.com')
+      await changeEmail(user.id, { newEmail: 'novo@t.com', currentPassword: 'senha123' })
+
+      const unchanged = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(unchanged.email).toBe('antigo@t.com')
+
       const token = await prisma.verificationToken.findFirst({
         where: { userId: user.id, type: 'EMAIL_CHANGE' },
       })
       expect(token).not.toBeNull()
+      expect(token.newEmail).toBe('novo@t.com')
+    })
+
+    it('lança UnauthorizedError quando a senha atual está errada', async () => {
+      const user = await createUser({ email: 'me@t.com', password: 'senha123' })
+      await createProfileFactory(user.id)
+      await expect(
+        changeEmail(user.id, { newEmail: 'novo@t.com', currentPassword: 'errada' })
+      ).rejects.toThrow(/Senha incorreta/)
+    })
+
+    it('lança ValidationError quando currentPassword está ausente', async () => {
+      const user = await createUser({ email: 'me@t.com' })
+      await createProfileFactory(user.id)
+      await expect(
+        changeEmail(user.id, { newEmail: 'novo@t.com' })
+      ).rejects.toThrow(ValidationError)
     })
 
     it('lança ConflictError se o novo email já pertence a outra conta', async () => {
       await createUser({ email: 'taken@t.com', username: 'owner' })
-      const user = await createUser({ email: 'me@t.com', username: 'me' })
+      const user = await createUser({ email: 'me@t.com', username: 'me', password: 'senha123' })
       await createProfileFactory(user.id)
-      await expect(changeEmail(user.id, 'taken@t.com')).rejects.toThrow(/cadastrado por outra conta/)
+      await expect(
+        changeEmail(user.id, { newEmail: 'taken@t.com', currentPassword: 'senha123' })
+      ).rejects.toThrow(/cadastrado por outra conta/)
     })
 
     it('lança ValidationError ao tentar mudar para o mesmo email atual', async () => {
-      const user = await createUser({ email: 'mesmo@t.com' })
+      const user = await createUser({ email: 'mesmo@t.com', password: 'senha123' })
       await createProfileFactory(user.id)
-      await expect(changeEmail(user.id, 'mesmo@t.com')).rejects.toThrow(ValidationError)
+      await expect(
+        changeEmail(user.id, { newEmail: 'mesmo@t.com', currentPassword: 'senha123' })
+      ).rejects.toThrow(ValidationError)
     })
 
     it('lança ValidationError para email com formato inválido', async () => {
-      const user = await createUser()
+      const user = await createUser({ password: 'senha123' })
       await createProfileFactory(user.id)
-      await expect(changeEmail(user.id, 'nao-e-um-email')).rejects.toThrow(ValidationError)
+      await expect(
+        changeEmail(user.id, { newEmail: 'nao-e-um-email', currentPassword: 'senha123' })
+      ).rejects.toThrow(ValidationError)
     })
 
     it('lança NotFoundError para userId inexistente', async () => {
       await expect(
-        changeEmail('00000000-0000-0000-0000-000000000000', 'x@y.com')
+        changeEmail('00000000-0000-0000-0000-000000000000', { newEmail: 'x@y.com', currentPassword: 'senha123' })
       ).rejects.toThrow(NotFoundError)
     })
   })

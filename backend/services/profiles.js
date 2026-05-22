@@ -1,7 +1,13 @@
+import bcrypt from 'bcrypt'
 import { prisma } from '../config/database.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
-import { NotFoundError, ConflictError, ValidationError } from '../lib/httpErrors.js'
-import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
+import {
+  NotFoundError,
+  ConflictError,
+  ValidationError,
+  UnauthorizedError,
+} from '../lib/httpErrors.js'
+import { upsertVerificationToken } from './auth.js'
 import { sendEmailChangeVerification } from './email.js'
 
 // `_count.movies` aparece em várias queries — extraído pra constante.
@@ -72,41 +78,31 @@ export const updateProfile = async (userId, payload) => {
   })
 }
 
-export const changeEmail = async (userId, newEmail) => {
+export const changeEmail = async (userId, { newEmail, currentPassword } = {}) => {
   if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
     throw new ValidationError('Email inválido')
   }
+  if (!currentPassword) {
+    throw new ValidationError('Senha atual é obrigatória')
+  }
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true },
+    where:  { id: userId },
+    select: { id: true, email: true, password: true },
   })
   if (!user) throw new NotFoundError('Usuário não encontrado')
   if (user.email === newEmail) throw new ValidationError('O novo email é igual ao atual')
 
-  const token = generateRandomToken()
-  const expiresAt = new Date(Date.now() + TOKEN_TTL.EMAIL_CHANGE)
+  const passwordMatch = await bcrypt.compare(currentPassword, user.password)
+  if (!passwordMatch) throw new UnauthorizedError('Senha incorreta')
 
   const dup = await prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } })
   if (dup && dup.id !== userId) {
     throw new ConflictError('Email já cadastrado por outra conta')
   }
 
-  // TODO: idealmente a troca só deveria efetivar APÓS verificação no novo endereço,
-  // pra não permitir que sessão comprometida sequestre a conta via email. Implementação
-  // atual mantém o comportamento legado (troca imediata + email informativo).
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data:  { email: newEmail },
-    }),
-    prisma.verificationToken.deleteMany({ where: { userId, type: 'EMAIL_CHANGE' } }),
-    prisma.verificationToken.create({
-      data: { userId, token, type: 'EMAIL_CHANGE', expiresAt },
-    }),
-  ])
-
-  sendEmailChangeVerification(newEmail, token).catch(console.error)
+  const token = await upsertVerificationToken(userId, 'EMAIL_CHANGE', { newEmail })
+  await sendEmailChangeVerification(newEmail, token)
 }
 
 export const markOnboarded = async (userId) => {

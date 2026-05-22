@@ -12,6 +12,7 @@ import MyList from './pages/MyList'
 import Profiles from './pages/Profiles'
 import Onboarding from './pages/Onboarding'
 import VerifyEmail from './pages/VerifyEmail'
+import VerifyEmailChange from './pages/VerifyEmailChange'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import NavBar from './components/NavBar.jsx'
@@ -44,7 +45,8 @@ function App() {
             <Routes>
               <Route path={ROUTES.LOGIN}           element={<Login />} />
               <Route path={ROUTES.REGISTER}        element={<Register />} />
-              <Route path={ROUTES.VERIFY_EMAIL}    element={<VerifyEmail />} />
+              <Route path={ROUTES.VERIFY_EMAIL}        element={<VerifyEmail />} />
+              <Route path={ROUTES.VERIFY_EMAIL_CHANGE} element={<VerifyEmailChange />} />
               <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
               <Route path={ROUTES.RESET_PASSWORD}  element={<ResetPassword />} />
               <Route path={ROUTES.HOME}            element={protect(<Home />)} />

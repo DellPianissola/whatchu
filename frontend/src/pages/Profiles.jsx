@@ -15,11 +15,15 @@ const Profiles = () => {
   const [editingSection, setEditingSection] = useState(null)
   const avatarInputRef = useRef(null)
 
-  const [formName, setFormName]           = useState('')
-  const [formBirthDate, setFormBirthDate] = useState('')
-  const [formEmail, setFormEmail]         = useState('')
+  const [formName, setFormName]               = useState('')
+  const [formBirthDate, setFormBirthDate]     = useState('')
+  const [formEmail, setFormEmail]             = useState('')
+  const [formPassword, setFormPassword]       = useState('')
 
-  const closeSection = () => setEditingSection(null)
+  const closeSection = () => {
+    setEditingSection(null)
+    setFormPassword('')
+  }
 
   const openProfileSection = () => {
     setFormName(profile?.name ?? '')
@@ -29,6 +33,7 @@ const Profiles = () => {
 
   const openEmailSection = () => {
     setFormEmail(user?.email ?? '')
+    setFormPassword('')
     setEditingSection(SECTIONS.EMAIL)
   }
 
@@ -57,12 +62,11 @@ const Profiles = () => {
     e.preventDefault()
     setLoading(true)
     try {
-      await changeEmail(formEmail)
-      await refreshUser()
+      await changeEmail({ newEmail: formEmail, currentPassword: formPassword })
       closeSection()
-      toast.success('Email atualizado. Verifique sua caixa de entrada.')
+      toast.success(`Enviamos um link de confirmação para ${formEmail}. O email só será trocado após você clicar nele.`)
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Erro ao atualizar email'))
+      toast.error(apiErrorMessage(err, 'Erro ao solicitar troca de email'))
     } finally {
       setLoading(false)
     }
@@ -161,15 +165,29 @@ const Profiles = () => {
                   onChange={(e) => setFormEmail(e.target.value)}
                   className="form-input"
                   disabled={loading}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="current-password">Senha atual</label>
+                <input
+                  id="current-password"
+                  type="password"
+                  value={formPassword}
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  className="form-input"
+                  disabled={loading}
+                  autoComplete="current-password"
                   required
                 />
               </div>
               <p className="form-hint-text">
-                Você receberá um link de confirmação no novo endereço.
+                Você receberá um link de confirmação no novo endereço. O email só muda depois que você clicar nele.
               </p>
               <div className="form-actions">
                 <button type="submit" disabled={loading} className="btn-save">
-                  {loading ? 'Salvando...' : 'Confirmar troca'}
+                  {loading ? 'Enviando...' : 'Enviar confirmação'}
                 </button>
                 <button type="button" onClick={closeSection} disabled={loading} className="btn-cancel">
                   Cancelar

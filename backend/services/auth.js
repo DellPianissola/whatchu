@@ -14,6 +14,7 @@ import {
   sendVerificationEmail,
   sendPasswordResetEmail,
 } from './email.js'
+import { invalidateUserCache } from '../middleware/auth.js'
 
 const generateTokens = (userId, username) => {
   const accessToken = jwt.sign(
@@ -61,11 +62,11 @@ const decodeRefreshToken = (refreshToken) => {
   }
 }
 
-const upsertVerificationToken = async (userId, type) => {
+export const upsertVerificationToken = async (userId, type, extra = {}) => {
   const token = generateRandomToken()
   const expiresAt = new Date(Date.now() + TOKEN_TTL[type])
   await prisma.verificationToken.deleteMany({ where: { userId, type } })
-  await prisma.verificationToken.create({ data: { userId, token, type, expiresAt } })
+  await prisma.verificationToken.create({ data: { userId, token, type, expiresAt, ...extra } })
   return token
 }
 
@@ -301,6 +302,43 @@ export const resetPassword = async (token, newPassword) => {
     }),
     prisma.verificationToken.delete({ where: { token } }),
   ])
+}
+
+export const verifyEmailChange = async (token) => {
+  if (!token) {
+    throw new ValidationError('Token de verificação inválido')
+  }
+
+  const record = await prisma.verificationToken.findUnique({ where: { token } })
+
+  if (!record || record.type !== 'EMAIL_CHANGE') {
+    throw new ValidationError('Token de verificação inválido')
+  }
+  if (record.expiresAt < new Date()) {
+    await prisma.verificationToken.delete({ where: { token } }).catch(() => {})
+    throw new ValidationError('Token de verificação expirado')
+  }
+  if (!record.newEmail) {
+    throw new ValidationError('Token de verificação inválido')
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: record.userId },
+        data:  { email: record.newEmail },
+      }),
+      prisma.verificationToken.delete({ where: { token } }),
+    ])
+  } catch (err) {
+    if (err.code === 'P2002') {
+      await prisma.verificationToken.delete({ where: { token } }).catch(() => {})
+      throw new ConflictError('Este email já foi cadastrado por outra conta.', { code: 'EMAIL_TAKEN' })
+    }
+    throw err
+  }
+
+  invalidateUserCache(record.userId)
 }
 
 export const cleanupExpiredPendingRegistrations = async () => {

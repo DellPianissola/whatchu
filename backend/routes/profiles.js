@@ -45,10 +45,12 @@ router.post('/onboarded', asyncHandler(async (req, res) => {
   })
 }))
 
-// PUT /api/profiles/email - Troca o email do usuário (envia verificação pro novo endereço)
 router.put('/email', asyncHandler(async (req, res) => {
-  await profilesService.changeEmail(req.user.id, req.body.email)
-  res.json({ message: 'Email atualizado. Verifique sua caixa de entrada para confirmar.' })
+  await profilesService.changeEmail(req.user.id, {
+    newEmail:        req.body.newEmail ?? req.body.email,
+    currentPassword: req.body.currentPassword,
+  })
+  res.json({ message: 'Confirme a troca pelo link enviado ao novo endereço.' })
 }))
 
 // PUT /api/profiles/avatar - Upload de foto de perfil

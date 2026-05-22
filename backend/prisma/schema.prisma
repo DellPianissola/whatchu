@@ -94,6 +94,7 @@ model VerificationToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String    @unique
   type      TokenType
+  newEmail  String?
   expiresAt DateTime
   createdAt DateTime  @default(now())
 

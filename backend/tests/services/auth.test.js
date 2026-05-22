@@ -9,6 +9,7 @@ import {
   resendVerificationEmailByEmail,
   requestPasswordReset,
   resetPassword,
+  verifyEmailChange,
   cleanupExpiredPendingRegistrations,
 } from '../../services/auth.js'
 import { truncateAll, prisma } from '../helpers/db.js'
@@ -377,6 +378,66 @@ describe('auth service', () => {
         token: 'weak-pw-token', type: 'PASSWORD_RESET',
       })
       await expect(resetPassword('weak-pw-token', '123')).rejects.toThrow(ValidationError)
+    })
+  })
+
+  // ─── verifyEmailChange ────────────────────────────────────────────────────
+
+  describe('verifyEmailChange', () => {
+    it('troca o email e remove o token', async () => {
+      const user = await createUserFactory({ email: 'antigo@t.com' })
+      await createVerificationToken(user.id, {
+        token: 'ec-token', type: 'EMAIL_CHANGE',
+      })
+      await prisma.verificationToken.update({
+        where: { token: 'ec-token' },
+        data:  { newEmail: 'novo@t.com' },
+      })
+
+      await verifyEmailChange('ec-token')
+
+      const updated = await prisma.user.findUnique({ where: { id: user.id } })
+      expect(updated.email).toBe('novo@t.com')
+      const leftover = await prisma.verificationToken.findUnique({ where: { token: 'ec-token' } })
+      expect(leftover).toBeNull()
+    })
+
+    it('lança ValidationError quando o token não existe', async () => {
+      await expect(verifyEmailChange('inexistente')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError quando o token é de outro tipo', async () => {
+      const user = await createUserFactory()
+      await createVerificationToken(user.id, {
+        token: 'wrong-type', type: 'PASSWORD_RESET',
+      })
+      await expect(verifyEmailChange('wrong-type')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ValidationError quando o token está expirado', async () => {
+      const user = await createUserFactory({ email: 'antigo@t.com' })
+      await createVerificationToken(user.id, {
+        token: 'exp-ec', type: 'EMAIL_CHANGE',
+        expiresAt: new Date(Date.now() - 1000),
+      })
+      await prisma.verificationToken.update({
+        where: { token: 'exp-ec' },
+        data:  { newEmail: 'novo@t.com' },
+      })
+      await expect(verifyEmailChange('exp-ec')).rejects.toThrow(ValidationError)
+    })
+
+    it('lança ConflictError se outro usuário já cadastrou o novo email', async () => {
+      await createUserFactory({ email: 'taken@t.com', username: 'taker' })
+      const user = await createUserFactory({ email: 'me@t.com', username: 'me' })
+      await createVerificationToken(user.id, {
+        token: 'race-ec', type: 'EMAIL_CHANGE',
+      })
+      await prisma.verificationToken.update({
+        where: { token: 'race-ec' },
+        data:  { newEmail: 'taken@t.com' },
+      })
+      await expect(verifyEmailChange('race-ec')).rejects.toThrow(ConflictError)
     })
   })
 

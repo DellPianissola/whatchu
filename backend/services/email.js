@@ -48,7 +48,7 @@ export const sendPasswordResetEmail = (to, token) => {
 }
 
 export const sendEmailChangeVerification = (to, token) => {
-  const link = `${APP_URL}/verify-email?token=${token}&type=email-change`
+  const link = `${APP_URL}/verify-email-change?token=${token}`
   return send({
     from: FROM,
     to,

@@ -106,12 +106,13 @@ export const drawMovie     = async (filters = {})  => (await api.post('/movies/d
 export const resendVerificationPublic = async (email)          => { await api.post('/auth/resend-verification-public', { email }) }
 export const requestPasswordReset     = async (email)          => { await api.post('/auth/request-password-reset', { email }) }
 export const resetPassword            = async (token, password) => { await api.post('/auth/reset-password', { token, password }) }
+export const verifyEmailChange        = async (token)          => { await api.post('/auth/verify-email-change', { token }) }
 
 // Profiles
 export const createProfile  = async (data)     => { await api.post('/profiles', data) }
 export const updateProfile  = async (id, data) => { await api.put('/profiles', data) }
 export const markOnboarded  = async ()         => (await api.post('/profiles/onboarded')).data.profile
-export const changeEmail    = async (email)    => { await api.put('/profiles/email', { email }) }
+export const changeEmail    = async ({ newEmail, currentPassword }) => { await api.put('/profiles/email', { newEmail, currentPassword }) }
 export const uploadAvatar   = async (formData) =>
   (await api.put('/profiles/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data.profile
 

@@ -1,6 +1,6 @@
 {
   "name": "whatchu",
-  "version": "0.2.4-alpha",
+  "version": "0.3.0-alpha",
   "description": "Plataforma multi-usuário para escolher filmes e séries para assistir juntos",
   "scripts": {
     "up": "docker compose up",

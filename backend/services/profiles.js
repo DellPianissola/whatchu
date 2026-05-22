@@ -10,11 +10,7 @@ import {
 import { upsertVerificationToken } from './auth.js'
 import { sendEmailChangeVerification } from './email.js'
 import { validateEmail, validateBirthDate } from '../lib/validators.js'
-
-// `_count.movies` aparece em várias queries — extraído pra constante.
-const COUNT_MOVIES = { _count: { select: { movies: true } } }
-
-// ─── Operações públicas ─────────────────────────────────────────────────────
+import { COUNT_MOVIES } from '../lib/prismaIncludes.js'
 
 export const getProfile = async (userId) => {
   const profile = await prisma.profile.findUnique({

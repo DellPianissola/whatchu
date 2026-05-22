@@ -11,6 +11,7 @@ import { validatePassword, BCRYPT_ROUNDS } from '../lib/passwordPolicy.js'
 import { generateRandomToken, TOKEN_TTL, JWT_TTL } from '../lib/tokens.js'
 import { PUBLIC_USER_FIELDS } from '../lib/userSelectors.js'
 import { validateEmail, validateBirthDate } from '../lib/validators.js'
+import { COUNT_MOVIES } from '../lib/prismaIncludes.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -212,7 +213,7 @@ export const getMe = async (userId) => {
           avatarUrl: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { movies: true } },
+          ...COUNT_MOVIES,
         },
       },
     },

@@ -3,10 +3,7 @@ import { buildWhere } from './filters.js'
 import { computeWeight } from './weights.js'
 import { weightedPick } from './picker.js'
 import { DEFAULT_LOTTERY_CONFIG } from './config.js'
-
-const INCLUDE_ADDED_BY = {
-  addedBy: { select: { id: true, name: true } },
-}
+import { INCLUDE_ADDED_BY } from '../../lib/prismaIncludes.js'
 
 const fetchEligibleMovies = (profileId, filters) =>
   prisma.movie.findMany({

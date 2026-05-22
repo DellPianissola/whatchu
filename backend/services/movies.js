@@ -3,6 +3,7 @@ import { prisma } from '../config/database.js'
 import { drawMovie as drawFromLottery } from './lottery/index.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
 import { toIntOrNull } from '../lib/parsers.js'
+import { INCLUDE_ADDED_BY } from '../lib/prismaIncludes.js'
 import {
   ValidationError,
   NotFoundError,
@@ -11,11 +12,6 @@ import {
 
 const VALID_TYPES      = Object.values(MovieType)
 const VALID_PRIORITIES = Object.values(Priority)
-
-// `include` padrão: traz quem adicionou (id + nome). Reusado em várias queries.
-const INCLUDE_ADDED_BY = {
-  addedBy: { select: { id: true, name: true } },
-}
 
 // ─── Helpers internos ───────────────────────────────────────────────────────
 

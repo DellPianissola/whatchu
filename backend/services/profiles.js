@@ -9,6 +9,7 @@ import {
 } from '../lib/httpErrors.js'
 import { upsertVerificationToken } from './auth.js'
 import { sendEmailChangeVerification } from './email.js'
+import { validateEmail, validateBirthDate } from '../lib/validators.js'
 
 // `_count.movies` aparece em várias queries — extraído pra constante.
 const COUNT_MOVIES = { _count: { select: { movies: true } } }
@@ -57,20 +58,20 @@ export const createProfile = async (userId, fallbackUsername, payload = {}) => {
 }
 
 export const updateProfile = async (userId, payload) => {
+  if (payload.username !== undefined) {
+    throw new ValidationError('username não pode ser alterado por aqui')
+  }
+
   await requireUserProfile(userId)
 
   const profileData = {}
   if (payload.name !== undefined) profileData.name = payload.name
 
-  // birthDate fica no model User, não no Profile
+  // birthDate vive em User (login), não em Profile.
   if (payload.birthDate !== undefined) {
-    const date = new Date(payload.birthDate)
-    if (isNaN(date.getTime())) throw new ValidationError('Data de nascimento inválida')
-    if (date > new Date()) throw new ValidationError('Data de nascimento não pode ser no futuro')
+    const date = validateBirthDate(payload.birthDate)
     await prisma.user.update({ where: { id: userId }, data: { birthDate: date } })
   }
-
-  // username é campo de login — nunca permitido aqui (payload ignorado silenciosamente)
 
   return prisma.profile.update({
     where: { userId },
@@ -79,9 +80,7 @@ export const updateProfile = async (userId, payload) => {
 }
 
 export const changeEmail = async (userId, { newEmail, currentPassword } = {}) => {
-  if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-    throw new ValidationError('Email inválido')
-  }
+  validateEmail(newEmail)
   if (!currentPassword) {
     throw new ValidationError('Senha atual é obrigatória')
   }

@@ -7,9 +7,10 @@ import {
   UnauthorizedError,
   NotFoundError,
 } from '../lib/httpErrors.js'
-import { validatePassword } from '../lib/passwordPolicy.js'
-import { generateRandomToken, TOKEN_TTL } from '../lib/tokens.js'
+import { validatePassword, BCRYPT_ROUNDS } from '../lib/passwordPolicy.js'
+import { generateRandomToken, TOKEN_TTL, JWT_TTL } from '../lib/tokens.js'
 import { PUBLIC_USER_FIELDS } from '../lib/userSelectors.js'
+import { validateEmail, validateBirthDate } from '../lib/validators.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -20,12 +21,12 @@ const generateTokens = (userId, username) => {
   const accessToken = jwt.sign(
     { userId, username },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: JWT_TTL.ACCESS },
   )
   const refreshToken = jwt.sign(
     { userId, type: 'refresh' },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: '30d' }
+    { expiresIn: JWT_TTL.REFRESH },
   )
   return { accessToken, refreshToken }
 }
@@ -34,19 +35,9 @@ const validateRegistrationInput = ({ email, username, password, birthDate }) => 
   if (!email || !username || !password) {
     throw new ValidationError('Email, nome de usuário e senha são obrigatórios')
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ValidationError('Email inválido')
-  }
+  validateEmail(email)
   validatePassword(password)
-  if (birthDate) {
-    const date = new Date(birthDate)
-    if (isNaN(date.getTime())) {
-      throw new ValidationError('Data de nascimento inválida')
-    }
-    if (date > new Date()) {
-      throw new ValidationError('Data de nascimento não pode ser no futuro')
-    }
-  }
+  if (birthDate) validateBirthDate(birthDate)
 }
 
 const decodeRefreshToken = (refreshToken) => {
@@ -89,7 +80,7 @@ export const registerUser = async ({ email, username, password, birthDate }) => 
     return { pending: true, email }
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS)
   const token = generateRandomToken()
   const expiresAt = new Date(Date.now() + TOKEN_TTL.PENDING_REGISTRATION)
 
@@ -193,33 +184,18 @@ export const loginUser = async ({ identifier, password }) => {
   }
 
   const where = identifier.includes('@') ? { email: identifier } : { username: identifier }
-  const user = await prisma.user.findUnique({
+  const record = await prisma.user.findUnique({
     where,
-    include: { profile: true },
+    select: { ...PUBLIC_USER_FIELDS, password: true, profile: true },
   })
 
-  if (!user) {
-    throw new UnauthorizedError('Usuário ou senha inválidos')
-  }
+  if (!record) throw new UnauthorizedError('Usuário ou senha inválidos')
 
-  const passwordMatch = await bcrypt.compare(password, user.password)
-  if (!passwordMatch) {
-    throw new UnauthorizedError('Usuário ou senha inválidos')
-  }
+  const passwordMatch = await bcrypt.compare(password, record.password)
+  if (!passwordMatch) throw new UnauthorizedError('Usuário ou senha inválidos')
 
-  const tokens = generateTokens(user.id, user.username)
-
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      isAdmin: user.isAdmin,
-      createdAt: user.createdAt,
-    },
-    profile: user.profile,
-    ...tokens,
-  }
+  const { password: _pw, profile, ...user } = record
+  return { user, profile, ...generateTokens(user.id, user.username) }
 }
 
 export const getMe = async (userId) => {
@@ -293,7 +269,7 @@ export const resetPassword = async (token, newPassword) => {
     throw new ValidationError('Token de redefinição expirado')
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10)
+  const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
 
   await prisma.$transaction([
     prisma.user.update({

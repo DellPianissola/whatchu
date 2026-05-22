@@ -1,3 +1,4 @@
+import { MovieType, Priority } from '@prisma/client'
 import { prisma } from '../config/database.js'
 import { drawMovie as drawFromLottery } from './lottery/index.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
@@ -8,8 +9,8 @@ import {
   ConflictError,
 } from '../lib/httpErrors.js'
 
-const VALID_TYPES = ['MOVIE', 'SERIES']
-const VALID_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
+const VALID_TYPES      = Object.values(MovieType)
+const VALID_PRIORITIES = Object.values(Priority)
 
 // `include` padrão: traz quem adicionou (id + nome). Reusado em várias queries.
 const INCLUDE_ADDED_BY = {

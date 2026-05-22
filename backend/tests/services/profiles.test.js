@@ -93,10 +93,12 @@ describe('profiles service', () => {
       expect(updated.name).toBe('Original')
     })
 
-    it('ignora campo username mesmo que esteja no payload', async () => {
+    it('lança ValidationError se tentar alterar username pelo payload', async () => {
       const user = await createUser({ username: 'username_original' })
       await createProfileFactory(user.id)
-      await updateProfile(user.id, { username: 'username_novo' })
+      await expect(
+        updateProfile(user.id, { username: 'username_novo' })
+      ).rejects.toThrow(ValidationError)
       const unchanged = await prisma.user.findUnique({ where: { id: user.id } })
       expect(unchanged.username).toBe('username_original')
     })

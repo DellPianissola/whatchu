@@ -221,42 +221,39 @@ const Home = () => {
     </>
   )
 
-  const extraFilters = (
+  const desktopDropdowns = (
     <>
-      <div className="draw-filter-row">
+      <Dropdown
+        multi
+        trigger="pill"
+        align="left"
+        label="Prioridade"
+        options={PRIORITY_OPTIONS}
+        value={filterPriorities}
+        onChange={setFilterPriorities}
+      />
+      {availableGenres.length > 0 && (
         <Dropdown
           multi
           trigger="pill"
           align="left"
-          label="Prioridade"
-          options={PRIORITY_OPTIONS}
-          value={filterPriorities}
-          onChange={setFilterPriorities}
+          label="Gênero"
+          options={availableGenres}
+          value={filterGenres}
+          onChange={setFilterGenres}
         />
-        {availableGenres.length > 0 && (
-          <Dropdown
-            multi
-            trigger="pill"
-            align="left"
-            label="Gênero"
-            options={availableGenres}
-            value={filterGenres}
-            onChange={setFilterGenres}
-          />
-        )}
-        {streamingOptions.length > 0 && (
-          <Dropdown
-            multi
-            trigger="pill"
-            align="left"
-            label="Streaming"
-            options={streamingOptions}
-            value={filterProviders}
-            onChange={setFilterProviders}
-          />
-        )}
-      </div>
-      {ignoreWatchedToggle}
+      )}
+      {streamingOptions.length > 0 && (
+        <Dropdown
+          multi
+          trigger="pill"
+          align="left"
+          label="Streaming"
+          options={streamingOptions}
+          value={filterProviders}
+          onChange={setFilterProviders}
+        />
+      )}
     </>
   )
 
@@ -303,6 +300,7 @@ const Home = () => {
             <div className="draw-filters">
               <div className="draw-filter-row">
                 <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
+                <div className="draw-filters-inline">{desktopDropdowns}</div>
                 <button
                   type="button"
                   className="draw-filter-sheet-btn"
@@ -315,8 +313,8 @@ const Home = () => {
                   )}
                 </button>
               </div>
-              <div className="draw-filters-inline">
-                {extraFilters}
+              <div className="draw-filters-toggle-row">
+                {ignoreWatchedToggle}
               </div>
             </div>
 

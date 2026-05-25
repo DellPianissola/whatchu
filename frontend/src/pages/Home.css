@@ -495,6 +495,10 @@
   display: contents;
 }
 
+.draw-filters-toggle-row {
+  display: block;
+}
+
 .draw-filter-sheet-btn {
   display: none;
   align-items: center;
@@ -830,7 +834,8 @@
     min-height: 56px;
   }
 
-  .draw-filters-inline {
+  .draw-filters-inline,
+  .draw-filters-toggle-row {
     display: none;
   }
 

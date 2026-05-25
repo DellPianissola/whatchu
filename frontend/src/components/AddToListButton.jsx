@@ -1,3 +1,4 @@
+import { Plus, Trash2 } from 'lucide-react'
 import PriorityIndicator from './PriorityIndicator.jsx'
 import './AddToListButton.css'
 
@@ -21,7 +22,7 @@ const AddToListButton = ({
         disabled={disabled || processing}
         className="btn-add"
       >
-        {processing ? 'Processando...' : '➕ Adicionar'}
+        {processing ? 'Processando...' : (<><Plus size={16} /> Adicionar</>)}
       </button>
     )
   }
@@ -34,7 +35,7 @@ const AddToListButton = ({
         disabled={disabled || processing}
         className="btn-add btn-remove in-list-row-remove"
       >
-        {processing ? 'Processando...' : '🗑️ Remover'}
+        {processing ? 'Processando...' : (<><Trash2 size={16} /> Remover</>)}
       </button>
 
       <PriorityIndicator

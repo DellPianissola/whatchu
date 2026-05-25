@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import './PasswordInput.css'
 
 const PasswordInput = ({ id, value, onChange, disabled, placeholder = '••••••••', minLength = 8, autoComplete = 'current-password', required = true, ...rest }) => {
@@ -27,7 +28,7 @@ const PasswordInput = ({ id, value, onChange, disabled, placeholder = '•••
         title={visible ? 'Esconder senha' : 'Mostrar senha'}
         tabIndex={-1}
       >
-        {visible ? '🙈' : '👁️'}
+        {visible ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>
     </div>
   )

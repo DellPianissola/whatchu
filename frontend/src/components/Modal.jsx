@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEscapeKey } from '../hooks/useEscapeKey'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import IconButton from './IconButton.jsx'
@@ -33,7 +34,7 @@ const Modal = ({
         {(title || showClose) && (
           <header className="ui-modal-header">
             {title && <h2 className="ui-modal-title" id={labelledBy}>{title}</h2>}
-            {showClose && <IconButton icon="✕" label="Fechar" onClick={onClose} className="ui-modal-close" />}
+            {showClose && <IconButton icon={<X size={20} />} label="Fechar" onClick={onClose} className="ui-modal-close" />}
           </header>
         )}
         <div className="ui-modal-body">{children}</div>

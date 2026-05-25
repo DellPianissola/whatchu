@@ -30,6 +30,9 @@
   padding: 0.5rem 1rem;
   border-radius: 8px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-links a:hover {
@@ -85,6 +88,7 @@
   border: 1px solid var(--surface-light);
   border-radius: 8px;
   background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -97,6 +101,7 @@
 }
 
 .btn-theme-toggle:hover {
+  color: var(--text);
   background: var(--surface-light);
   border-color: var(--primary);
   transform: scale(1.05);

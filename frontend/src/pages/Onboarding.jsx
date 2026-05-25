@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { markOnboarded } from '../services/api.js'
@@ -62,7 +63,7 @@ const Onboarding = () => {
       {transitioning && (
         <div className="onboarding-transition" onClick={goHome}>
           <div className="onboarding-transition-content">
-            <div className="onboarding-transition-emoji">🎉</div>
+            <div className="onboarding-transition-emoji"><Sparkles size={64} strokeWidth={1.5} /></div>
             <h2>Pronto pra começar!</h2>
             <p>Sua lista está montada. Vamos sortear?</p>
           </div>

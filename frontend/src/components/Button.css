@@ -47,3 +47,8 @@
   background: color-mix(in srgb, var(--primary), #000 35%);
   border-color: color-mix(in srgb, var(--primary), #000 35%);
 }
+
+@media (max-width: 640px) {
+  .ui-btn--sm { min-height: 44px; padding: 0.5rem 1rem; font-size: 0.85rem; }
+  .ui-btn--md { min-height: 44px; }
+}

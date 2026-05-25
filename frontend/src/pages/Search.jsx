@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Film, Tv, Calendar, Star, Tags, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
   mapUpstreamError,
@@ -49,9 +50,9 @@ const cycleSort = (current) => {
 }
 
 const getSortIcon = (sortState) => {
-  if (sortState === 'asc')  return '↑'
-  if (sortState === 'desc') return '↓'
-  return ''
+  if (sortState === 'asc')  return <ArrowUp size={14} />
+  if (sortState === 'desc') return <ArrowDown size={14} />
+  return null
 }
 
 const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
@@ -217,14 +218,14 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 onClick={() => setType('movie')}
                 className={`filter-btn ${type === 'movie' ? 'active' : ''}`}
               >
-                🎬 Filmes
+                <Film size={16} /> Filmes
               </button>
               <button
                 type="button"
                 onClick={() => setType('series')}
                 className={`filter-btn ${type === 'series' ? 'active' : ''}`}
               >
-                📺 Séries
+                <Tv size={16} /> Séries
               </button>
             </div>
 
@@ -247,7 +248,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                   title={sortAndGenreDisabled ? 'Indisponível durante busca por texto' : ''}
                   className={`sort-btn ${sortDate ? 'active' : ''}`}
                 >
-                  📅 Data {getSortIcon(sortDate)}
+                  <Calendar size={14} /> Data {getSortIcon(sortDate)}
                 </button>
                 <button
                   type="button"
@@ -256,7 +257,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                   title={sortAndGenreDisabled ? 'Indisponível durante busca por texto' : ''}
                   className={`sort-btn ${sortRating ? 'active' : ''}`}
                 >
-                  ⭐ Nota {getSortIcon(sortRating)}
+                  <Star size={14} /> Nota {getSortIcon(sortRating)}
                 </button>
               </div>
 
@@ -264,7 +265,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 multi
                 trigger="button"
                 align="right"
-                icon="🎭"
+                icon={<Tags size={14} />}
                 label="Gêneros"
                 options={availableGenres}
                 value={selectedGenres}

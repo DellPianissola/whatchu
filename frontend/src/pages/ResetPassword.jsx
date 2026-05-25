@@ -8,6 +8,7 @@ import ErrorMessage from '../components/ErrorMessage.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import { validatePassword } from '../utils/validation.js'
 import { ROUTES } from '../constants/routes.js'
+import { CheckCircle2 } from 'lucide-react'
 import { MIN_PASSWORD_LENGTH } from '../constants/ui.js'
 import './Login.css'
 
@@ -60,7 +61,7 @@ const ResetPassword = () => {
   if (done) {
     return (
       <AuthShell subtitle="Definir nova senha" footer={loginFooter}>
-        <AuthSuccessMessage title="Senha redefinida com sucesso!">
+        <AuthSuccessMessage icon={<CheckCircle2 size={48} strokeWidth={1.5} />} title="Senha redefinida com sucesso!">
           <p className="forgot-hint">Redirecionando para o login...</p>
         </AuthSuccessMessage>
       </AuthShell>

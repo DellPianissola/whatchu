@@ -1,3 +1,4 @@
+import { Calendar, Star, Tags } from 'lucide-react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
 import { displayYear, displayRating, displayGenres } from '../utils/content'
 import './MovieCard.css'
@@ -30,9 +31,9 @@ export const MovieCardMeta = ({ item }) => {
   const genres = displayGenres(item.genres)
   return (
     <div className="ui-movie-card-meta">
-      <span>📅 {displayYear(item.year)}</span>
-      <span>⭐ {displayRating(item.rating)}</span>
-      <span className="ui-movie-card-meta-genres" title={genres}>🎭 {genres}</span>
+      <span><Calendar size={14} /> {displayYear(item.year)}</span>
+      <span><Star size={14} /> {displayRating(item.rating)}</span>
+      <span className="ui-movie-card-meta-genres" title={genres}><Tags size={14} /> {genres}</span>
     </div>
   )
 }

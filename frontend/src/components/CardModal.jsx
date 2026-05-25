@@ -1,3 +1,4 @@
+import { Play, Calendar, Star, Clock, Tags, AlertTriangle, X } from 'lucide-react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
 import IconButton from './IconButton.jsx'
 import { Skeleton } from './Skeleton.jsx'
@@ -66,7 +67,7 @@ const WatchProviders = ({ providers, trailer }) => {
             rel="noopener noreferrer"
             className="btn-trailer-subtle"
           >
-            ▶ Trailer
+            <Play size={14} fill="currentColor" /> Trailer
           </a>
         )}
       </div>
@@ -117,7 +118,7 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
         aria-modal="true"
         aria-labelledby={TITLE_ID}
       >
-        <IconButton icon="✕" label="Fechar" onClick={onClose} className="card-modal-close" />
+        <IconButton icon={<X size={20} />} label="Fechar" onClick={onClose} className="card-modal-close" />
         <div className="card-modal-body">
 
           <div className="card-modal-poster-col">
@@ -138,9 +139,9 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             </div>
 
             <div className="card-modal-meta">
-              <span>📅 {yearLabel}</span>
-              <span>⭐ {displayRating(item.rating)}</span>
-              {item.type === 'MOVIE' && duration && <span>⏱ {formatDuration(duration)}</span>}
+              <span><Calendar size={14} /> {yearLabel}</span>
+              <span><Star size={14} /> {displayRating(item.rating)}</span>
+              {item.type === 'MOVIE' && duration && <span><Clock size={14} /> {formatDuration(duration)}</span>}
               {ageRating && (
                 <span
                   className={`age-rating age-rating--tier-${ageRatingTier(ageRating)}`}
@@ -152,7 +153,7 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             </div>
 
             <div className="card-modal-genres">
-              🎭 {displayGenres(item.genres)}
+              <Tags size={14} /> {displayGenres(item.genres)}
             </div>
 
             <p className="card-modal-description">
@@ -169,7 +170,7 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
 
             {!richDetailsLoading && richDetailsError && (
               <div className="card-modal-rich-error" role="status">
-                ⚠ {richDetailsError}
+                <AlertTriangle size={14} /> {richDetailsError}
               </div>
             )}
 

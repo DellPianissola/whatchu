@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Plus, Trash2, Film, Tv } from 'lucide-react'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
@@ -147,7 +148,7 @@ const MyList = () => {
               title="Confirmar remoção"
               aria-label="Confirmar remoção"
             >
-              🗑️
+              <Trash2 size={48} />
             </button>
           </div>
         )}
@@ -161,7 +162,7 @@ const MyList = () => {
         <div className="mylist-header">
           <h2>Minha Lista</h2>
           <button className="btn-add-new" onClick={() => navigate(ROUTES.SEARCH)}>
-            ➕ Adicionar
+            <Plus size={18} /> Adicionar
           </button>
         </div>
 
@@ -191,7 +192,7 @@ const MyList = () => {
               description='Clique em "Adicionar" para buscar filmes e séries!'
               action={
                 <button className="btn-add-empty" onClick={() => navigate(ROUTES.SEARCH)}>
-                  ➕ Adicionar Primeiro Item
+                  <Plus size={18} /> Adicionar Primeiro Item
                 </button>
               }
             />
@@ -200,7 +201,7 @@ const MyList = () => {
           <div className="movies-by-category">
             {moviesByCategory.movies.length > 0 && (
               <div className="category-section">
-                <h3 className="category-title">🎬 Filmes ({moviesByCategory.movies.length})</h3>
+                <h3 className="category-title"><Film size={20} /> Filmes ({moviesByCategory.movies.length})</h3>
                 <div className="movies-grid">
                   {moviesByCategory.movies.map(renderMovieCard)}
                 </div>
@@ -208,7 +209,7 @@ const MyList = () => {
             )}
             {moviesByCategory.series.length > 0 && (
               <div className="category-section">
-                <h3 className="category-title">📺 Séries ({moviesByCategory.series.length})</h3>
+                <h3 className="category-title"><Tv size={20} /> Séries ({moviesByCategory.series.length})</h3>
                 <div className="movies-grid">
                   {moviesByCategory.series.map(renderMovieCard)}
                 </div>

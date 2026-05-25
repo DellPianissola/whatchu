@@ -113,6 +113,12 @@
   flex-shrink: 0;
 }
 
+.ui-movie-card-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .ui-movie-card-meta-genres {
   flex: 1;
   min-width: 0;

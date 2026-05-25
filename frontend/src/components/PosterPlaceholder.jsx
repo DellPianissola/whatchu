@@ -1,21 +1,13 @@
+import { Film, Tv } from 'lucide-react'
 import './PosterPlaceholder.css'
 
 const PosterPlaceholder = ({ title, type, className = '' }) => {
-  const getIcon = () => {
-    switch (type) {
-      case 'SERIES':
-      case 'series':
-        return '📺'
-      case 'MOVIE':
-      case 'movie':
-      default:
-        return '🎬'
-    }
-  }
+  const isSeries = type === 'SERIES' || type === 'series'
+  const Icon = isSeries ? Tv : Film
 
   return (
     <div className={`poster-placeholder ${className}`}>
-      <div className="poster-placeholder-icon">{getIcon()}</div>
+      <div className="poster-placeholder-icon"><Icon size={48} strokeWidth={1.5} /></div>
       <div className="poster-placeholder-text">{title}</div>
     </div>
   )

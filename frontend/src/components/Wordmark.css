@@ -36,3 +36,10 @@
 .ui-wordmark--nav .ui-wordmark-text  { font-size: 1.4rem; }
 .ui-wordmark--auth .ui-wordmark-text { font-size: 2rem; }
 .ui-wordmark--hero .ui-wordmark-text { font-size: 3.5rem; }
+
+@media (max-width: 640px) {
+  .ui-wordmark--hero { gap: var(--space-2); }
+  .ui-wordmark--hero svg { width: 70px !important; height: 48px !important; }
+  .ui-wordmark--hero .ui-wordmark-text { font-size: 2.25rem; }
+  .ui-wordmark--hero .ui-wordmark-subtitle { font-size: 0.9rem; }
+}

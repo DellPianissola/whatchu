@@ -1,3 +1,4 @@
+import { Check, Eye } from 'lucide-react'
 import './WatchedToggle.css'
 
 const WatchedToggle = ({ watched, onToggle, className = '' }) => (
@@ -13,7 +14,7 @@ const WatchedToggle = ({ watched, onToggle, className = '' }) => (
     aria-pressed={watched}
     title={watched ? 'Marcar como não assistido' : 'Marcar como assistido'}
   >
-    <span aria-hidden="true">{watched ? '✓' : '👁'}</span>
+    <span aria-hidden="true">{watched ? <Check size={18} /> : <Eye size={18} />}</span>
   </button>
 )
 

@@ -37,6 +37,10 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 640px) {
+  .dropdown-trigger-btn { min-height: 44px; }
+}
+
 .dropdown-trigger-icon {
   font-size: 0.95em;
   line-height: 1;

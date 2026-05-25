@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X, SlidersHorizontal } from 'lucide-react'
 import { drawMovie, luckyDraw, getExternalGenres, getStreamingProviders } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -12,6 +13,8 @@ import CardModal from '../components/CardModal.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import FilterSheet from '../components/FilterSheet.jsx'
+import Button from '../components/Button.jsx'
 import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
@@ -34,6 +37,7 @@ const Home = () => {
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
   const [streamingProviders, setStreamingProviders] = useState([])
   const [ignoreWatched, setIgnoreWatched] = useState(false)
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -135,6 +139,127 @@ const Home = () => {
     if (created) setSelectedMovie(created)
   }
 
+  const activeFilterCount =
+    filterPriorities.length + filterGenres.length + filterProviders.length + (ignoreWatched ? 1 : 0)
+
+  const handleClearFilters = () => {
+    setFilterPriorities([])
+    setFilterGenres([])
+    setFilterProviders([])
+    setIgnoreWatched(false)
+  }
+
+  const togglePriority = (value) =>
+    setFilterPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
+
+  const ignoreWatchedToggle = (
+    <label className="draw-toggle-label">
+      <input
+        type="checkbox"
+        checked={ignoreWatched}
+        onChange={(e) => setIgnoreWatched(e.target.checked)}
+        className="draw-toggle-input"
+      />
+      <span className="draw-toggle-track" />
+      <span className="draw-toggle-text">Ignorar já assistidos</span>
+    </label>
+  )
+
+  const sheetFilters = (
+    <>
+      <section className="filter-section">
+        <span className="filter-section-label">Prioridade</span>
+        <div className="filter-chip-group">
+          {PRIORITY_OPTIONS.map(opt => (
+            <Button
+              key={opt.value}
+              variant="filter"
+              size="sm"
+              pill
+              active={filterPriorities.includes(opt.value)}
+              onClick={() => togglePriority(opt.value)}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      {availableGenres.length > 0 && (
+        <section className="filter-section">
+          <span className="filter-section-label">Gênero</span>
+          <Dropdown
+            multi
+            trigger="button"
+            align="left"
+            label="Selecionar"
+            options={availableGenres}
+            value={filterGenres}
+            onChange={setFilterGenres}
+          />
+        </section>
+      )}
+
+      {streamingOptions.length > 0 && (
+        <section className="filter-section">
+          <span className="filter-section-label">Streaming</span>
+          <Dropdown
+            multi
+            trigger="button"
+            align="left"
+            label="Selecionar"
+            options={streamingOptions}
+            value={filterProviders}
+            onChange={setFilterProviders}
+          />
+        </section>
+      )}
+
+      <section className="filter-section">
+        {ignoreWatchedToggle}
+      </section>
+    </>
+  )
+
+  const extraFilters = (
+    <>
+      <div className="draw-filter-row">
+        <Dropdown
+          multi
+          trigger="pill"
+          align="left"
+          label="Prioridade"
+          options={PRIORITY_OPTIONS}
+          value={filterPriorities}
+          onChange={setFilterPriorities}
+        />
+        {availableGenres.length > 0 && (
+          <Dropdown
+            multi
+            trigger="pill"
+            align="left"
+            label="Gênero"
+            options={availableGenres}
+            value={filterGenres}
+            onChange={setFilterGenres}
+          />
+        )}
+        {streamingOptions.length > 0 && (
+          <Dropdown
+            multi
+            trigger="pill"
+            align="left"
+            label="Streaming"
+            options={streamingOptions}
+            value={filterProviders}
+            onChange={setFilterProviders}
+          />
+        )}
+      </div>
+      {ignoreWatchedToggle}
+    </>
+  )
+
   const greeting = profile?.name ? `Olá, ${profile.name.split(' ')[0]}!` : 'Bem-vindo!'
   const totalItems = stats.movies + stats.series
   const listIsEmpty = !userMoviesLoading && totalItems === 0
@@ -178,48 +303,21 @@ const Home = () => {
             <div className="draw-filters">
               <div className="draw-filter-row">
                 <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
-                <Dropdown
-                  multi
-                  trigger="pill"
-                  align="left"
-                  label="Prioridade"
-                  options={PRIORITY_OPTIONS}
-                  value={filterPriorities}
-                  onChange={setFilterPriorities}
-                />
-                {availableGenres.length > 0 && (
-                  <Dropdown
-                    multi
-                    trigger="pill"
-                    align="left"
-                    label="Gênero"
-                    options={availableGenres}
-                    value={filterGenres}
-                    onChange={setFilterGenres}
-                  />
-                )}
-                {streamingOptions.length > 0 && (
-                  <Dropdown
-                    multi
-                    trigger="pill"
-                    align="left"
-                    label="Streaming"
-                    options={streamingOptions}
-                    value={filterProviders}
-                    onChange={setFilterProviders}
-                  />
-                )}
+                <button
+                  type="button"
+                  className="draw-filter-sheet-btn"
+                  onClick={() => setFilterSheetOpen(true)}
+                >
+                  <SlidersHorizontal size={16} />
+                  Filtros
+                  {activeFilterCount > 0 && (
+                    <span className="draw-filter-sheet-badge">{activeFilterCount}</span>
+                  )}
+                </button>
               </div>
-              <label className="draw-toggle-label">
-                <input
-                  type="checkbox"
-                  checked={ignoreWatched}
-                  onChange={(e) => setIgnoreWatched(e.target.checked)}
-                  className="draw-toggle-input"
-                />
-                <span className="draw-toggle-track" />
-                <span className="draw-toggle-text">Ignorar já assistidos</span>
-              </label>
+              <div className="draw-filters-inline">
+                {extraFilters}
+              </div>
             </div>
 
             <div className="card-actions">
@@ -229,7 +327,7 @@ const Home = () => {
                     Sua lista está vazia. Pesquise filmes ou séries para começar.
                   </p>
                   <Link to={ROUTES.SEARCH} className="btn btn-primary btn-draw">
-                    <span className="btn-icon">🔍</span>
+                    <span className="btn-icon"><SearchIcon size={20} /></span>
                     <span className="btn-text">Pesquisar conteúdo</span>
                   </Link>
                 </div>
@@ -241,7 +339,7 @@ const Home = () => {
                     disabled={drawDisabled}
                     title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
                   >
-                    <span className="btn-icon">🎲</span>
+                    <span className="btn-icon"><Dices size={20} /></span>
                     <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Sortear'}</span>
                   </button>
                   <button
@@ -250,7 +348,7 @@ const Home = () => {
                     disabled={drawDisabled}
                     title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
                   >
-                    <span className="btn-icon">✨</span>
+                    <span className="btn-icon"><Sparkles size={20} /></span>
                     <span className="btn-text">{isDrawing ? 'Sorteando...' : 'Estou com sorte'}</span>
                   </button>
                 </div>
@@ -258,7 +356,7 @@ const Home = () => {
 
               <div className="group-row">
                 <button className="btn-group" onClick={handleGroup}>
-                  👥 Formar grupo
+                  <Users size={18} /> Formar grupo
                   <span className="btn-soon btn-soon--inline">em breve</span>
                 </button>
               </div>
@@ -288,9 +386,9 @@ const Home = () => {
                   />
                 )}
                 <div className="draw-result-top">
-                  <span className="draw-result-label">🎉 Sorteado!</span>
+                  <span className="draw-result-label"><Sparkles size={16} /> Sorteado!</span>
                   <IconButton
-                    icon="✕"
+                    icon={<X size={20} />}
                     label="Fechar sorteio"
                     onClick={(e) => { e.stopPropagation(); setSelectedMovie(null); setModalOpen(false) }}
                     className="btn-close-draw"
@@ -301,9 +399,9 @@ const Home = () => {
                     <span className="draw-type">
                       {TYPE_LABEL[selectedMovie.type] ?? selectedMovie.type}
                     </span>
-                    {selectedMovie.year && <span className="draw-meta-item">📅 {selectedMovie.year}</span>}
-                    {selectedMovie.rating && <span className="draw-meta-item">⭐ {selectedMovie.rating}</span>}
-                    {selectedMovie.type === 'MOVIE' && selectedMovie.duration && <span className="draw-meta-item">⏱ {formatDuration(selectedMovie.duration)}</span>}
+                    {selectedMovie.year && <span className="draw-meta-item"><Calendar size={14} /> {selectedMovie.year}</span>}
+                    {selectedMovie.rating && <span className="draw-meta-item"><Star size={14} /> {selectedMovie.rating}</span>}
+                    {selectedMovie.type === 'MOVIE' && selectedMovie.duration && <span className="draw-meta-item"><Clock size={14} /> {formatDuration(selectedMovie.duration)}</span>}
                   </div>
                   <h4 className="draw-result-title">{selectedMovie.title}</h4>
                   {selectedMovie.genres?.length > 0 && (
@@ -353,6 +451,14 @@ const Home = () => {
           }
         />
       )}
+
+      <FilterSheet
+        open={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        onClear={handleClearFilters}
+      >
+        {sheetFilters}
+      </FilterSheet>
     </div>
   )
 }

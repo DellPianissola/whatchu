@@ -73,6 +73,9 @@
   font-size: 1rem;
   cursor: pointer;
   transition: transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-add-empty:hover {
@@ -96,6 +99,9 @@
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--surface-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .movies-grid {

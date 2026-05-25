@@ -15,7 +15,7 @@ import './Dropdown.css'
  *   trigger          — 'pill' | 'button' (visual do botão), default 'button'
  *   align            — 'left' | 'right' (alinhamento do menu), default 'left'
  *   label            — texto do trigger quando vazio
- *   icon             — emoji/string opcional antes do label
+ *   icon             — ReactNode opcional antes do label
  *   disabled         — bool
  *   disabledTitle    — tooltip quando disabled
  *   emptyMessage     — string mostrada quando options está vazio

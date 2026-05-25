@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useResendVerification } from '../hooks/useResendVerification.js'
 import AuthShell from '../components/AuthShell.jsx'
@@ -63,7 +64,7 @@ const VerifyEmail = () => {
 
       {status === 'success' && (
         <div className="verify-content">
-          <div className="verify-icon verify-icon--success">✓</div>
+          <div className="verify-icon verify-icon--success"><CheckCircle2 size={56} strokeWidth={1.5} /></div>
           <h2>Tudo certo!</h2>
           <p>Sua conta foi criada e você já está logado. Redirecionando...</p>
         </div>
@@ -71,7 +72,7 @@ const VerifyEmail = () => {
 
       {status === 'error' && (
         <div className="verify-content">
-          <div className="verify-icon verify-icon--error">✕</div>
+          <div className="verify-icon verify-icon--error"><XCircle size={56} strokeWidth={1.5} /></div>
           <h2>Verificação falhou</h2>
           <p>{errorMsg}</p>
 

@@ -61,7 +61,8 @@
   --gradient-wordmark: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
 
   /* layout */
-  --navbar-height: 64px;
+  --navbar-height: 56px;
+  --bottom-nav-height: 0px;
 
   /* radius */
   --radius-sm: 4px;
@@ -165,6 +166,13 @@ body {
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
+  padding-bottom: var(--bottom-nav-height);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --bottom-nav-height: calc(64px + env(safe-area-inset-bottom));
+  }
 }
 
 /* ── Scrollbar global ────────────────────────────── */

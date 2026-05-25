@@ -1,5 +1,5 @@
 .home {
-  min-height: calc(100vh - 3.75rem);
+  min-height: calc(100vh - var(--navbar-height) - var(--bottom-nav-height));
   position: relative;
   overflow-x: hidden;
   display: flex;
@@ -780,7 +780,7 @@
 
   .home-content { max-width: 100%; }
 
-  .home-header { margin-bottom: 1.25rem; }
+  .home-header { display: none; }
 
   .main-card {
     grid-template-columns: 1fr;

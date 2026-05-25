@@ -16,6 +16,7 @@ import VerifyEmailChange from './pages/VerifyEmailChange'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import NavBar from './components/NavBar.jsx'
+import BottomNav from './components/BottomNav.jsx'
 import CookieBanner from './components/CookieBanner.jsx'
 import { initAnalytics, trackPageView } from './services/analytics.js'
 import { ROUTES } from './constants/routes.js'
@@ -56,6 +57,7 @@ function App() {
               <Route path={ROUTES.ONBOARDING}      element={protect(<Onboarding />, { requireOnboarding: false })} />
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
             </Routes>
+            <BottomNav />
           </Router>
         </UserMoviesProvider>
       </NotificationProvider>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X, SlidersHorizontal } from 'lucide-react'
+import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X } from 'lucide-react'
 import { drawMovie, luckyDraw, getExternalGenres, getStreamingProviders } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -14,6 +14,7 @@ import AddToListButton from '../components/AddToListButton.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
+import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import Button from '../components/Button.jsx'
 import GeoPlaceholder from '../components/GeoPlaceholder.jsx'
 import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
@@ -39,6 +40,10 @@ const Home = () => {
   const [streamingProviders, setStreamingProviders] = useState([])
   const [ignoreWatched, setIgnoreWatched] = useState(false)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const [pendingPriorities, setPendingPriorities] = useState([])
+  const [pendingGenres, setPendingGenres] = useState([])
+  const [pendingProviders, setPendingProviders] = useState([])
+  const [pendingIgnoreWatched, setPendingIgnoreWatched] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -143,12 +148,36 @@ const Home = () => {
   const activeFilterCount =
     filterPriorities.length + filterGenres.length + filterProviders.length + (ignoreWatched ? 1 : 0)
 
-  const handleClearFilters = () => {
+  const openFilterSheet = () => {
+    setPendingPriorities(filterPriorities)
+    setPendingGenres(filterGenres)
+    setPendingProviders(filterProviders)
+    setPendingIgnoreWatched(ignoreWatched)
+    setFilterSheetOpen(true)
+  }
+
+  const commitPendingAndClose = () => {
+    setFilterPriorities(pendingPriorities)
+    setFilterGenres(pendingGenres)
+    setFilterProviders(pendingProviders)
+    setIgnoreWatched(pendingIgnoreWatched)
+    setFilterSheetOpen(false)
+  }
+
+  const clearAndApply = () => {
+    setPendingPriorities([])
+    setPendingGenres([])
+    setPendingProviders([])
+    setPendingIgnoreWatched(false)
     setFilterPriorities([])
     setFilterGenres([])
     setFilterProviders([])
     setIgnoreWatched(false)
+    setFilterSheetOpen(false)
   }
+
+  const togglePendingPriority = (value) =>
+    setPendingPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
 
   const togglePriority = (value) =>
     setFilterPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
@@ -159,6 +188,19 @@ const Home = () => {
         type="checkbox"
         checked={ignoreWatched}
         onChange={(e) => setIgnoreWatched(e.target.checked)}
+        className="draw-toggle-input"
+      />
+      <span className="draw-toggle-track" />
+      <span className="draw-toggle-text">Ignorar já assistidos</span>
+    </label>
+  )
+
+  const pendingIgnoreWatchedToggle = (
+    <label className="draw-toggle-label">
+      <input
+        type="checkbox"
+        checked={pendingIgnoreWatched}
+        onChange={(e) => setPendingIgnoreWatched(e.target.checked)}
         className="draw-toggle-input"
       />
       <span className="draw-toggle-track" />
@@ -177,8 +219,8 @@ const Home = () => {
               variant="filter"
               size="sm"
               pill
-              active={filterPriorities.includes(opt.value)}
-              onClick={() => togglePriority(opt.value)}
+              active={pendingPriorities.includes(opt.value)}
+              onClick={() => togglePendingPriority(opt.value)}
             >
               {opt.label}
             </Button>
@@ -195,8 +237,8 @@ const Home = () => {
             align="left"
             label="Selecionar"
             options={availableGenres}
-            value={filterGenres}
-            onChange={setFilterGenres}
+            value={pendingGenres}
+            onChange={setPendingGenres}
           />
         </section>
       )}
@@ -210,14 +252,14 @@ const Home = () => {
             align="left"
             label="Selecionar"
             options={streamingOptions}
-            value={filterProviders}
-            onChange={setFilterProviders}
+            value={pendingProviders}
+            onChange={setPendingProviders}
           />
         </section>
       )}
 
       <section className="filter-section">
-        {ignoreWatchedToggle}
+        {pendingIgnoreWatchedToggle}
       </section>
     </>
   )
@@ -302,17 +344,7 @@ const Home = () => {
               <div className="draw-filter-row">
                 <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
                 <div className="draw-filters-inline">{desktopDropdowns}</div>
-                <button
-                  type="button"
-                  className="draw-filter-sheet-btn"
-                  onClick={() => setFilterSheetOpen(true)}
-                >
-                  <SlidersHorizontal size={16} />
-                  Filtros
-                  {activeFilterCount > 0 && (
-                    <span className="draw-filter-sheet-badge">{activeFilterCount}</span>
-                  )}
-                </button>
+                <FilterSheetTrigger count={activeFilterCount} onClick={openFilterSheet} />
               </div>
               <div className="draw-filters-toggle-row">
                 {ignoreWatchedToggle}
@@ -444,8 +476,8 @@ const Home = () => {
 
       <FilterSheet
         open={filterSheetOpen}
-        onClose={() => setFilterSheetOpen(false)}
-        onClear={handleClearFilters}
+        onClose={commitPendingAndClose}
+        onClear={clearAndApply}
       >
         {sheetFilters}
       </FilterSheet>

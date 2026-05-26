@@ -17,12 +17,35 @@ import MovieCard from '../components/MovieCard.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import FilterSheet from '../components/FilterSheet.jsx'
+import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
+import Button from '../components/Button.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { TYPE_LABEL } from '../utils/content.js'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
 import './Search.css'
 
 const MODE = { PAGE: 'page', ONBOARDING: 'onboarding' }
+
+// ↓ = ascendente (menor primeiro), ↑ = descendente (maior primeiro)
+const SORT_CATEGORIES = [
+  {
+    Icon: Calendar,
+    label: 'Por data',
+    options: [
+      { value: 'date_asc',  ariaLabel: 'Mais antigos primeiro',  Icon: ArrowDown },
+      { value: 'date_desc', ariaLabel: 'Mais recentes primeiro', Icon: ArrowUp   },
+    ],
+  },
+  {
+    Icon: Star,
+    label: 'Por nota',
+    options: [
+      { value: 'rating_asc',  ariaLabel: 'Menor nota primeiro', Icon: ArrowDown },
+      { value: 'rating_desc', ariaLabel: 'Maior nota primeiro', Icon: ArrowUp   },
+    ],
+  },
+]
 
 const VALID_TYPES = ['movie', 'series']
 const VALID_SORTS = ['date_asc', 'date_desc', 'rating_asc', 'rating_desc']
@@ -69,6 +92,9 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [totalPages, setTotalPages] = useState(1)
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const [pendingSortBy, setPendingSortBy] = useState(null)
+  const [pendingGenres, setPendingGenres] = useState([])
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
@@ -94,7 +120,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     updateParams((next) => {
       if (newType === 'movie') next.delete('type')
       else next.set('type', newType)
-      next.delete('genres') // gêneros são por-tipo
     }, { resetPage: true })
   }
 
@@ -122,16 +147,37 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   useEffect(() => {
     let cancelled = false
     getExternalGenres(type)
-      .then((genres) => { if (!cancelled) setAvailableGenres(genres || []) })
+      .then((genres) => {
+        if (cancelled) return
+        const list = genres || []
+        setAvailableGenres(list)
+        // Só faz intersect se temos lista válida da API (evita zerar genres em erro temporário)
+        if (list.length > 0 && selectedGenres.length > 0) {
+          const validSet = new Set(list)
+          const filtered = selectedGenres.filter(g => validSet.has(g))
+          if (filtered.length !== selectedGenres.length) {
+            const next = new URLSearchParams(searchParams)
+            if (filtered.length === 0) next.delete('genres')
+            else next.set('genres', filtered.join(','))
+            setSearchParams(next)
+          }
+        }
+      })
       .catch((error) => {
         console.error('Erro ao carregar gêneros:', error)
         if (!cancelled) setAvailableGenres([])
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type])
 
-  // reseta página ao mudar texto (debouncedQuery); type/sort/gênero já resetam nos setters
+  // Texto + sort/gênero são mutuamente exclusivos (TMDB /search não suporta).
+  // Ao iniciar busca por texto, limpa sort/gêneros e reseta página juntos.
   useEffect(() => {
+    if (debouncedQuery.trim() && (sortBy || selectedGenres.length > 0)) {
+      commitFiltersToUrl(null, [])
+      return
+    }
     if (currentPage !== 1) setCurrentPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery])
@@ -198,6 +244,86 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     setSortBy(next === null ? null : `rating_${next}`)
   }
 
+  const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length
+
+  const openFilterSheet = () => {
+    setPendingSortBy(sortBy)
+    setPendingGenres(selectedGenres)
+    setFilterSheetOpen(true)
+  }
+
+  // Batchar sortBy + genres numa única setSearchParams pra evitar que a segunda
+  // chamada sobrescreva a primeira (cada setSearchParams lê searchParams stale).
+  const commitFiltersToUrl = (sortByValue, genresArr) => {
+    const next = new URLSearchParams(searchParams)
+    if (!sortByValue) next.delete('sortBy')
+    else next.set('sortBy', sortByValue)
+    if (!genresArr || genresArr.length === 0) next.delete('genres')
+    else next.set('genres', genresArr.join(','))
+    next.delete('page')
+    setSearchParams(next)
+  }
+
+  const commitPendingAndClose = () => {
+    commitFiltersToUrl(pendingSortBy, pendingGenres)
+    setFilterSheetOpen(false)
+  }
+
+  const clearAndApply = () => {
+    setPendingSortBy(null)
+    setPendingGenres([])
+    commitFiltersToUrl(null, [])
+    setFilterSheetOpen(false)
+  }
+
+  const sheetFilters = (
+    <>
+      <section className="filter-section">
+        <span className="filter-section-label">Ordenar por</span>
+        {SORT_CATEGORIES.map(({ Icon: CategoryIcon, label, options }) => (
+          <div key={label} className="filter-sort-group">
+            <span className="filter-sort-group-label">
+              <CategoryIcon size={14} /> {label}
+            </span>
+            <div className="filter-chip-group">
+              {options.map(({ value, ariaLabel, Icon: ArrowIcon }) => (
+                <Button
+                  key={value}
+                  variant="filter"
+                  size="sm"
+                  pill
+                  active={pendingSortBy === value}
+                  disabled={sortAndGenreDisabled}
+                  onClick={() => setPendingSortBy(pendingSortBy === value ? null : value)}
+                  aria-label={ariaLabel}
+                  title={ariaLabel}
+                >
+                  <ArrowIcon size={16} />
+                </Button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="filter-section">
+        <span className="filter-section-label">Gêneros</span>
+        <Dropdown
+          multi
+          trigger="button"
+          align="left"
+          label="Selecionar"
+          options={availableGenres}
+          value={pendingGenres}
+          onChange={setPendingGenres}
+          disabled={sortAndGenreDisabled}
+          disabledTitle="Indisponível durante busca por texto"
+          emptyMessage="Nenhum gênero disponível"
+        />
+      </section>
+    </>
+  )
+
   return (
     <div className={`search-page ${isOnboarding ? 'search-page-onboarding' : ''}`}>
       {isOnboarding && (
@@ -218,14 +344,14 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 onClick={() => setType('movie')}
                 className={`filter-btn ${type === 'movie' ? 'active' : ''}`}
               >
-                <Film size={16} /> Filmes
+                <Film size={18} /> Filmes
               </button>
               <button
                 type="button"
                 onClick={() => setType('series')}
                 className={`filter-btn ${type === 'series' ? 'active' : ''}`}
               >
-                <Tv size={16} /> Séries
+                <Tv size={18} /> Séries
               </button>
             </div>
 
@@ -275,6 +401,8 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 emptyMessage="Nenhum gênero disponível"
               />
             </div>
+
+            <FilterSheetTrigger count={activeFilterCount} onClick={openFilterSheet} />
           </div>
         </form>
 
@@ -339,6 +467,14 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           }
         />
       )}
+
+      <FilterSheet
+        open={filterSheetOpen}
+        onClose={commitPendingAndClose}
+        onClear={clearAndApply}
+      >
+        {sheetFilters}
+      </FilterSheet>
     </div>
   )
 }

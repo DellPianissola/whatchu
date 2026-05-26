@@ -1,5 +1,5 @@
 .mylist-page {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--navbar-height) - var(--bottom-nav-height));
   padding: 2rem;
   background: var(--background);
 }
@@ -183,5 +183,13 @@
 
   .movies-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile compacto: cards horizontais em lista 1 coluna */
+@media (max-width: 640px) {
+  .movies-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
   }
 }

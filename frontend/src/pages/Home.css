@@ -373,40 +373,6 @@
   display: block;
 }
 
-.draw-filter-sheet-btn {
-  display: none;
-  align-items: center;
-  gap: 8px;
-  padding: 0.5rem 1rem;
-  min-height: 44px;
-  border: 1.5px solid var(--surface-light);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-
-.draw-filter-sheet-btn:hover {
-  border-color: var(--primary);
-}
-
-.draw-filter-sheet-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: var(--radius-pill);
-  background: var(--primary);
-  color: var(--text-on-media);
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
-}
 
 /* Toggle "Ignorar assistidos" */
 .draw-toggle-label {
@@ -713,7 +679,7 @@
     display: none;
   }
 
-  .draw-filter-sheet-btn {
+  .home .ui-filter-sheet-trigger {
     display: inline-flex;
   }
 

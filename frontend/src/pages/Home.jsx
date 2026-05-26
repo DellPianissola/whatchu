@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X } from 'lucide-react'
+import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X, Film, Tv } from 'lucide-react'
 import { drawMovie, luckyDraw, getExternalGenres, getStreamingProviders } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -307,20 +307,18 @@ const Home = () => {
         <div className="main-card">
 
           <div className="card-left">
-            <div className="card-header">
-              <h2>{greeting}</h2>
-            </div>
-
-            <div className="stats-preview">
-              <div className="stat-item">
-                <div className="stat-value">{userMoviesLoading ? '—' : stats.movies}</div>
-                <div className="stat-label">Filmes</div>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-item">
-                <div className="stat-value">{userMoviesLoading ? '—' : stats.series}</div>
-                <div className="stat-label">Séries</div>
-              </div>
+            <div className="greeting-row">
+              <h2 className="greeting">{greeting}</h2>
+              {!userMoviesLoading && (
+                <div className="stat-pills">
+                  <span className="stat-pill stat-pill--movie" title={`${stats.movies} filmes na sua lista`}>
+                    <Film size={14} /> {stats.movies}
+                  </span>
+                  <span className="stat-pill stat-pill--series" title={`${stats.series} séries na sua lista`}>
+                    <Tv size={14} /> {stats.series}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="draw-filters">

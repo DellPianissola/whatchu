@@ -9,51 +9,34 @@
   margin: 0 auto;
 }
 
-.mylist-header {
+.mylist-controls {
   display: flex;
-  justify-content: space-between;
+  gap: 0.75rem;
   align-items: center;
-  margin-bottom: 2rem;
-}
-
-.mylist-header h2 {
-  color: var(--text);
-  margin: 0;
-  font-size: 2rem;
-}
-
-.btn-add-new {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 12px;
-  background: var(--gradient-1);
-  color: var(--text-on-media);
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-add-new:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
-}
-
-.filters {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
   flex-wrap: wrap;
-  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.filter-pills-row {
+.mylist-search {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.mylist-types {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.mylist-page .ui-filter-sheet-trigger {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.mylist-count {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .loading {
@@ -83,27 +66,6 @@
   box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
 }
 
-.movies-by-category {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-}
-
-.category-section {
-  margin-bottom: 2rem;
-}
-
-.category-title {
-  color: var(--text);
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--surface-light);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .movies-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -111,8 +73,6 @@
   align-items: stretch;
 }
 
-/* wrapper precisa ser positioned pro overlay de confirmação ficar absolute em cima do card.
-   data-card-id é necessário pro click-outside do confirmingDelete. */
 .ui-movie-card-wrap {
   position: relative;
   display: flex;
@@ -124,7 +84,6 @@
   min-width: 0;
 }
 
-/* ── Card armado pra deletar: blur + overlay + glow ── */
 .ui-movie-card-wrap--deleting .ui-movie-card {
   box-shadow: 0 0 0 2px var(--danger), 0 8px 28px rgba(var(--danger-rgb), 0.45);
 }
@@ -177,8 +136,18 @@
 }
 
 @media (max-width: 768px) {
-  .filters {
+  .mylist-page {
+    padding: 1rem;
+  }
+
+  .mylist-controls {
     flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .mylist-search {
+    flex: 1 1 auto;
   }
 
   .movies-grid {
@@ -186,8 +155,28 @@
   }
 }
 
-/* Mobile compacto: cards horizontais em lista 1 coluna */
 @media (max-width: 640px) {
+  .mylist-controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "search  search"
+      "types   filtros";
+    gap: 0.6rem;
+  }
+
+  .mylist-search   { grid-area: search; }
+  .mylist-types    { grid-area: types; }
+  .mylist-page .ui-filter-sheet-trigger {
+    grid-area: filtros;
+    margin-left: 0;
+  }
+
+  .ui-search-input {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.95rem;
+  }
+
   .movies-grid {
     grid-template-columns: 1fr;
     gap: 0.65rem;

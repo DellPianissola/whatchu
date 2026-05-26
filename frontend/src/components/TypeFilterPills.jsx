@@ -1,8 +1,9 @@
-import Button from './Button.jsx'
+import { Film, Tv } from 'lucide-react'
+import './TypeFilterPills.css'
 
 export const TYPE_OPTIONS = [
-  { value: 'MOVIE',  label: 'Filme'  },
-  { value: 'SERIES', label: 'Série'  },
+  { value: 'MOVIE',  label: 'Filme', Icon: Film },
+  { value: 'SERIES', label: 'Série', Icon: Tv   },
 ]
 
 export const ALL_TYPES = TYPE_OPTIONS.map(t => t.value)
@@ -15,17 +16,15 @@ const TypeFilterPills = ({ value, onChange }) => {
 
   return (
     <>
-      {TYPE_OPTIONS.map(({ value: v, label }) => (
-        <Button
+      {TYPE_OPTIONS.map(({ value: v, label, Icon }) => (
+        <button
           key={v}
-          variant="filter"
-          size="sm"
-          pill
-          active={value.includes(v)}
+          type="button"
+          className={`filter-btn ${value.includes(v) ? 'active' : ''}`}
           onClick={() => toggle(v)}
         >
-          {label}
-        </Button>
+          <Icon size={18} /> {label}
+        </button>
       ))}
     </>
   )

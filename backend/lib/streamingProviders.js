@@ -24,7 +24,7 @@ export const resolveTmdbIds = (keys) => {
 }
 
 export const publicStreamingProviders = () =>
-  STREAMING_PROVIDERS.map(({ key, name }) => ({ key, name }))
+  STREAMING_PROVIDERS.map(({ key, name, tmdbIds }) => ({ key, name, tmdbIds }))
 
 export const extractStreamingProviderIds = (watchProviders) => {
   if (!watchProviders?.streaming) return []

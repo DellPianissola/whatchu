@@ -19,9 +19,9 @@ import { SkeletonCard } from '../components/Skeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
-import Button from '../components/Button.jsx'
+import SortCategoriesSection from '../components/SortCategoriesSection.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
-import { TYPE_LABEL } from '../utils/content.js'
+import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
 import './Search.css'
 
@@ -92,9 +92,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [totalPages, setTotalPages] = useState(1)
   const [availableGenres, setAvailableGenres] = useState([])
   const [expandedItem, setExpandedItem] = useState(null)
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
-  const [pendingSortBy, setPendingSortBy] = useState(null)
-  const [pendingGenres, setPendingGenres] = useState([])
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
@@ -246,12 +243,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
 
   const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length
 
-  const openFilterSheet = () => {
-    setPendingSortBy(sortBy)
-    setPendingGenres(selectedGenres)
-    setFilterSheetOpen(true)
-  }
-
   // Batchar sortBy + genres numa única setSearchParams pra evitar que a segunda
   // chamada sobrescreva a primeira (cada setSearchParams lê searchParams stale).
   const commitFiltersToUrl = (sortByValue, genresArr) => {
@@ -264,47 +255,20 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     setSearchParams(next)
   }
 
-  const commitPendingAndClose = () => {
-    commitFiltersToUrl(pendingSortBy, pendingGenres)
-    setFilterSheetOpen(false)
-  }
-
-  const clearAndApply = () => {
-    setPendingSortBy(null)
-    setPendingGenres([])
-    commitFiltersToUrl(null, [])
-    setFilterSheetOpen(false)
-  }
+  const filterSheet = useFilterSheet({
+    defaults: { sortBy: null, genres: [] },
+    onCommit: ({ sortBy: s, genres: g }) => commitFiltersToUrl(s, g),
+  })
 
   const sheetFilters = (
     <>
-      <section className="filter-section">
-        <span className="filter-section-label">Ordenar por</span>
-        {SORT_CATEGORIES.map(({ Icon: CategoryIcon, label, options }) => (
-          <div key={label} className="filter-sort-group">
-            <span className="filter-sort-group-label">
-              <CategoryIcon size={14} /> {label}
-            </span>
-            <div className="filter-chip-group">
-              {options.map(({ value, ariaLabel, Icon: ArrowIcon }) => (
-                <Button
-                  key={value}
-                  variant="filter"
-                  size="sm"
-                  pill
-                  active={pendingSortBy === value}
-                  disabled={sortAndGenreDisabled}
-                  onClick={() => setPendingSortBy(pendingSortBy === value ? null : value)}
-                  aria-label={ariaLabel}
-                  title={ariaLabel}
-                >
-                  <ArrowIcon size={16} />
-                </Button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </section>
+      <SortCategoriesSection
+        categories={SORT_CATEGORIES}
+        value={filterSheet.pending.sortBy}
+        onChange={(val) => filterSheet.setField('sortBy', val)}
+        disabled={sortAndGenreDisabled}
+        deselectable
+      />
 
       <section className="filter-section">
         <span className="filter-section-label">Gêneros</span>
@@ -314,8 +278,8 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           align="left"
           label="Selecionar"
           options={availableGenres}
-          value={pendingGenres}
-          onChange={setPendingGenres}
+          value={filterSheet.pending.genres}
+          onChange={(val) => filterSheet.setField('genres', val)}
           disabled={sortAndGenreDisabled}
           disabledTitle="Indisponível durante busca por texto"
           emptyMessage="Nenhum gênero disponível"
@@ -361,7 +325,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Digite o nome do filme ou série..."
-                className="search-input"
+                className="ui-search-input"
               />
             </div>
 
@@ -402,7 +366,10 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
               />
             </div>
 
-            <FilterSheetTrigger count={activeFilterCount} onClick={openFilterSheet} />
+            <FilterSheetTrigger
+              count={activeFilterCount}
+              onClick={() => filterSheet.openWith({ sortBy, genres: selectedGenres })}
+            />
           </div>
         </form>
 
@@ -421,7 +388,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 key={item.id}
                 item={item}
                 onClick={() => setExpandedItem(item)}
-                posterBadge={TYPE_LABEL[item.type] ?? item.type}
                 actions={
                   <AddToListButton
                     inList={isMovieInList(item)}
@@ -469,9 +435,9 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       )}
 
       <FilterSheet
-        open={filterSheetOpen}
-        onClose={commitPendingAndClose}
-        onClear={clearAndApply}
+        open={filterSheet.open}
+        onClose={filterSheet.close}
+        onClear={filterSheet.clear}
       >
         {sheetFilters}
       </FilterSheet>

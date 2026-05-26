@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
+import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import Wordmark from '../components/Wordmark.jsx'
 import IconButton from '../components/IconButton.jsx'
@@ -39,11 +40,6 @@ const Home = () => {
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
   const [streamingProviders, setStreamingProviders] = useState([])
   const [ignoreWatched, setIgnoreWatched] = useState(false)
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
-  const [pendingPriorities, setPendingPriorities] = useState([])
-  const [pendingGenres, setPendingGenres] = useState([])
-  const [pendingProviders, setPendingProviders] = useState([])
-  const [pendingIgnoreWatched, setPendingIgnoreWatched] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -148,36 +144,23 @@ const Home = () => {
   const activeFilterCount =
     filterPriorities.length + filterGenres.length + filterProviders.length + (ignoreWatched ? 1 : 0)
 
-  const openFilterSheet = () => {
-    setPendingPriorities(filterPriorities)
-    setPendingGenres(filterGenres)
-    setPendingProviders(filterProviders)
-    setPendingIgnoreWatched(ignoreWatched)
-    setFilterSheetOpen(true)
-  }
-
-  const commitPendingAndClose = () => {
-    setFilterPriorities(pendingPriorities)
-    setFilterGenres(pendingGenres)
-    setFilterProviders(pendingProviders)
-    setIgnoreWatched(pendingIgnoreWatched)
-    setFilterSheetOpen(false)
-  }
-
-  const clearAndApply = () => {
-    setPendingPriorities([])
-    setPendingGenres([])
-    setPendingProviders([])
-    setPendingIgnoreWatched(false)
-    setFilterPriorities([])
-    setFilterGenres([])
-    setFilterProviders([])
-    setIgnoreWatched(false)
-    setFilterSheetOpen(false)
-  }
+  const filterSheet = useFilterSheet({
+    defaults: { priorities: [], genres: [], providers: [], ignoreWatched: false },
+    onCommit: ({ priorities, genres, providers, ignoreWatched: ignored }) => {
+      setFilterPriorities(priorities)
+      setFilterGenres(genres)
+      setFilterProviders(providers)
+      setIgnoreWatched(ignored)
+    },
+  })
 
   const togglePendingPriority = (value) =>
-    setPendingPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
+    filterSheet.setField(
+      'priorities',
+      filterSheet.pending.priorities.includes(value)
+        ? filterSheet.pending.priorities.filter(v => v !== value)
+        : [...filterSheet.pending.priorities, value]
+    )
 
   const togglePriority = (value) =>
     setFilterPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
@@ -199,8 +182,8 @@ const Home = () => {
     <label className="draw-toggle-label">
       <input
         type="checkbox"
-        checked={pendingIgnoreWatched}
-        onChange={(e) => setPendingIgnoreWatched(e.target.checked)}
+        checked={filterSheet.pending.ignoreWatched}
+        onChange={(e) => filterSheet.setField('ignoreWatched', e.target.checked)}
         className="draw-toggle-input"
       />
       <span className="draw-toggle-track" />
@@ -219,7 +202,7 @@ const Home = () => {
               variant="filter"
               size="sm"
               pill
-              active={pendingPriorities.includes(opt.value)}
+              active={filterSheet.pending.priorities.includes(opt.value)}
               onClick={() => togglePendingPriority(opt.value)}
             >
               {opt.label}
@@ -237,8 +220,8 @@ const Home = () => {
             align="left"
             label="Selecionar"
             options={availableGenres}
-            value={pendingGenres}
-            onChange={setPendingGenres}
+            value={filterSheet.pending.genres}
+            onChange={(val) => filterSheet.setField('genres', val)}
           />
         </section>
       )}
@@ -252,8 +235,8 @@ const Home = () => {
             align="left"
             label="Selecionar"
             options={streamingOptions}
-            value={pendingProviders}
-            onChange={setPendingProviders}
+            value={filterSheet.pending.providers}
+            onChange={(val) => filterSheet.setField('providers', val)}
           />
         </section>
       )}
@@ -344,7 +327,15 @@ const Home = () => {
               <div className="draw-filter-row">
                 <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
                 <div className="draw-filters-inline">{desktopDropdowns}</div>
-                <FilterSheetTrigger count={activeFilterCount} onClick={openFilterSheet} />
+                <FilterSheetTrigger
+                  count={activeFilterCount}
+                  onClick={() => filterSheet.openWith({
+                    priorities: filterPriorities,
+                    genres: filterGenres,
+                    providers: filterProviders,
+                    ignoreWatched,
+                  })}
+                />
               </div>
               <div className="draw-filters-toggle-row">
                 {ignoreWatchedToggle}
@@ -475,9 +466,9 @@ const Home = () => {
       )}
 
       <FilterSheet
-        open={filterSheetOpen}
-        onClose={commitPendingAndClose}
-        onClear={clearAndApply}
+        open={filterSheet.open}
+        onClose={filterSheet.close}
+        onClear={filterSheet.clear}
       >
         {sheetFilters}
       </FilterSheet>

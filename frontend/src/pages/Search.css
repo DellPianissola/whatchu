@@ -35,20 +35,6 @@
   min-width: 300px;
 }
 
-.search-input {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 1rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
 
 .search-sort-filters {
   display: flex;
@@ -57,42 +43,6 @@
   flex-wrap: wrap;
 }
 
-.filter-btn {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.filter-btn svg {
-  flex-shrink: 0;
-}
-
-.filter-btn:hover {
-  border-color: var(--primary);
-  background: var(--surface-light);
-  transform: translateY(-2px);
-}
-
-.filter-btn.active {
-  background: var(--gradient-1);
-  border-color: transparent;
-  color: var(--text-on-media);
-  box-shadow: 0 4px 12px rgba(var(--shadow-rgb), 0.2);
-}
-
-.filter-btn.active:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(var(--shadow-rgb), 0.3);
-}
 
 .sort-buttons {
   display: flex;
@@ -159,12 +109,6 @@
     justify-content: flex-start;
   }
 
-  .filter-btn {
-    flex: 1;
-    min-width: 0;
-    justify-content: center;
-  }
-
   .search-sort-filters {
     display: none;
   }
@@ -197,7 +141,7 @@
     grid-area: filtros;
   }
 
-  .search-input {
+  .ui-search-input {
     padding: 0.7rem 0.85rem;
     font-size: 0.95rem;
   }

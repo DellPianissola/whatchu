@@ -21,7 +21,7 @@
 }
 
 .ui-btn--full { width: 100%; }
-.ui-btn--pill { border-radius: 99px; }
+.ui-btn--pill { border-radius: 12px; }
 
 /* ── Sizes ── */
 .ui-btn--sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }

@@ -2,9 +2,10 @@ import axios from 'axios'
 import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
 import { extractVirtualGenres, VIRTUAL_GENRE_NAMES } from '../lib/virtualGenres.js'
 
-const TMDB_BASE_URL       = 'https://api.themoviedb.org/3'
-const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
-const TMDB_LOGO_BASE_URL  = 'https://image.tmdb.org/t/p/w92'
+const TMDB_BASE_URL          = 'https://api.themoviedb.org/3'
+const TMDB_IMAGE_BASE_URL    = 'https://image.tmdb.org/t/p/w500'
+const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w780'
+const TMDB_LOGO_BASE_URL     = 'https://image.tmdb.org/t/p/w92'
 const TMDB_MAX_PAGES      = 500
 const LANGUAGE            = 'pt-BR'
 
@@ -273,6 +274,7 @@ class TMDBService {
       description: data.overview,
       descriptionLanguage: LANGUAGE,
       poster: data.poster_path ? `${TMDB_IMAGE_BASE_URL}${data.poster_path}` : null,
+      backdrop: data.backdrop_path ? `${TMDB_BACKDROP_BASE_URL}${data.backdrop_path}` : null,
       genres: data.genres?.map(g => g.name) || [],
       rating: roundRating(data.vote_average),
       externalId: data.id.toString(),

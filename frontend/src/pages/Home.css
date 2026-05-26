@@ -309,134 +309,8 @@
 /* ── Placeholder geométrico ──────────────────────── */
 
 .draw-placeholder {
-  width: 100%;
   flex: 1;
   min-height: 340px;
-  border-radius: 0;
-  background: transparent;
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Anéis concêntricos — centrados no ph-top */
-.geo-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1.5px solid;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.geo-ring--1 {
-  width: 110px; height: 110px;
-  border-color: rgba(var(--primary-rgb), 0.35);
-}
-.geo-ring--2 {
-  width: 72px; height: 72px;
-  border-color: rgba(var(--primary-rgb), 0.55);
-}
-.geo-ring--3 {
-  width: 36px; height: 36px;
-  border-color: rgba(var(--secondary-rgb), 0.7);
-  background: rgba(var(--secondary-rgb), 0.08);
-}
-
-/* Triângulos */
-.geo-triangle {
-  position: absolute;
-  width: 0;
-  height: 0;
-}
-
-.geo-triangle--1 {
-  border-left: 22px solid transparent;
-  border-right: 22px solid transparent;
-  border-bottom: 38px solid rgba(var(--primary-rgb), 0.2);
-  top: 12%;
-  right: 14%;
-}
-
-.geo-triangle--2 {
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 24px solid rgba(var(--secondary-rgb), 0.18);
-  bottom: 28%;
-  left: 10%;
-}
-
-/* Barras diagonais */
-.geo-bar {
-  position: absolute;
-  height: 2px;
-  border-radius: 99px;
-  transform-origin: left center;
-}
-
-.geo-bar--1 {
-  width: 55px;
-  background: rgba(var(--primary-rgb), 0.3);
-  top: 22%;
-  left: 8%;
-  transform: rotate(32deg);
-}
-
-.geo-bar--2 {
-  width: 38px;
-  background: rgba(var(--secondary-rgb), 0.25);
-  bottom: 22%;
-  right: 10%;
-  transform: rotate(-20deg);
-}
-
-/* Pontos */
-.geo-dot {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.geo-dot--1 {
-  width: 8px; height: 8px;
-  background: rgba(var(--secondary-rgb), 0.5);
-  top: 15%;
-  left: 18%;
-}
-
-.geo-dot--2 {
-  width: 5px; height: 5px;
-  background: rgba(var(--primary-rgb), 0.6);
-  bottom: 32%;
-  right: 18%;
-}
-
-.placeholder-hint {
-  position: absolute;
-  bottom: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(var(--primary-rgb), 0.75);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-}
-
-/* Animação ao sortear */
-.draw-placeholder.drawing .geo-ring {
-  animation: spin-ring 1.5s linear infinite;
-}
-
-.draw-placeholder.drawing .geo-ring--2 {
-  animation-direction: reverse;
-  animation-duration: 1s;
-}
-
-@keyframes spin-ring {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* ── Stats ───────────────────────────────────────── */
@@ -817,12 +691,12 @@
     height: 200px;
   }
 
-  .geo-ring--1 { width: 80px; height: 80px; }
-  .geo-ring--2 { width: 52px; height: 52px; }
-  .geo-ring--3 { width: 26px; height: 26px; }
-
   .draw-result-panel {
     min-height: min(60vh, 420px);
+  }
+
+  .draw-result-description {
+    display: none;
   }
 
   .btn-close-draw {

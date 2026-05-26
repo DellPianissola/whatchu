@@ -314,6 +314,12 @@ components:
           format: uri
           description: URL do poster
           example: 'https://example.com/poster.jpg'
+        backdrop:
+          type: string
+          format: uri
+          nullable: true
+          description: URL da imagem horizontal (backdrop) — disponível apenas em endpoints de detalhes
+          example: 'https://image.tmdb.org/t/p/w780/abc.jpg'
         year:
           type: integer
           description: Ano de lançamento

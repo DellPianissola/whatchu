@@ -15,6 +15,7 @@ import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Button from '../components/Button.jsx'
+import GeoPlaceholder from '../components/GeoPlaceholder.jsx'
 import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
@@ -411,20 +412,11 @@ const Home = () => {
                 </div>
               </button>
             ) : (
-              <div className={`draw-placeholder ${isDrawing ? 'drawing' : ''}`}>
-                <div className="geo-ring geo-ring--1" />
-                <div className="geo-ring geo-ring--2" />
-                <div className="geo-ring geo-ring--3" />
-                <div className="geo-triangle geo-triangle--1" />
-                <div className="geo-triangle geo-triangle--2" />
-                <div className="geo-bar geo-bar--1" />
-                <div className="geo-bar geo-bar--2" />
-                <div className="geo-dot geo-dot--1" />
-                <div className="geo-dot geo-dot--2" />
-                <div className="placeholder-hint">
-                  {isDrawing ? 'Sorteando...' : 'O sorteado aparece aqui'}
-                </div>
-              </div>
+              <GeoPlaceholder
+                className="draw-placeholder"
+                animated={isDrawing}
+                hint={isDrawing ? 'Sorteando...' : 'O sorteado aparece aqui'}
+              />
             )}
           </div>
 

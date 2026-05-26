@@ -29,7 +29,7 @@
 
 /* ── Slots ── */
 .ui-btn-icon { font-size: 1em; line-height: 1; }
-.ui-btn-text { line-height: 1.1; }
+.ui-btn-text { line-height: 1; }
 
 /* ── Variant: filter (toggle pill) ── */
 .ui-btn--filter {

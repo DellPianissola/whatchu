@@ -1,14 +1,19 @@
 .ui-pagination {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-4) 0;
+  flex-wrap: wrap;
 }
 
 .ui-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   min-width: 36px;
+  min-height: 36px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -35,4 +40,26 @@
   color: var(--text-on-media);
   border-color: var(--primary);
   cursor: default;
+}
+
+@media (max-width: 640px) {
+  .ui-pagination {
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ui-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ui-pagination-text {
+    display: none;
+  }
+
+  .ui-pagination-btn {
+    padding: 0;
+    flex-shrink: 0;
+  }
 }

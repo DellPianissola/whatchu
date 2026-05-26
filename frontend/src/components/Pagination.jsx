@@ -1,3 +1,4 @@
+import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react'
 import { usePagination } from '../hooks/usePagination'
 import './Pagination.css'
 
@@ -17,7 +18,10 @@ const Pagination = ({ current, total, onChange }) => {
         onClick={() => go(1)}
         disabled={isFirst}
         aria-label="Primeira página"
-      >« Início</button>
+      >
+        <ChevronsLeft size={16} />
+        <span className="ui-pagination-text">Início</span>
+      </button>
 
       <button
         type="button"
@@ -25,13 +29,16 @@ const Pagination = ({ current, total, onChange }) => {
         onClick={() => go(current - 1)}
         disabled={isFirst}
         aria-label="Página anterior"
-      >‹ Anterior</button>
+      >
+        <ChevronLeft size={16} />
+        <span className="ui-pagination-text">Anterior</span>
+      </button>
 
       {pages.map((page) => (
         <button
           key={page}
           type="button"
-          className={`ui-pagination-btn ui-pagination-btn--page ${page === current ? 'ui-pagination-btn--active' : ''}`}
+          className={`ui-pagination-btn ${page === current ? 'ui-pagination-btn--active' : ''}`}
           onClick={() => go(page)}
           aria-label={`Página ${page}`}
           aria-current={page === current ? 'page' : undefined}
@@ -44,7 +51,10 @@ const Pagination = ({ current, total, onChange }) => {
         onClick={() => go(current + 1)}
         disabled={isLast}
         aria-label="Próxima página"
-      >Próximo ›</button>
+      >
+        <span className="ui-pagination-text">Próximo</span>
+        <ChevronRight size={16} />
+      </button>
 
       <button
         type="button"
@@ -52,7 +62,10 @@ const Pagination = ({ current, total, onChange }) => {
         onClick={() => go(total)}
         disabled={isLast}
         aria-label="Última página"
-      >Último »</button>
+      >
+        <span className="ui-pagination-text">Último</span>
+        <ChevronsRight size={16} />
+      </button>
     </nav>
   )
 }

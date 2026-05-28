@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Film, Tv, Calendar, Star, Tags, ArrowUp, ArrowDown } from 'lucide-react'
+import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
   mapUpstreamError,
@@ -22,6 +22,9 @@ import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import SortCategoriesSection from '../components/SortCategoriesSection.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
+import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
+import { parseCsvParam } from '../utils/queryParams.js'
+import { cycleSort, getSortIcon } from '../utils/sort.jsx'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
 import './Search.css'
 
@@ -56,26 +59,12 @@ const parsePageParam = (value) => {
 }
 const parseTypeParam   = (value) => VALID_TYPES.includes(value) ? value : 'movie'
 const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : null
-const parseGenresParam = (value) => value ? value.split(',').map((s) => s.trim()).filter(Boolean) : []
-
 const splitSort = (sortBy) => {
   if (sortBy === 'date_asc')    return { sortDate: 'asc',  sortRating: null  }
   if (sortBy === 'date_desc')   return { sortDate: 'desc', sortRating: null  }
   if (sortBy === 'rating_asc')  return { sortDate: null,   sortRating: 'asc' }
   if (sortBy === 'rating_desc') return { sortDate: null,   sortRating: 'desc' }
   return { sortDate: null, sortRating: null }
-}
-
-const cycleSort = (current) => {
-  if (current === null)   return 'desc'
-  if (current === 'desc') return 'asc'
-  return null
-}
-
-const getSortIcon = (sortState) => {
-  if (sortState === 'asc')  return <ArrowUp size={14} />
-  if (sortState === 'desc') return <ArrowDown size={14} />
-  return null
 }
 
 const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
@@ -91,6 +80,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [results, setResults] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [availableGenres, setAvailableGenres] = useState([])
+  const { options: streamingOptions } = useStreamingProviders()
   const [expandedItem, setExpandedItem] = useState(null)
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
@@ -99,7 +89,8 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const type           = parseTypeParam(searchParams.get('type'))
   const currentPage    = parsePageParam(searchParams.get('page'))
   const sortBy         = parseSortParam(searchParams.get('sortBy'))
-  const selectedGenres = parseGenresParam(searchParams.get('genres'))
+  const selectedGenres = parseCsvParam(searchParams.get('genres'))
+  const selectedProviders = parseCsvParam(searchParams.get('providers'))
   const { sortDate, sortRating } = splitSort(sortBy)
 
   // TMDB /search não suporta sort/gênero — UI desabilitada durante busca textual
@@ -117,6 +108,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     updateParams((next) => {
       if (newType === 'movie') next.delete('type')
       else next.set('type', newType)
+      next.delete('genres')
     }, { resetPage: true })
   }
 
@@ -141,38 +133,29 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     }, { resetPage: true })
   }
 
+  const setSelectedProviders = (arr) => {
+    updateParams((next) => {
+      if (!arr || arr.length === 0) next.delete('providers')
+      else next.set('providers', arr.join(','))
+    }, { resetPage: true })
+  }
+
   useEffect(() => {
     let cancelled = false
     getExternalGenres(type)
-      .then((genres) => {
-        if (cancelled) return
-        const list = genres || []
-        setAvailableGenres(list)
-        // Só faz intersect se temos lista válida da API (evita zerar genres em erro temporário)
-        if (list.length > 0 && selectedGenres.length > 0) {
-          const validSet = new Set(list)
-          const filtered = selectedGenres.filter(g => validSet.has(g))
-          if (filtered.length !== selectedGenres.length) {
-            const next = new URLSearchParams(searchParams)
-            if (filtered.length === 0) next.delete('genres')
-            else next.set('genres', filtered.join(','))
-            setSearchParams(next)
-          }
-        }
-      })
+      .then((genres) => { if (!cancelled) setAvailableGenres(genres || []) })
       .catch((error) => {
         console.error('Erro ao carregar gêneros:', error)
         if (!cancelled) setAvailableGenres([])
       })
     return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type])
 
-  // Texto + sort/gênero são mutuamente exclusivos (TMDB /search não suporta).
-  // Ao iniciar busca por texto, limpa sort/gêneros e reseta página juntos.
+  // Texto + sort/gênero/streaming são mutuamente exclusivos (TMDB /search não suporta).
+  // Ao iniciar busca por texto, limpa filtros e reseta página juntos.
   useEffect(() => {
-    if (debouncedQuery.trim() && (sortBy || selectedGenres.length > 0)) {
-      commitFiltersToUrl(null, [])
+    if (debouncedQuery.trim() && (sortBy || selectedGenres.length > 0 || selectedProviders.length > 0)) {
+      commitFiltersToUrl(null, [], [])
       return
     }
     if (currentPage !== 1) setCurrentPage(1)
@@ -180,6 +163,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   }, [debouncedQuery])
 
   const genresKey = selectedGenres.join(',')
+  const providersKey = selectedProviders.join(',')
   useEffect(() => {
     let cancelled = false
     const doFetch = async () => {
@@ -191,6 +175,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           : await (type === 'series' ? getPopularSeries : getPopularMovies)(currentPage, {
               sortBy: sortBy || undefined,
               genres: selectedGenres,
+              providers: selectedProviders,
             })
         if (cancelled) return
         setResults(data.results || [])
@@ -208,7 +193,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     doFetch()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, type, currentPage, sortBy, genresKey])
+  }, [debouncedQuery, type, currentPage, sortBy, genresKey, providersKey])
 
   const notifyExternalError = (error) => {
     if (!error.response) {
@@ -241,23 +226,25 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     setSortBy(next === null ? null : `rating_${next}`)
   }
 
-  const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length
+  const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length + selectedProviders.length
 
-  // Batchar sortBy + genres numa única setSearchParams pra evitar que a segunda
+  // Batchar sortBy + genres + providers numa única setSearchParams pra evitar que a segunda
   // chamada sobrescreva a primeira (cada setSearchParams lê searchParams stale).
-  const commitFiltersToUrl = (sortByValue, genresArr) => {
+  const commitFiltersToUrl = (sortByValue, genresArr, providersArr) => {
     const next = new URLSearchParams(searchParams)
     if (!sortByValue) next.delete('sortBy')
     else next.set('sortBy', sortByValue)
     if (!genresArr || genresArr.length === 0) next.delete('genres')
     else next.set('genres', genresArr.join(','))
+    if (!providersArr || providersArr.length === 0) next.delete('providers')
+    else next.set('providers', providersArr.join(','))
     next.delete('page')
     setSearchParams(next)
   }
 
   const filterSheet = useFilterSheet({
-    defaults: { sortBy: null, genres: [] },
-    onCommit: ({ sortBy: s, genres: g }) => commitFiltersToUrl(s, g),
+    defaults: { sortBy: null, genres: [], providers: [] },
+    onCommit: ({ sortBy: s, genres: g, providers: p }) => commitFiltersToUrl(s, g, p),
   })
 
   const sheetFilters = (
@@ -285,6 +272,24 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           emptyMessage="Nenhum gênero disponível"
         />
       </section>
+
+      {streamingOptions.length > 0 && (
+        <section className="filter-section">
+          <span className="filter-section-label">Streaming</span>
+          <Dropdown
+            multi
+            trigger="button"
+            align="left"
+            label="Selecionar"
+            options={streamingOptions}
+            value={filterSheet.pending.providers}
+            onChange={(val) => filterSheet.setField('providers', val)}
+            disabled={sortAndGenreDisabled}
+            disabledTitle="Indisponível durante busca por texto"
+            emptyMessage="Nenhum streaming disponível"
+          />
+        </section>
+      )}
     </>
   )
 
@@ -364,11 +369,27 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 disabledTitle="Indisponível durante busca por texto"
                 emptyMessage="Nenhum gênero disponível"
               />
+
+              {streamingOptions.length > 0 && (
+                <Dropdown
+                  multi
+                  trigger="button"
+                  align="right"
+                  icon={<Tv2 size={14} />}
+                  label="Streaming"
+                  options={streamingOptions}
+                  value={selectedProviders}
+                  onChange={setSelectedProviders}
+                  disabled={sortAndGenreDisabled}
+                  disabledTitle="Indisponível durante busca por texto"
+                  emptyMessage="Nenhum streaming disponível"
+                />
+              )}
             </div>
 
             <FilterSheetTrigger
               count={activeFilterCount}
-              onClick={() => filterSheet.openWith({ sortBy, genres: selectedGenres })}
+              onClick={() => filterSheet.openWith({ sortBy, genres: selectedGenres, providers: selectedProviders })}
             />
           </div>
         </form>

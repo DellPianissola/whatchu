@@ -117,11 +117,12 @@ export const uploadAvatar   = async (formData) =>
   (await api.put('/profiles/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })).data.profile
 
 // External APIs
-const buildExtParams = ({ page, sortBy, genres } = {}) => {
+const buildExtParams = ({ page, sortBy, genres, providers } = {}) => {
   const params = {}
   if (page) params.page = page
   if (sortBy) params.sortBy = sortBy
   if (genres && genres.length > 0) params.genres = genres.join(',')
+  if (providers && providers.length > 0) params.providers = providers.join(',')
   return params
 }
 

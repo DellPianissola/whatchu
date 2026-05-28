@@ -1,0 +1,27 @@
+.ui-stat-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.ui-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px 4px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-on-media);
+  line-height: 1;
+}
+
+.ui-stat-pill--movie  { background: rgba(var(--primary-rgb), 0.9); }
+.ui-stat-pill--series { background: rgba(var(--secondary-rgb), 0.9); }
+
+@media (max-width: 640px) {
+  .ui-stat-pill {
+    font-size: 0.8rem;
+    padding: 4px 9px 3px;
+  }
+}

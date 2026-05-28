@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp } from 'lucide-react'
-import { getStreamingProviders } from '../services/api.js'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
@@ -11,6 +10,7 @@ import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import StatPills from '../components/StatPills.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import SortCategoriesSection from '../components/SortCategoriesSection.jsx'
@@ -18,9 +18,12 @@ import Button from '../components/Button.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
+import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import { ROUTES } from '../constants/routes.js'
 import { SEARCH_DEBOUNCE_MS } from '../constants/ui.js'
 import { TYPE_LABEL } from '../utils/content.js'
+import { parseCsvParam } from '../utils/queryParams.js'
+import { cycleSort, getSortIcon } from '../utils/sort.jsx'
 import './MyList.css'
 
 const PAGE_SIZE = 20
@@ -85,16 +88,27 @@ const WATCHED_OPTIONS = [
   { value: 'true',  label: 'Assistidos' },
 ]
 
+const SORT_FIELDS = [
+  { field: 'added',    label: 'Adicionado',  Icon: Calendar },
+  { field: 'release',  label: 'Lançamento',  Icon: Clapperboard },
+  { field: 'priority', label: 'Prioridade',  Icon: Flame },
+  { field: 'rating',   label: 'Nota',        Icon: Star },
+  { field: 'title',    label: 'Título',      Icon: Type },
+]
+
+const splitSort = (sortBy) => {
+  const [field, dir] = (sortBy || '').split('_')
+  return { field: field || null, dir: dir || null }
+}
+
 const parseTypesParam = (csv) => {
-  if (!csv) return ALL_TYPES
+  if (csv === null) return ALL_TYPES
+  if (csv === '') return []
   const list = csv.split(',').filter((t) => ALL_TYPES.includes(t))
-  return list.length > 0 ? list : ALL_TYPES
+  return list
 }
 
 const parseSortParam = (value) => VALID_SORTS.includes(value) ? value : null
-
-const parseCsvParam = (value) =>
-  value ? value.split(',').map((s) => s.trim()).filter(Boolean) : []
 
 const parsePageParam = (value) => {
   const n = parseInt(value, 10)
@@ -137,7 +151,7 @@ const MyList = () => {
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
-  const [streamingProviders, setStreamingProviders] = useState([])
+  const { providers: streamingProviders, options: streamingOptions } = useStreamingProviders()
 
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
@@ -165,14 +179,6 @@ const MyList = () => {
     return () => document.removeEventListener('mousedown', handler)
   }, [confirmingDeleteId])
 
-  useEffect(() => {
-    let cancelled = false
-    getStreamingProviders()
-      .then((list) => { if (!cancelled) setStreamingProviders(list || []) })
-      .catch(() => { if (!cancelled) setStreamingProviders([]) })
-    return () => { cancelled = true }
-  }, [])
-
   const updateParams = (mutate) => {
     const next = new URLSearchParams(searchParams)
     mutate(next)
@@ -183,7 +189,9 @@ const MyList = () => {
   const setTypes = (nextTypes) => {
     updateParams((next) => {
       if (nextTypes.length === ALL_TYPES.length) next.delete('types')
+      else if (nextTypes.length === 0) next.set('types', '')
       else next.set('types', nextTypes.join(','))
+      next.delete('genres')
     })
   }
 
@@ -209,6 +217,37 @@ const MyList = () => {
     setSearchParams(next, { replace: true })
   }
 
+  const setSortBy = (value) => updateParams((next) => {
+    if (!value || value === DEFAULT_SORT) next.delete('sortBy')
+    else next.set('sortBy', value)
+  })
+
+  const setWatchedFilter = (value) => updateParams((next) => {
+    if (!value) next.delete('watched')
+    else next.set('watched', value)
+  })
+
+  const setGenres = (arr) => updateParams((next) => {
+    if (!arr || arr.length === 0) next.delete('genres')
+    else next.set('genres', arr.join(','))
+  })
+
+  const setProviders = (arr) => updateParams((next) => {
+    if (!arr || arr.length === 0) next.delete('providers')
+    else next.set('providers', arr.join(','))
+  })
+
+  const { field: activeSortField, dir: activeSortDir } = splitSort(sortBy)
+
+  const toggleSort = (field) => {
+    if (field !== activeSortField) {
+      setSortBy(`${field}_desc`)
+      return
+    }
+    const next = cycleSort(activeSortDir)
+    setSortBy(next === null ? null : `${field}_${next}`)
+  }
+
   const filterSheet = useFilterSheet({
     defaults: { sortBy: DEFAULT_SORT, watched: '', genres: [], providers: [] },
     onCommit: commitSheetFiltersToUrl,
@@ -226,11 +265,6 @@ const MyList = () => {
     }
     return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'))
   }, [userMovies])
-
-  const streamingOptions = useMemo(
-    () => streamingProviders.map((p) => ({ value: p.key, label: p.name })),
-    [streamingProviders]
-  )
 
   const providerTmdbIdsByKey = useMemo(() => {
     const map = new Map()
@@ -370,6 +404,62 @@ const MyList = () => {
     )
   }
 
+  const desktopFilters = (
+    <div className="mylist-sort-filters">
+      <div className="sort-segmented" role="group" aria-label="Ordenar por">
+        {SORT_FIELDS.map(({ field, label, Icon }) => (
+          <button
+            key={field}
+            type="button"
+            onClick={() => toggleSort(field)}
+            className={`sort-seg-btn ${activeSortField === field ? 'active' : ''}`}
+          >
+            <Icon size={14} />
+            <span>{label}</span>
+            <span className="sort-seg-arrow" aria-hidden>
+              {activeSortField === field ? getSortIcon(activeSortDir) : null}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mylist-filter-group">
+        <Dropdown
+          trigger="button"
+          align="right"
+          label="Status"
+          options={WATCHED_OPTIONS}
+          value={watched || null}
+          onChange={setWatchedFilter}
+        />
+
+        {availableGenres.length > 0 && (
+          <Dropdown
+            multi
+            trigger="button"
+            align="right"
+            label="Gênero"
+            options={availableGenres}
+            value={selectedGenres}
+            onChange={setGenres}
+          />
+        )}
+
+        {streamingOptions.length > 0 && (
+          <Dropdown
+            multi
+            trigger="button"
+            align="right"
+            label="Streaming"
+            options={streamingOptions}
+            value={selectedProviders}
+            onChange={setProviders}
+          />
+        )}
+      </div>
+    </div>
+  )
+
   const sheetFilters = (
     <>
       <SortCategoriesSection
@@ -448,6 +538,8 @@ const MyList = () => {
             <TypeFilterPills value={types} onChange={setTypes} />
           </div>
 
+          {desktopFilters}
+
           <FilterSheetTrigger
             count={activeFilterCount}
             onClick={() => filterSheet.openWith({
@@ -457,12 +549,9 @@ const MyList = () => {
         </div>
 
         {!isLoading && counts.total > 0 && (
-          <p className="mylist-count">
-            {counts.total} {counts.total === 1 ? 'item' : 'itens'}
-            {counts.movies > 0 && counts.series > 0 && (
-              <> · {counts.movies} {counts.movies === 1 ? 'filme' : 'filmes'} · {counts.series} {counts.series === 1 ? 'série' : 'séries'}</>
-            )}
-          </p>
+          <div className="mylist-count">
+            <StatPills movies={counts.movies} series={counts.series} />
+          </div>
         )}
 
         {isLoading ? (

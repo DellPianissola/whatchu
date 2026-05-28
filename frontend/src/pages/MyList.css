@@ -11,10 +11,10 @@
 
 .mylist-controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 1.5rem;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .mylist-search {
@@ -28,15 +28,94 @@
   flex-wrap: wrap;
 }
 
-.mylist-page .ui-filter-sheet-trigger {
+/* Padroniza altura dos controles do toolbar (44px) */
+.mylist-page .filter-btn,
+.mylist-page .dropdown-trigger-btn {
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 12px;
+  min-height: 44px;
+}
+
+.mylist-page .filter-btn {
+  font-weight: 500;
+}
+
+.mylist-page .dropdown-trigger-btn {
+  min-width: 140px;
+}
+
+/* Linha 2: ordenação (segmented control à esquerda) + filtros (pills à direita) */
+.mylist-sort-filters {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.mylist-filter-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Sort segmented control ───────────────────────── */
+.sort-segmented {
   display: inline-flex;
-  margin-left: auto;
+  border: 2px solid var(--surface-light);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.sort-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 1rem;
+  min-height: 40px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--surface-light);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.sort-seg-btn:last-child {
+  border-right: none;
+}
+
+.sort-seg-btn:hover:not(.active) {
+  background: var(--surface-light);
+}
+
+.sort-seg-btn.active {
+  background: var(--gradient-2);
+  color: var(--text-on-media);
+}
+
+.sort-seg-btn svg {
+  flex-shrink: 0;
+}
+
+.sort-seg-arrow {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .mylist-count {
   margin: 0 0 1.5rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
 }
 
 .loading {
@@ -148,6 +227,15 @@
 
   .mylist-search {
     flex: 1 1 auto;
+  }
+
+  .mylist-sort-filters {
+    display: none;
+  }
+
+  .mylist-page .ui-filter-sheet-trigger {
+    display: inline-flex;
+    margin-left: auto;
   }
 
   .movies-grid {

@@ -1,5 +1,6 @@
 import tmdbService from './tmdb.js'
 import { ValidationError } from '../lib/httpErrors.js'
+import { resolveTmdbIds } from '../lib/streamingProviders.js'
 
 /**
  * Camada de orquestração do provider externo (TMDB).
@@ -61,10 +62,17 @@ const formatSearchResponse = ({ q, type, page, totalPages, results }) => ({
  * Lista de conteúdo (sem busca textual). Aplica sort/genres no nível da API.
  * Gêneros virtuais (ex.: "Anime") são resolvidos dentro do tmdbService.
  */
-export const discoverByType = async (type, { page = 1, sortBy, genres } = {}) => {
+export const discoverByType = async (type, { page = 1, sortBy, genres, providers } = {}) => {
   const genreList = parseGenres(genres)
+  const providerKeys = parseGenres(providers)
+  const providerIds = resolveTmdbIds(providerKeys)
   const tmdbType = TMDB_TYPE_MAP[type] || 'movie'
-  const data = await tmdbService.discover(tmdbType, { page, sortBy, genres: genreList })
+  const data = await tmdbService.discover(tmdbType, {
+    page,
+    sortBy,
+    genres: genreList,
+    providers: providerIds,
+  })
 
   return {
     page: parseInt(page),

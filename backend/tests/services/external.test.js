@@ -87,6 +87,33 @@ describe('discoverByType', () => {
       expect.objectContaining({ genres: ['Anime', 'Ação'] })
     )
   })
+
+  it('resolve providers keys para tmdbIds antes de enviar ao provider', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage())
+    await discoverByType('movie', { providers: 'netflix,prime' })
+    expect(tmdbService.discover).toHaveBeenCalledWith(
+      'movie',
+      expect.objectContaining({ providers: [8, 1796, 9, 10, 119, 2100] })
+    )
+  })
+
+  it('ignora keys de provider inválidas (silenciosamente)', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage())
+    await discoverByType('movie', { providers: 'netflix,banana' })
+    expect(tmdbService.discover).toHaveBeenCalledWith(
+      'movie',
+      expect.objectContaining({ providers: [8, 1796] })
+    )
+  })
+
+  it('repassa providers vazio quando param ausente', async () => {
+    tmdbService.discover.mockResolvedValue(tmdbPage())
+    await discoverByType('movie', {})
+    expect(tmdbService.discover).toHaveBeenCalledWith(
+      'movie',
+      expect.objectContaining({ providers: [] })
+    )
+  })
 })
 
 // ─── listGenres ─────────────────────────────────────────────────────────────

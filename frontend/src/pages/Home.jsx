@@ -1,15 +1,17 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X, Film, Tv } from 'lucide-react'
-import { drawMovie, luckyDraw, getExternalGenres, getStreamingProviders } from '../services/api.js'
+import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X } from 'lucide-react'
+import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
+import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import Wordmark from '../components/Wordmark.jsx'
 import IconButton from '../components/IconButton.jsx'
+import StatPills from '../components/StatPills.jsx'
 import CardModal from '../components/CardModal.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
@@ -21,7 +23,7 @@ import GeoPlaceholder from '../components/GeoPlaceholder.jsx'
 import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
-import { DRAW_DELAY_MS, GLOW_DOT_COUNT } from '../constants/ui.js'
+import { DRAW_DELAY_MS } from '../constants/ui.js'
 import './Home.css'
 
 const Home = () => {
@@ -38,13 +40,12 @@ const Home = () => {
   const [filterGenres, setFilterGenres] = useState([])
   const [filterProviders, setFilterProviders] = useState([])
   const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
-  const [streamingProviders, setStreamingProviders] = useState([])
+  const { options: streamingOptions } = useStreamingProviders()
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
     loadGenres()
-    loadStreamingProviders()
   }, [])
 
   const loadGenres = async () => {
@@ -59,14 +60,6 @@ const Home = () => {
     }
   }
 
-  const loadStreamingProviders = async () => {
-    try {
-      setStreamingProviders(await getStreamingProviders())
-    } catch (error) {
-      console.error('Erro ao carregar streamings:', error)
-    }
-  }
-
   const stats = useMemo(() => ({
     movies: userMovies.filter((m) => m.type === 'MOVIE').length,
     series: userMovies.filter((m) => m.type === 'SERIES').length,
@@ -77,11 +70,6 @@ const Home = () => {
     filterTypes.forEach(t => (genresByType[t] || []).forEach(g => set.add(g)))
     return [...set].sort()
   }, [filterTypes, genresByType])
-
-  const streamingOptions = useMemo(
-    () => streamingProviders.map(p => ({ value: p.key, label: p.name })),
-    [streamingProviders]
-  )
 
   const handleDraw = async () => {
     setIsDrawing(true)
@@ -291,12 +279,6 @@ const Home = () => {
 
   return (
     <div className="home">
-      <div className="cinema-bg">
-        {[...Array(GLOW_DOT_COUNT)].map((_, i) => (
-          <div key={i} className={`glow-dot glow-dot-${i + 1}`} />
-        ))}
-      </div>
-
       <div className={`home-content ${isLoaded ? 'loaded' : ''}`}>
         <header className="home-header">
           <div className="logo">
@@ -310,20 +292,16 @@ const Home = () => {
             <div className="greeting-row">
               <h2 className="greeting">{greeting}</h2>
               {!userMoviesLoading && (
-                <div className="stat-pills">
-                  <span className="stat-pill stat-pill--movie" title={`${stats.movies} filmes na sua lista`}>
-                    <Film size={14} /> {stats.movies}
-                  </span>
-                  <span className="stat-pill stat-pill--series" title={`${stats.series} séries na sua lista`}>
-                    <Tv size={14} /> {stats.series}
-                  </span>
-                </div>
+                <StatPills movies={stats.movies} series={stats.series} />
               )}
             </div>
 
             <div className="draw-filters">
               <div className="draw-filter-row">
-                <TypeFilterPills value={filterTypes} onChange={setFilterTypes} />
+                <TypeFilterPills
+                  value={filterTypes}
+                  onChange={(next) => { setFilterTypes(next); setFilterGenres([]) }}
+                />
                 <div className="draw-filters-inline">{desktopDropdowns}</div>
                 <FilterSheetTrigger
                   count={activeFilterCount}

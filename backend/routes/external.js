@@ -1,19 +1,15 @@
 import express from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
+import { authenticateToken } from '../middleware/auth.js'
+import { publicApiLimiter } from '../config/rateLimits.js'
 import * as externalService from '../services/external.js'
 import { luckyDraw } from '../services/externalLottery.js'
 import { publicStreamingProviders } from '../lib/streamingProviders.js'
 
 const router = express.Router()
 
-// GET /api/external/search - Busca textual no TMDB
-router.get('/search', asyncHandler(async (req, res) => {
-  const result = await externalService.searchByText(req.query)
-  res.json(result)
-}))
-
 // GET /api/external/genres?type=movie|series
-router.get('/genres', asyncHandler(async (req, res) => {
+router.get('/genres', publicApiLimiter, asyncHandler(async (req, res) => {
   const { type } = req.query
   const genres = await externalService.listGenres(type)
   res.json({ type: type || 'movie', genres })
@@ -21,35 +17,41 @@ router.get('/genres', asyncHandler(async (req, res) => {
 
 // POST /api/external/lucky - Sorteia um item popular de fora da lista
 // Body: { types?: ('MOVIE'|'SERIES')[], genres?: string[], providers?: string[] }
-router.post('/lucky', asyncHandler(async (req, res) => {
+router.post('/lucky', publicApiLimiter, asyncHandler(async (req, res) => {
   const result = await luckyDraw(req.body || {})
   res.json(result)
 }))
 
 // GET /api/external/streaming-providers - Lista curada de streamings pro filtro do sorteio
-router.get('/streaming-providers', asyncHandler(async (_req, res) => {
+router.get('/streaming-providers', publicApiLimiter, asyncHandler(async (_req, res) => {
   res.json({ providers: publicStreamingProviders() })
 }))
 
+// GET /api/external/search - Busca textual no TMDB
+router.get('/search', authenticateToken, asyncHandler(async (req, res) => {
+  const result = await externalService.searchByText(req.query)
+  res.json(result)
+}))
+
 // GET /api/external/movies - Lista filmes (discover) com sort/gênero
-router.get('/movies', asyncHandler(async (req, res) => {
+router.get('/movies', authenticateToken, asyncHandler(async (req, res) => {
   const result = await externalService.discoverByType('movie', req.query)
   res.json(result)
 }))
 
 // GET /api/external/series - Lista séries (discover) com sort/gênero
-router.get('/series', asyncHandler(async (req, res) => {
+router.get('/series', authenticateToken, asyncHandler(async (req, res) => {
   const result = await externalService.discoverByType('series', req.query)
   res.json(result)
 }))
 
 // GET /api/external/movies/:id - Detalhes de filme
-router.get('/movies/:id', asyncHandler(async (req, res) => {
+router.get('/movies/:id', authenticateToken, asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('movie', req.params.id))
 }))
 
 // GET /api/external/series/:id - Detalhes de série
-router.get('/series/:id', asyncHandler(async (req, res) => {
+router.get('/series/:id', authenticateToken, asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('series', req.params.id))
 }))
 

@@ -52,7 +52,7 @@ app.use('/api', indexRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/movies', authenticateToken, moviesRoutes)
 app.use('/api/profiles', authenticateToken, profilesRoutes)
-app.use('/api/external', authenticateToken, externalRoutes)
+app.use('/api/external', externalRoutes)
 
 app.use(errorHandler)
 

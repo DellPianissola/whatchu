@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       'tests/lib/**/*.test.js',
       'tests/middleware/**/*.test.js',
+      'tests/routes/**/*.test.js',
       'tests/services/external.test.js',
       'tests/services/externalLottery.test.js',
     ],

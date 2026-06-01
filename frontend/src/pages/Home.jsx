@@ -297,6 +297,7 @@ const Home = () => {
             <DrawResultPanel
               item={selectedMovie}
               isDrawing={isDrawing}
+              showProviders
               onOpen={() => setModalOpen(true)}
               onClose={() => { setSelectedMovie(null); setModalOpen(false) }}
             />

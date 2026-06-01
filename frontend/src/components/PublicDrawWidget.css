@@ -86,8 +86,6 @@
     flex-wrap: nowrap;
   }
 
-  /* display:contents dissolve o wrapper das pills, deixando Filme/Série/Filtros
-     como irmãos diretos da linha pra dividir a largura igual e nunca quebrar. */
   .public-draw-types {
     display: contents;
   }

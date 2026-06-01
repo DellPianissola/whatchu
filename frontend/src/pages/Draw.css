@@ -9,7 +9,7 @@
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 3rem 2rem 4rem;
+  padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 5vw, 2rem) 4rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -20,14 +20,15 @@
 }
 
 .draw-page-title {
-  font-size: 2rem;
+  font-size: clamp(1.6rem, 5vw, 2rem);
   font-weight: 800;
   margin: 0 0 0.75rem;
   color: var(--text);
+  text-wrap: balance;
 }
 
 .draw-page-subhead {
-  font-size: 1.05rem;
+  font-size: clamp(1rem, 2.5vw, 1.05rem);
   line-height: 1.5;
   color: var(--text-muted);
   margin: 0;
@@ -48,14 +49,4 @@
 
 .draw-page-cta-link:hover {
   text-decoration: underline;
-}
-
-@media (max-width: 640px) {
-  .draw-page-main {
-    padding: 2rem 1rem 3rem;
-  }
-
-  .draw-page-title {
-    font-size: 1.6rem;
-  }
 }

@@ -1,19 +1,21 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Search as SearchIcon, Dices, Sparkles, Users } from 'lucide-react'
-import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
+import { drawMovie } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
-import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
+import { useDrawFilters } from '../hooks/useDrawFilters.js'
+import { performLuckyDraw } from '../utils/draw.js'
 import Wordmark from '../components/Wordmark.jsx'
 import StatPills from '../components/StatPills.jsx'
 import CardModal from '../components/CardModal.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
-import TypeFilterPills, { ALL_TYPES } from '../components/TypeFilterPills.jsx'
+import TypeFilterPills from '../components/TypeFilterPills.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import DrawFilterDropdowns from '../components/DrawFilterDropdowns.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import Button from '../components/Button.jsx'
@@ -33,41 +35,23 @@ const Home = () => {
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [filterTypes, setFilterTypes] = useState(ALL_TYPES)
+  const {
+    filterTypes, selectTypes,
+    filterGenres, setFilterGenres,
+    filterProviders, setFilterProviders,
+    availableGenres, streamingOptions,
+  } = useDrawFilters()
   const [filterPriorities, setFilterPriorities] = useState([])
-  const [filterGenres, setFilterGenres] = useState([])
-  const [filterProviders, setFilterProviders] = useState([])
-  const [genresByType, setGenresByType] = useState({ MOVIE: [], SERIES: [] })
-  const { options: streamingOptions } = useStreamingProviders()
   const [ignoreWatched, setIgnoreWatched] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
-    loadGenres()
   }, [])
-
-  const loadGenres = async () => {
-    try {
-      const [movie, series] = await Promise.all([
-        getExternalGenres('movie'),
-        getExternalGenres('series'),
-      ])
-      setGenresByType({ MOVIE: movie, SERIES: series })
-    } catch (error) {
-      console.error('Erro ao carregar gêneros:', error)
-    }
-  }
 
   const stats = useMemo(() => ({
     movies: userMovies.filter((m) => m.type === 'MOVIE').length,
     series: userMovies.filter((m) => m.type === 'SERIES').length,
   }), [userMovies])
-
-  const availableGenres = useMemo(() => {
-    const set = new Set()
-    filterTypes.forEach(t => (genresByType[t] || []).forEach(g => set.add(g)))
-    return [...set].sort()
-  }, [filterTypes, genresByType])
 
   const handleDraw = async () => {
     setIsDrawing(true)
@@ -96,27 +80,10 @@ const Home = () => {
     }
   }
 
-  const handleLucky = async () => {
-    setIsDrawing(true)
-    setSelectedMovie(null)
-    try {
-      await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
-      const movie = await luckyDraw({
-        types: filterTypes,
-        genres: filterGenres,
-        providers: filterProviders,
-      })
-      if (movie) {
-        setSelectedMovie(movie)
-      } else {
-        toast.info('Não rolou achar nada com esses filtros. Tente outros gêneros ou tipos.')
-      }
-    } catch (error) {
-      toast.error('Erro ao sortear. Tente novamente.')
-    } finally {
-      setIsDrawing(false)
-    }
-  }
+  const handleLucky = () => performLuckyDraw(
+    { types: filterTypes, genres: filterGenres, providers: filterProviders },
+    { toast, setDrawing: setIsDrawing, setResult: setSelectedMovie }
+  )
 
   const handleGroup = () => {
     toast.info('Em breve — você vai poder sortear com os amigos!')
@@ -197,35 +164,15 @@ const Home = () => {
         </div>
       </section>
 
-      {availableGenres.length > 0 && (
-        <section className="filter-section">
-          <span className="filter-section-label">Gênero</span>
-          <Dropdown
-            multi
-            trigger="button"
-            align="left"
-            label="Selecionar"
-            options={availableGenres}
-            value={filterSheet.pending.genres}
-            onChange={(val) => filterSheet.setField('genres', val)}
-          />
-        </section>
-      )}
-
-      {streamingOptions.length > 0 && (
-        <section className="filter-section">
-          <span className="filter-section-label">Streaming</span>
-          <Dropdown
-            multi
-            trigger="button"
-            align="left"
-            label="Selecionar"
-            options={streamingOptions}
-            value={filterSheet.pending.providers}
-            onChange={(val) => filterSheet.setField('providers', val)}
-          />
-        </section>
-      )}
+      <DrawFilterDropdowns
+        variant="sheet"
+        availableGenres={availableGenres}
+        genres={filterSheet.pending.genres}
+        onGenresChange={(val) => filterSheet.setField('genres', val)}
+        streamingOptions={streamingOptions}
+        providers={filterSheet.pending.providers}
+        onProvidersChange={(val) => filterSheet.setField('providers', val)}
+      />
 
       <section className="filter-section">
         {pendingIgnoreWatchedToggle}
@@ -244,28 +191,15 @@ const Home = () => {
         value={filterPriorities}
         onChange={setFilterPriorities}
       />
-      {availableGenres.length > 0 && (
-        <Dropdown
-          multi
-          trigger="pill"
-          align="left"
-          label="Gênero"
-          options={availableGenres}
-          value={filterGenres}
-          onChange={setFilterGenres}
-        />
-      )}
-      {streamingOptions.length > 0 && (
-        <Dropdown
-          multi
-          trigger="pill"
-          align="left"
-          label="Streaming"
-          options={streamingOptions}
-          value={filterProviders}
-          onChange={setFilterProviders}
-        />
-      )}
+      <DrawFilterDropdowns
+        variant="pills"
+        availableGenres={availableGenres}
+        genres={filterGenres}
+        onGenresChange={setFilterGenres}
+        streamingOptions={streamingOptions}
+        providers={filterProviders}
+        onProvidersChange={setFilterProviders}
+      />
     </>
   )
 
@@ -298,7 +232,7 @@ const Home = () => {
               <div className="draw-filter-row">
                 <TypeFilterPills
                   value={filterTypes}
-                  onChange={(next) => { setFilterTypes(next); setFilterGenres([]) }}
+                  onChange={selectTypes}
                 />
                 <div className="draw-filters-inline">{desktopDropdowns}</div>
                 <FilterSheetTrigger

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search as SearchIcon, Dices, Sparkles, Users, Calendar, Star, Clock, X } from 'lucide-react'
+import { Search as SearchIcon, Dices, Sparkles, Users } from 'lucide-react'
 import { drawMovie, luckyDraw, getExternalGenres } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
@@ -8,9 +8,7 @@ import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
-import PosterPlaceholder from '../components/PosterPlaceholder.jsx'
 import Wordmark from '../components/Wordmark.jsx'
-import IconButton from '../components/IconButton.jsx'
 import StatPills from '../components/StatPills.jsx'
 import CardModal from '../components/CardModal.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
@@ -19,8 +17,8 @@ import Dropdown from '../components/Dropdown.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import Button from '../components/Button.jsx'
-import GeoPlaceholder from '../components/GeoPlaceholder.jsx'
-import { TYPE_LABEL, PRIORITY_OPTIONS, formatDuration } from '../utils/content.js'
+import DrawResultPanel from '../components/DrawResultPanel.jsx'
+import { PRIORITY_OPTIONS } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
 import { DRAW_DELAY_MS } from '../constants/ui.js'
@@ -362,61 +360,12 @@ const Home = () => {
           </div>
 
           <div className="card-right">
-            {selectedMovie ? (
-              <button
-                type="button"
-                className="draw-result-panel"
-                onClick={() => setModalOpen(true)}
-              >
-                {selectedMovie.poster ? (
-                  <img
-                    src={selectedMovie.poster}
-                    alt=""
-                    className="draw-result-bg"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <PosterPlaceholder
-                    title={selectedMovie.title}
-                    type={selectedMovie.type}
-                    className="draw-result-bg"
-                  />
-                )}
-                <div className="draw-result-top">
-                  <span className="draw-result-label"><Sparkles size={16} /> Sorteado!</span>
-                  <IconButton
-                    icon={<X size={20} />}
-                    label="Fechar sorteio"
-                    onClick={(e) => { e.stopPropagation(); setSelectedMovie(null); setModalOpen(false) }}
-                    className="btn-close-draw"
-                  />
-                </div>
-                <div className="draw-result-content">
-                  <div className="draw-result-meta">
-                    <span className="draw-type">
-                      {TYPE_LABEL[selectedMovie.type] ?? selectedMovie.type}
-                    </span>
-                    {selectedMovie.year && <span className="draw-meta-item"><Calendar size={14} /> {selectedMovie.year}</span>}
-                    {selectedMovie.rating && <span className="draw-meta-item"><Star size={14} /> {selectedMovie.rating}</span>}
-                    {selectedMovie.type === 'MOVIE' && selectedMovie.duration && <span className="draw-meta-item"><Clock size={14} /> {formatDuration(selectedMovie.duration)}</span>}
-                  </div>
-                  <h4 className="draw-result-title">{selectedMovie.title}</h4>
-                  {selectedMovie.genres?.length > 0 && (
-                    <p className="draw-result-genres">{selectedMovie.genres.join(', ')}</p>
-                  )}
-                  {selectedMovie.description && (
-                    <p className="draw-result-description">{selectedMovie.description}</p>
-                  )}
-                </div>
-              </button>
-            ) : (
-              <GeoPlaceholder
-                className="draw-placeholder"
-                animated={isDrawing}
-                hint={isDrawing ? 'Sorteando...' : 'O sorteado aparece aqui'}
-              />
-            )}
+            <DrawResultPanel
+              item={selectedMovie}
+              isDrawing={isDrawing}
+              onOpen={() => setModalOpen(true)}
+              onClose={() => { setSelectedMovie(null); setModalOpen(false) }}
+            />
           </div>
 
         </div>

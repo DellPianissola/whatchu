@@ -4,6 +4,8 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import { UserMoviesProvider } from './contexts/UserMoviesContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import Landing from './pages/Landing'
+import Draw from './pages/Draw'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -44,6 +46,8 @@ function App() {
             <NavBar />
             <CookieBanner />
             <Routes>
+              <Route path={ROUTES.LANDING}         element={<Landing />} />
+              <Route path={ROUTES.DRAW}            element={<Draw />} />
               <Route path={ROUTES.LOGIN}           element={<Login />} />
               <Route path={ROUTES.REGISTER}        element={<Register />} />
               <Route path={ROUTES.VERIFY_EMAIL}        element={<VerifyEmail />} />
@@ -55,6 +59,10 @@ function App() {
               <Route path={ROUTES.LIST}            element={protect(<MyList />)} />
               <Route path={ROUTES.PROFILES}        element={protect(<Profiles />)} />
               <Route path={ROUTES.ONBOARDING}      element={protect(<Onboarding />, { requireOnboarding: false })} />
+              <Route path="/search"    element={<Navigate to={ROUTES.SEARCH} replace />} />
+              <Route path="/list"      element={<Navigate to={ROUTES.LIST} replace />} />
+              <Route path="/profiles"  element={<Navigate to={ROUTES.PROFILES} replace />} />
+              <Route path="/onboarding" element={<Navigate to={ROUTES.ONBOARDING} replace />} />
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
             </Routes>
             <BottomNav />

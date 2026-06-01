@@ -56,6 +56,26 @@ describe('rotas públicas de /api/external (sem token)', () => {
     expect(res.status).toBe(200)
     expect(Array.isArray(res.body.providers)).toBe(true)
   })
+
+  it('GET /movies/:id responde sem autenticação', async () => {
+    externalService.getDetails.mockResolvedValue({ id: 1, title: 'Filme' })
+
+    const res = await request(app).get('/api/external/movies/1')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({ id: 1 })
+    expect(externalService.getDetails).toHaveBeenCalledWith('movie', '1')
+  })
+
+  it('GET /series/:id responde sem autenticação', async () => {
+    externalService.getDetails.mockResolvedValue({ id: 2, title: 'Série' })
+
+    const res = await request(app).get('/api/external/series/2')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({ id: 2 })
+    expect(externalService.getDetails).toHaveBeenCalledWith('series', '2')
+  })
 })
 
 describe('rotas protegidas de /api/external (exigem token)', () => {
@@ -63,8 +83,6 @@ describe('rotas protegidas de /api/external (exigem token)', () => {
     ['get', '/api/external/search?q=batman'],
     ['get', '/api/external/movies'],
     ['get', '/api/external/series'],
-    ['get', '/api/external/movies/1'],
-    ['get', '/api/external/series/1'],
   ])('%s %s sem token responde 401', async (method, path) => {
     const res = await request(app)[method](path)
 

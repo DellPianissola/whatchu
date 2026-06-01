@@ -45,13 +45,13 @@ router.get('/series', authenticateToken, asyncHandler(async (req, res) => {
   res.json(result)
 }))
 
-// GET /api/external/movies/:id - Detalhes de filme
-router.get('/movies/:id', authenticateToken, asyncHandler(async (req, res) => {
+// GET /api/external/movies/:id - Detalhes de filme (dados públicos do TMDB)
+router.get('/movies/:id', publicApiLimiter, asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('movie', req.params.id))
 }))
 
-// GET /api/external/series/:id - Detalhes de série
-router.get('/series/:id', authenticateToken, asyncHandler(async (req, res) => {
+// GET /api/external/series/:id - Detalhes de série (dados públicos do TMDB)
+router.get('/series/:id', publicApiLimiter, asyncHandler(async (req, res) => {
   res.json(await externalService.getDetails('series', req.params.id))
 }))
 

@@ -28,6 +28,7 @@
   color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 600;
+  white-space: nowrap;
   text-decoration: none;
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
@@ -42,6 +43,7 @@
   color: var(--text-on-media);
   font-size: 0.9rem;
   font-weight: 700;
+  white-space: nowrap;
   text-decoration: none;
   padding: 0.55rem 1.1rem;
   border-radius: var(--radius-md);
@@ -58,6 +60,10 @@
 @media (max-width: 640px) {
   .public-header {
     padding: 0 1rem;
+  }
+
+  .public-header .ui-wordmark-text-group {
+    display: none;
   }
 
   .public-header-link {

@@ -82,12 +82,31 @@
 }
 
 @media (max-width: 640px) {
+  .public-draw-filters {
+    flex-wrap: nowrap;
+  }
+
+  /* display:contents dissolve o wrapper das pills, deixando Filme/Série/Filtros
+     como irmãos diretos da linha pra dividir a largura igual e nunca quebrar. */
+  .public-draw-types {
+    display: contents;
+  }
+
   .public-draw-dropdowns {
     display: none;
   }
 
+  .public-draw-filters .filter-btn,
+  .public-draw-sheet-trigger {
+    flex: 1;
+    min-width: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
   .public-draw-sheet-trigger {
     display: inline-flex;
+    justify-content: center;
   }
 
   .public-draw-btn {

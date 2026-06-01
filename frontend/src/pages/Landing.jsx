@@ -56,7 +56,9 @@ const Landing = () => {
       <main className="landing-main">
         <section className="landing-hero">
           <div className="landing-hero-copy">
-            <Wordmark variant="hero" logoSize={64} subtitle="O que vamos assistir hoje?" />
+            <div className="landing-hero-brand">
+              <Wordmark variant="hero" logoSize={64} subtitle="O que vamos assistir hoje?" as="span" />
+            </div>
             <h1 className="landing-headline">
               Pare de perder tempo decidindo o que assistir
             </h1>

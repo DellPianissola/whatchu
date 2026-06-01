@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /app/
+Disallow: /login
+Disallow: /register
+Disallow: /verify-email
+Disallow: /verify-email-change
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://whatchu.pianissola.tech/sitemap.xml

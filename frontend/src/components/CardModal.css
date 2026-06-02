@@ -360,7 +360,6 @@
 }
 
 .ui-detail-provider {
-  position: relative;
   display: inline-flex;
   width: 36px;
   height: 36px;
@@ -380,27 +379,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.ui-detail-provider-tip {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  background: rgba(var(--shadow-rgb), 0.9);
-  color: var(--text-on-media);
-  font-size: 0.7rem;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
-  z-index: 10;
-}
-
-.ui-detail-provider:hover .ui-detail-provider-tip {
-  opacity: 1;
 }
 
 .ui-detail-provider-source {

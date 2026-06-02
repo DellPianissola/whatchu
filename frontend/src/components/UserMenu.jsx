@@ -28,7 +28,7 @@ const UserMenu = () => {
   const handleLogout = () => {
     close()
     logout()
-    navigate(ROUTES.LOGIN)
+    navigate(ROUTES.LANDING)
   }
 
   const handleTheme = () => {

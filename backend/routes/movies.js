@@ -1,5 +1,6 @@
 import express from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
+import { movieWriteLimiter } from '../config/rateLimits.js'
 import * as moviesService from '../services/movies.js'
 
 const router = express.Router()
@@ -18,7 +19,7 @@ router.get('/', asyncHandler(async (req, res) => {
 }))
 
 // POST /api/movies - Adiciona novo filme ou série
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', movieWriteLimiter, asyncHandler(async (req, res) => {
   const movie = await moviesService.createMovie(req.user.id, req.body)
   res.status(201).json({ message: 'Filme adicionado com sucesso', movie })
 }))
@@ -30,13 +31,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
 }))
 
 // PUT /api/movies/:id - Atualiza filme (apenas do usuário autenticado)
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', movieWriteLimiter, asyncHandler(async (req, res) => {
   const movie = await moviesService.updateMovie(req.user.id, req.params.id, req.body)
   res.json({ message: 'Filme atualizado com sucesso', movie })
 }))
 
 // DELETE /api/movies/:id - Remove filme (apenas do usuário autenticado)
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', movieWriteLimiter, asyncHandler(async (req, res) => {
   await moviesService.deleteMovie(req.user.id, req.params.id)
   res.json({ message: 'Filme removido com sucesso' })
 }))

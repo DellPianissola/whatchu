@@ -26,3 +26,12 @@ export const publicApiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Muitas requisições. Aguarde um momento e tente novamente.' },
 })
+
+export const movieWriteLimiter = rateLimit({
+  windowMs: ONE_MIN,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id ?? req.ip,
+  message: { error: 'Muitas alterações em pouco tempo. Aguarde um momento e tente novamente.' },
+})

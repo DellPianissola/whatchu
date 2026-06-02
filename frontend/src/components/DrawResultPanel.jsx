@@ -5,6 +5,7 @@ import IconButton from './IconButton.jsx'
 import { TYPE_LABEL, formatDuration } from '../utils/content.js'
 import { providerUrl } from '../utils/providers.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
+import Tooltip from './Tooltip.jsx'
 import './DrawResultPanel.css'
 
 const MAX_GENRE_CHIPS = 3
@@ -87,18 +88,18 @@ const DrawResultPanel = ({ item, isDrawing = false, onOpen, onClose, showProvide
           <div className="draw-result-providers">
             <div className="draw-result-providers-logos">
               {providers.map((p) => (
-                <a
-                  key={p.id}
-                  href={providerUrl(p)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="draw-result-provider"
-                  aria-label={p.name}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <img src={p.logo} alt={p.name} loading="lazy" />
-                  <span className="draw-result-provider-tip">{p.name}</span>
-                </a>
+                <Tooltip key={p.id} label={p.name}>
+                  <a
+                    href={providerUrl(p)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="draw-result-provider"
+                    aria-label={p.name}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img src={p.logo} alt={p.name} loading="lazy" />
+                  </a>
+                </Tooltip>
               ))}
             </div>
           </div>

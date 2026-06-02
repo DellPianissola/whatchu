@@ -1,0 +1,17 @@
+.ui-tooltip-anchor {
+  display: inline-flex;
+}
+
+.ui-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 0.25rem 0.5rem;
+  background: rgba(var(--shadow-rgb), 0.95);
+  color: var(--text-on-media);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: var(--z-toast);
+}

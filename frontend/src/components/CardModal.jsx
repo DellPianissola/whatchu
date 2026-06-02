@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Play, Star, X, ChevronDown } from 'lucide-react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
 import GeoPlaceholder from './GeoPlaceholder.jsx'
@@ -11,12 +11,12 @@ import { ageRatingTier } from '../utils/ageRating.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
+import Tooltip from './Tooltip.jsx'
 import './CardModal.css'
 
 const TITLE_ID = 'card-modal-title'
 
 const DESCRIPTION_MAX_LINES = 4
-const DESCRIPTION_EXPAND_THRESHOLD = 150
 
 const PROVIDER_GROUPS = [
   { key: 'streaming', label: 'Streaming' },
@@ -27,18 +27,15 @@ const PROVIDER_GROUPS = [
 
 const ProviderLogo = ({ provider }) => {
   const url = providerUrl(provider)
-  const content = (
-    <>
-      <img src={provider.logo} alt={provider.name} className="ui-detail-provider-logo" />
-      <span className="ui-detail-provider-tip">{provider.name}</span>
-    </>
-  )
-  if (!url) return <span className="ui-detail-provider">{content}</span>
-  return (
+  const logo = <img src={provider.logo} alt={provider.name} className="ui-detail-provider-logo" />
+  const chip = url ? (
     <a href={url} target="_blank" rel="noopener noreferrer" className="ui-detail-provider" aria-label={provider.name}>
-      {content}
+      {logo}
     </a>
+  ) : (
+    <span className="ui-detail-provider">{logo}</span>
   )
+  return <Tooltip label={provider.name}>{chip}</Tooltip>
 }
 
 const buildYearLabel = (item, richDetails) => {
@@ -61,6 +58,17 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   useBodyScrollLock(!!item)
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(item)
   const [descriptionOpen, setDescriptionOpen] = useState(false)
+  const [descriptionOverflows, setDescriptionOverflows] = useState(false)
+  const descriptionRef = useRef(null)
+
+  useEffect(() => {
+    const el = descriptionRef.current
+    if (!el || descriptionOpen) return
+    const measure = () => setDescriptionOverflows(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [item?.description, descriptionOpen, richDetailsLoading])
 
   if (!item) return null
 
@@ -80,7 +88,7 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   const hasProviders = providerGroups.length > 0
 
   const description = item.description?.trim()
-  const canExpandDescription = description && description.length > DESCRIPTION_EXPAND_THRESHOLD
+  const canExpandDescription = description && descriptionOverflows
 
   const hasSeries = richDetails?.seasons || richDetails?.episodes
   const hasCrew   = richDetails?.director || richDetails?.cast?.length > 0 || richDetails?.studios?.length > 0
@@ -181,6 +189,7 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
           {description && (
             <div className={`ui-detail-description-wrap ${descriptionOpen ? 'is-expanded' : ''}`}>
               <p
+                ref={descriptionRef}
                 className="ui-detail-description"
                 style={{ WebkitLineClamp: descriptionOpen ? 'unset' : DESCRIPTION_MAX_LINES }}
               >

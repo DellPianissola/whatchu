@@ -2,9 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import dotenv from 'dotenv'
+import pinoHttp from 'pino-http'
 import swaggerUi from 'swagger-ui-express'
 import swaggerSpec from './config/swagger.js'
 import connectDB from './config/database.js'
+import { logger } from './lib/logger.js'
 import { authenticateToken } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import indexRoutes from './routes/index.js'
@@ -37,6 +39,16 @@ app.use(cors({
   credentials: true,
 }))
 
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (_req, res, err) => {
+    if (err || res.statusCode >= 500) return 'error'
+    if (res.statusCode >= 400) return 'warn'
+    return 'info'
+  },
+  autoLogging: { ignore: (req) => req.url === '/api/health' },
+}))
+
 app.use(express.json({ limit: JSON_LIMIT }))
 
 if (!IS_PROD) {
@@ -57,7 +69,6 @@ app.use('/api/external', externalRoutes)
 app.use(errorHandler)
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`)
-  console.log(`📡 API available at http://localhost:${PORT}/api`)
-  if (!IS_PROD) console.log(`📚 Documentation available at http://localhost:${PORT}/docs`)
+  logger.info(`Server running on port ${PORT}`)
+  if (!IS_PROD) logger.info(`Docs available at http://localhost:${PORT}/docs`)
 })

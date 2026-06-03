@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { logger } from '../lib/logger.js'
 
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
@@ -7,9 +8,9 @@ const prisma = new PrismaClient({
 const connectDB = async () => {
   try {
     await prisma.$connect()
-    console.log('✅ PostgreSQL conectado com sucesso!')
+    logger.info('PostgreSQL conectado')
   } catch (error) {
-    console.error('❌ Erro ao conectar com PostgreSQL:', error.message)
+    logger.error({ err: error }, 'Erro ao conectar com PostgreSQL')
     process.exit(1)
   }
 }

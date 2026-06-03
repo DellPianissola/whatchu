@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+vi.mock('../../lib/logger.js', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}))
+
 import { errorHandler } from '../../middleware/errorHandler.js'
+import { logger } from '../../lib/logger.js'
 import {
   ValidationError,
   NotFoundError,
@@ -12,13 +18,10 @@ describe('errorHandler middleware', () => {
   const req = buildReq()
   const next = buildNext()
 
-  // Suprime console.error pra não poluir output dos testes
-  let errorSpy
   beforeEach(() => {
-    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.clearAllMocks()
   })
   afterEach(() => {
-    errorSpy.mockRestore()
     delete process.env.NODE_ENV
   })
 
@@ -58,11 +61,11 @@ describe('errorHandler middleware', () => {
       })
     })
 
-    it('NÃO deve logar console.error pra HttpError (são esperados)', () => {
+    it('NÃO deve logar pra HttpError < 500 (são esperados)', () => {
       const res = buildRes()
       errorHandler(new ValidationError('x'), req, res, next)
 
-      expect(errorSpy).not.toHaveBeenCalled()
+      expect(logger.error).not.toHaveBeenCalled()
     })
 
     it.each([
@@ -99,14 +102,14 @@ describe('errorHandler middleware', () => {
   // ─── Erros genéricos / não tratados ───────────────────────────────────────
 
   describe('com erro genérico (não tratado)', () => {
-    it('deve devolver 500 e logar no console', () => {
+    it('deve devolver 500 e logar o erro', () => {
       const res = buildRes()
       const erro = new Error('coisa inesperada')
 
       errorHandler(erro, req, res, next)
 
       expect(res.status).toHaveBeenCalledWith(500)
-      expect(errorSpy).toHaveBeenCalledWith('Erro não tratado:', erro)
+      expect(logger.error).toHaveBeenCalledWith({ err: erro }, 'Erro não tratado')
     })
 
     it('em dev (NODE_ENV !== production) deve incluir details com a mensagem', () => {

@@ -12,6 +12,7 @@ import { generateRandomToken, TOKEN_TTL, JWT_TTL } from '../lib/tokens.js'
 import { PUBLIC_USER_FIELDS } from '../lib/userSelectors.js'
 import { validateEmail, validateBirthDate } from '../lib/validators.js'
 import { COUNT_MOVIES } from '../lib/prismaIncludes.js'
+import { logger } from '../lib/logger.js'
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -101,7 +102,7 @@ export const registerUser = async ({ email, username, password, birthDate }) => 
   })
 
   // Background — falha no email não bloqueia o cadastro
-  sendVerificationEmail(email, token).catch(console.error)
+  sendVerificationEmail(email, token).catch((err) => logger.error({ err }, 'Falha ao enviar email de verificação'))
 
   return { pending: true, email }
 }
@@ -153,6 +154,8 @@ export const verifyEmail = async (token) => {
     throw err
   }
 
+  logger.info({ userId: user.id, username: user.username }, 'Novo usuário registrado')
+
   const tokens = generateTokens(user.id, user.username)
   return { user, profile, ...tokens }
 }
@@ -190,10 +193,16 @@ export const loginUser = async ({ identifier, password }) => {
     select: { ...PUBLIC_USER_FIELDS, password: true, profile: true },
   })
 
-  if (!record) throw new UnauthorizedError('Usuário ou senha inválidos')
+  if (!record) {
+    logger.warn({ identifier }, 'Login inválido: usuário não encontrado')
+    throw new UnauthorizedError('Usuário ou senha inválidos')
+  }
 
   const passwordMatch = await bcrypt.compare(password, record.password)
-  if (!passwordMatch) throw new UnauthorizedError('Usuário ou senha inválidos')
+  if (!passwordMatch) {
+    logger.warn({ userId: record.id }, 'Login inválido: senha incorreta')
+    throw new UnauthorizedError('Usuário ou senha inválidos')
+  }
 
   const { password: _pw, profile, ...user } = record
   return { user, profile, ...generateTokens(user.id, user.username) }
@@ -256,6 +265,7 @@ export const requestPasswordReset = async (email) => {
 
   const token = await upsertVerificationToken(user.id, 'PASSWORD_RESET')
   await sendPasswordResetEmail(user.email, token)
+  logger.info({ userId: user.id }, 'Reset de senha solicitado')
 }
 
 export const resetPassword = async (token, newPassword) => {
@@ -279,6 +289,8 @@ export const resetPassword = async (token, newPassword) => {
     }),
     prisma.verificationToken.delete({ where: { token } }),
   ])
+
+  logger.info({ userId: record.userId }, 'Senha redefinida')
 }
 
 export const verifyEmailChange = async (token) => {
@@ -315,6 +327,7 @@ export const verifyEmailChange = async (token) => {
     throw err
   }
 
+  logger.info({ userId: record.userId }, 'Email alterado')
   invalidateUserCache(record.userId)
 }
 

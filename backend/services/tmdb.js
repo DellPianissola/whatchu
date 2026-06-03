@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { describeAxiosError, makeUpstreamErrorFactory } from '../lib/upstreamErrors.js'
 import { extractVirtualGenres, VIRTUAL_GENRE_NAMES } from '../lib/virtualGenres.js'
+import { logger } from '../lib/logger.js'
 
 const TMDB_BASE_URL          = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL    = 'https://image.tmdb.org/t/p/w500'
@@ -44,7 +45,7 @@ class TMDBService {
   constructor() {
     this.apiKey = process.env.TMDB_API_KEY
     if (!this.apiKey) {
-      console.warn('⚠️ TMDB_API_KEY não configurada. Algumas funcionalidades podem não funcionar.')
+      logger.warn('TMDB_API_KEY não configurada. Algumas funcionalidades podem não funcionar.')
     }
     this.genreCache = { movie: null, tv: null }
   }

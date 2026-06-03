@@ -10,6 +10,7 @@ import {
   STREAMING_PROVIDER_KEYS,
   resolveTmdbIds,
 } from '../lib/streamingProviders.js'
+import { logger } from '../lib/logger.js'
 import {
   ValidationError,
   NotFoundError,
@@ -77,7 +78,7 @@ const safeFetchProviders = async (type, externalId) => {
       providersUpdatedAt: new Date(),
     }
   } catch (err) {
-    console.error(`Falha ao buscar providers TMDB (${type} ${externalId}):`, err.message)
+    logger.warn({ err, type, externalId }, 'Falha ao buscar providers TMDB')
     return { providers: [], providersUpdatedAt: null }
   }
 }

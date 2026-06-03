@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { logger } from '../lib/logger.js'
 
 const FROM = process.env.EMAIL_FROM ?? 'Whatchu <noreply@whatchu.app>'
 const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
@@ -9,7 +10,7 @@ const resend = process.env.RESEND_API_KEY
 
 const send = async (payload) => {
   if (!resend) {
-    console.warn('[email] RESEND_API_KEY não configurada — email não enviado:', payload.subject)
+    logger.warn({ subject: payload.subject }, 'RESEND_API_KEY não configurada — email não enviado')
     return null
   }
   return resend.emails.send(payload)

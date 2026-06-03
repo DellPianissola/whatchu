@@ -2,6 +2,7 @@ import tmdbService from './tmdb.js'
 import { weightedPick } from './lottery/picker.js'
 import { resolveTmdbIds } from '../lib/streamingProviders.js'
 import { ValidationError } from '../lib/httpErrors.js'
+import { logger } from '../lib/logger.js'
 
 // Sorteia dentro do top ~400 populares de cada tipo: variedade sem descer
 // pra páginas com itens obscuros que passariam o piso de votos por sorte.
@@ -41,7 +42,7 @@ const safeFetch = async (type, opts) => {
   try {
     return await fetchCandidates(type, opts)
   } catch (error) {
-    console.error(`Lucky: falha ao buscar ${type}:`, error.message)
+    logger.warn({ err: error, type }, 'Lucky: falha ao buscar candidatos')
     return []
   }
 }

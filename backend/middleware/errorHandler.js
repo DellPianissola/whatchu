@@ -1,4 +1,5 @@
 import { HttpError } from '../lib/httpErrors.js'
+import { logger } from '../lib/logger.js'
 
 /**
  * Middleware central de tratamento de erros.
@@ -18,7 +19,7 @@ import { HttpError } from '../lib/httpErrors.js'
 export const errorHandler = (err, req, res, _next) => {
   // Erro tipado da nossa lib — confiável, devolve direto.
   if (err instanceof HttpError) {
-    if (err.statusCode >= 500) console.error(`[${err.name}]`, err.message, err.details ?? '')
+    if (err.statusCode >= 500) logger.error({ err }, err.message)
     const body = { error: err.message }
     if (err.code) body.code = err.code
     if (err.details) body.details = err.details
@@ -34,7 +35,7 @@ export const errorHandler = (err, req, res, _next) => {
   }
 
   // Erro inesperado — loga e devolve 500 genérico
-  console.error('Erro não tratado:', err)
+  logger.error({ err }, 'Erro não tratado')
   const body = { error: 'Erro interno do servidor' }
   if (process.env.NODE_ENV !== 'production') {
     body.details = err.message

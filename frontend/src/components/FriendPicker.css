@@ -1,0 +1,235 @@
+.friend-picker-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-5);
+}
+
+/* ── Sessão (facepile do grupo montado) ─────────── */
+
+.friend-picker-session {
+  margin-bottom: var(--space-4);
+}
+
+.friend-picker-session-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.friend-picker-session-avatars {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.friend-picker-session-avatar {
+  display: inline-flex;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.friend-picker-session-avatar + .friend-picker-session-avatar {
+  margin-left: -10px;
+}
+
+.friend-picker-session-avatar--removable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.friend-picker-session-avatar--removable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px var(--danger);
+  z-index: 1;
+}
+
+.friend-picker-session-hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-left: var(--space-2);
+}
+
+/* ── Busca ──────────────────────────────────────── */
+
+.friend-picker-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.55rem 0.9rem;
+  border: 2px solid var(--surface-light);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.friend-picker-search:focus-within {
+  border-color: var(--primary);
+}
+
+.friend-picker-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.friend-picker-search input:focus {
+  outline: none;
+}
+
+.friend-picker-search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Ações em lote ──────────────────────────────── */
+
+.friend-picker-bulk {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.friend-picker-bulk-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.friend-picker-bulk-btn:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+/* ── Grid de amigos ─────────────────────────────── */
+
+.friend-picker-grid {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-1);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-1);
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+.friend-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: var(--space-2) var(--space-1);
+  background: none;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+.friend-card:hover {
+  background: var(--surface-light);
+}
+
+.friend-card-avatar {
+  position: relative;
+  display: inline-flex;
+  border-radius: var(--radius-pill);
+  border: 3px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.friend-card.is-selected .friend-card-avatar {
+  border-color: var(--primary);
+}
+
+.friend-card-check {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--text-on-media);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.friend-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-card-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.friend-picker-no-results {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--space-4) 0;
+  margin: 0 0 var(--space-3);
+}
+
+/* ── Footer ─────────────────────────────────────── */
+
+.friend-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.friend-picker-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.friend-picker-manage:hover {
+  color: var(--text);
+}
+
+.friend-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--gradient-2);
+  color: var(--text-on-media);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}

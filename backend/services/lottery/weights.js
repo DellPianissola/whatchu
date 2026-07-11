@@ -25,3 +25,12 @@ const STRATEGIES = [
 
 export const computeWeight = (movie, config, now) =>
   STRATEGIES.reduce((acc, { fn, key }) => acc * fn(movie, config[key], now), 1)
+
+export const overlapStrategy = (group, config) => {
+  if (!config?.enabled) return 1
+  return config.boostPerExtraList ** (group.copies.length - 1)
+}
+
+export const computeGroupWeight = (group, config, now) =>
+  group.copies.reduce((sum, movie) => sum + computeWeight(movie, config, now), 0)
+    * overlapStrategy(group, config.overlap)

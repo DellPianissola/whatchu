@@ -1,6 +1,8 @@
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },
+  // __APP_VERSION__ é injetada em build time pelo Vite (define)
+  globals: { __APP_VERSION__: 'readonly' },
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
@@ -18,5 +20,12 @@ module.exports = {
     ],
     'react/prop-types': 'off',
   },
+  overrides: [
+    {
+      // Contexts exportam Provider + hook no mesmo arquivo por design
+      files: ['src/contexts/*.jsx'],
+      rules: { 'react-refresh/only-export-components': 'off' },
+    },
+  ],
 }
 

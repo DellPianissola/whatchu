@@ -13,5 +13,5 @@ export { prisma }
 
 export const truncateAll = () =>
   prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE movies, profiles, users, pending_registrations, verification_tokens RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE movies, friendships, profiles, users, pending_registrations, verification_tokens RESTART IDENTITY CASCADE'
   )

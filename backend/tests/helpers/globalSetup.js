@@ -18,10 +18,9 @@ const TEST_DATABASE_URL =
   'postgresql://whatchu:whatchu@localhost:5433/whatchu_test'
 
 export async function setup() {
-  console.log('\n⏳ Sincronizando schema Prisma no banco de testes...')
-  // Usa db push porque o projeto ainda não tem migration files.
-  // Quando migrations forem criadas, trocar por: prisma migrate deploy
-  execSync('npx prisma db push --accept-data-loss --skip-generate', {
+  console.log('\n⏳ Aplicando migrations no banco de testes...')
+  // migrate deploy (mesmo comando do start.sh) — valida a chain de migrations a cada run.
+  execSync('npx prisma migrate deploy', {
     cwd: BACKEND_ROOT,
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
     stdio: 'inherit',

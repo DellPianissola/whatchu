@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Home, Search, ListVideo } from 'lucide-react'
+import { Home, Search, ListVideo, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { ROUTES } from '../constants/routes.js'
 import './BottomNav.css'
@@ -8,6 +8,7 @@ const TABS = [
   { to: ROUTES.HOME,   label: 'Início', Icon: Home },
   { to: ROUTES.SEARCH, label: 'Buscar', Icon: Search },
   { to: ROUTES.LIST,   label: 'Lista',  Icon: ListVideo },
+  { to: ROUTES.FRIENDS, label: 'Amigos', Icon: Users },
 ]
 
 const HIDDEN_ROUTES = new Set([

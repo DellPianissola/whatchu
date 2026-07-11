@@ -1,7 +1,7 @@
 // Filtros já chegam normalizados pelo service (movies.normalizeDrawFilters).
 
-export const buildWhere = (profileId, filters = {}) => {
-  const where = { addedById: profileId }
+export const buildWhere = (profileIds, filters = {}) => {
+  const where = { addedById: { in: profileIds } }
 
   if (filters.types?.length)            where.type      = { in: filters.types }
   if (filters.genres?.length)           where.genres    = { hasSome: filters.genres }

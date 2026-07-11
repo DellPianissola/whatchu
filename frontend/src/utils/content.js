@@ -3,6 +3,8 @@ export const TYPE_LABEL = {
   SERIES: 'Série',
 }
 
+export const ALL_TYPES = Object.keys(TYPE_LABEL)
+
 export const PRIORITY_VALUES = ['URGENT', 'HIGH', 'MEDIUM', 'LOW']
 
 export const PRIORITY_COLOR = {

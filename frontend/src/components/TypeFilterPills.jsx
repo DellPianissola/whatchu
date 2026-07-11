@@ -1,12 +1,11 @@
 import { Film, Tv } from 'lucide-react'
+import { TYPE_LABEL } from '../utils/content.js'
 import './TypeFilterPills.css'
 
-export const TYPE_OPTIONS = [
-  { value: 'MOVIE',  label: 'Filme', Icon: Film },
-  { value: 'SERIES', label: 'Série', Icon: Tv   },
+const TYPE_OPTIONS = [
+  { value: 'MOVIE',  label: TYPE_LABEL.MOVIE,  Icon: Film },
+  { value: 'SERIES', label: TYPE_LABEL.SERIES, Icon: Tv   },
 ]
-
-export const ALL_TYPES = TYPE_OPTIONS.map(t => t.value)
 
 const TypeFilterPills = ({ value, onChange }) => {
   const toggle = (type) => {

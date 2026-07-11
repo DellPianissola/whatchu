@@ -3,6 +3,7 @@ import { prisma } from '../config/database.js'
 import { drawMovie as drawFromLottery } from './lottery/index.js'
 import tmdbService from './tmdb.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
+import { requireAcceptedFriendIds } from './friends.js'
 import { toIntOrNull } from '../lib/parsers.js'
 import { INCLUDE_ADDED_BY } from '../lib/prismaIncludes.js'
 import {
@@ -250,12 +251,20 @@ const normalizeDrawFilters = (filters = {}) => {
 
 export const drawForUser = async (userId, filters = {}) => {
   const profile = await requireUserProfile(userId)
+  const friendIds = await requireAcceptedFriendIds(profile.id, filters.friendIds)
   const normalized = normalizeDrawFilters(filters)
-  const { movie, reason } = await drawFromLottery(profile.id, normalized)
-  if (movie) return movie
+  const { movie, sources, reason } = await drawFromLottery([profile.id, ...friendIds], normalized)
+  if (movie) return { movie, sources }
 
+  const withFriends = friendIds.length > 0
   if (reason === 'NO_MATCH') {
-    throw new NotFoundError('Nenhum item da sua lista corresponde aos filtros', { code: 'NO_MATCH' })
+    throw new NotFoundError(
+      withFriends ? 'Nenhum item das listas corresponde aos filtros' : 'Nenhum item da sua lista corresponde aos filtros',
+      { code: 'NO_MATCH' }
+    )
   }
-  throw new NotFoundError('Sua lista está vazia', { code: 'EMPTY_LIST' })
+  throw new NotFoundError(
+    withFriends ? 'Nenhuma das listas tem itens' : 'Sua lista está vazia',
+    { code: 'EMPTY_LIST' }
+  )
 }

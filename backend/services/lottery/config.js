@@ -12,4 +12,10 @@ export const DEFAULT_LOTTERY_CONFIG = {
     maxBoost: 3,
     fullMonths: 24,
   },
+  overlap: {
+    // Sorteio com amigos: item presente em N listas ganha boost^(N-1),
+    // além da soma natural dos pesos das cópias.
+    enabled: true,
+    boostPerExtraList: 4,
+  },
 }

@@ -65,6 +65,27 @@
   gap: 4px;
 }
 
+.draw-result-top-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.draw-result-sources {
+  display: inline-flex;
+  align-items: center;
+}
+
+.draw-result-source {
+  display: inline-flex;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px rgba(var(--shadow-rgb), 0.55);
+}
+
+.draw-result-source + .draw-result-source {
+  margin-left: -7px;
+}
+
 .draw-result-content {
   position: relative;
   z-index: 2;

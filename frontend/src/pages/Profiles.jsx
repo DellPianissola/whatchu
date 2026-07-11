@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { createProfile, updateProfile, changeEmail, uploadAvatar, apiErrorMessage } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
+import Avatar from '../components/Avatar.jsx'
 import { pluralize, todayISODate } from '../utils/content.js'
 import { AVATAR_ACCEPT } from '../constants/ui.js'
 import './Profiles.css'
@@ -106,13 +107,7 @@ const Profiles = () => {
               title="Trocar foto"
               aria-label="Trocar foto"
             >
-              {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="" />
-              ) : (
-                <div className="avatar-placeholder">
-                  {profile?.name?.charAt(0)?.toUpperCase() ?? '?'}
-                </div>
-              )}
+              <Avatar src={profile?.avatarUrl} name={profile?.name} />
               <div className="avatar-overlay" aria-hidden="true">Trocar</div>
             </button>
             <input

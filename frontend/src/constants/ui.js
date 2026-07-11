@@ -12,4 +12,8 @@ export const ONBOARDING_TRANSITION_MS = 1400
 
 export const SKELETON_COUNT = 4
 
+export const DRAW_FRIENDS_MAX_AVATARS = 3
+
+export const RECENT_FRIENDS_LIMIT = 20
+
 export const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp'

@@ -54,9 +54,31 @@ model Profile {
   updatedAt         DateTime  @updatedAt
 
   // Relacionamentos
-  movies    Movie[]
+  movies                Movie[]
+  sentFriendships       Friendship[] @relation("sentFriendships")
+  receivedFriendships   Friendship[] @relation("receivedFriendships")
 
   @@map("profiles")
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String
+  requester   Profile  @relation("sentFriendships", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   Profile  @relation("receivedFriendships", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  acceptedAt  DateTime?
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@map("friendships")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
 }
 
 model Movie {
@@ -81,7 +103,8 @@ model Movie {
   addedById   String
   addedBy     Profile  @relation(fields: [addedById], references: [id], onDelete: Cascade)
 
-  @@unique([addedById, externalId])
+  // IDs do TMDB colidem entre movie e tv — sem o type, um filme bloquearia a série homônima.
+  @@unique([addedById, externalId, type])
   @@index([addedById])
   @@index([type])
   @@index([priority])

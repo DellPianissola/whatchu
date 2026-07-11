@@ -6,10 +6,10 @@ import * as moviesService from '../services/movies.js'
 const router = express.Router()
 
 // POST /api/movies/draw - Sorteia um filme da lista com peso por prioridade.
-// Body opcional: { types?: string[], genres?: string[], priorities?: string[], ignoreWatched?: boolean }
+// Body opcional: { types?: string[], genres?: string[], priorities?: string[], ignoreWatched?: boolean, friendIds?: string[] }
 router.post('/draw', asyncHandler(async (req, res) => {
-  const movie = await moviesService.drawForUser(req.user.id, req.body || {})
-  res.json({ movie })
+  const { movie, sources } = await moviesService.drawForUser(req.user.id, req.body || {})
+  res.json({ movie, sources })
 }))
 
 // GET /api/movies - Lista filmes do usuário autenticado

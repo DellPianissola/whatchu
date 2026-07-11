@@ -3,4 +3,6 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refreshToken',
   THEME: 'theme',
   ANALYTICS_CONSENT: 'analytics_consent',
+  DRAW_FRIENDS: 'drawFriends',
+  DRAW_FRIENDS_RECENT: 'drawFriendsRecent',
 }

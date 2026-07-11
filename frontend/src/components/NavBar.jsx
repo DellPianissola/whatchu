@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Home, Search, ListVideo } from 'lucide-react'
+import { Home, Search, ListVideo, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import Wordmark from './Wordmark.jsx'
 import UserMenu from './UserMenu.jsx'
@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { to: ROUTES.HOME,   label: 'Início', Icon: Home,      end: true },
   { to: ROUTES.SEARCH, label: 'Buscar', Icon: Search },
   { to: ROUTES.LIST,   label: 'Minha Lista', Icon: ListVideo },
+  { to: ROUTES.FRIENDS, label: 'Amigos', Icon: Users },
 ]
 
 const NavBar = () => {

@@ -2,6 +2,7 @@ import { Sparkles, Calendar, Star, Clock, X } from 'lucide-react'
 import PosterPlaceholder from './PosterPlaceholder.jsx'
 import GeoPlaceholder from './GeoPlaceholder.jsx'
 import IconButton from './IconButton.jsx'
+import Avatar from './Avatar.jsx'
 import { TYPE_LABEL, formatDuration } from '../utils/content.js'
 import { providerUrl } from '../utils/providers.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
@@ -20,7 +21,7 @@ const collectProviders = (watchProviders) => {
   })
 }
 
-const DrawResultPanel = ({ item, isDrawing = false, onOpen, onClose, showProviders = false }) => {
+const DrawResultPanel = ({ item, isDrawing = false, onOpen, onClose, showProviders = false, sources = null }) => {
   const { richDetails, richDetailsLoading } = useRichDetails(showProviders ? item : null)
 
   if (!item) {
@@ -55,7 +56,23 @@ const DrawResultPanel = ({ item, isDrawing = false, onOpen, onClose, showProvide
         <PosterPlaceholder title={item.title} type={item.type} className="draw-result-bg" />
       )}
       <div className="draw-result-top">
-        <span className="draw-result-label"><Sparkles size={16} /> Sorteado!</span>
+        <span className="draw-result-top-left">
+          <span className="draw-result-label"><Sparkles size={16} /> Sorteado!</span>
+          {sources?.length > 0 && (
+            <span
+              className="draw-result-sources"
+              aria-label={`Das listas de ${sources.map((s) => s.name).join(' e ')}`}
+            >
+              {sources.map((s) => (
+                <Tooltip key={s.profileId} label={`Da lista de ${s.name}`}>
+                  <span className="draw-result-source">
+                    <Avatar src={s.avatarUrl} name={s.name} size={24} />
+                  </span>
+                </Tooltip>
+              ))}
+            </span>
+          )}
+        </span>
         {onClose && (
           <IconButton
             icon={<X size={20} />}

@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Search as SearchIcon, Dices, Sparkles, Users } from 'lucide-react'
-import { drawMovie } from '../services/api.js'
+import { drawMovie, getFriends } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useDrawFilters } from '../hooks/useDrawFilters.js'
+import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
 import { performLuckyDraw } from '../utils/draw.js'
 import Wordmark from '../components/Wordmark.jsx'
 import StatPills from '../components/StatPills.jsx'
@@ -20,10 +21,13 @@ import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import Button from '../components/Button.jsx'
 import DrawResultPanel from '../components/DrawResultPanel.jsx'
+import FriendPicker from '../components/FriendPicker.jsx'
+import Avatar from '../components/Avatar.jsx'
 import { PRIORITY_OPTIONS } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
-import { DRAW_DELAY_MS } from '../constants/ui.js'
+import { STORAGE_KEYS } from '../constants/storageKeys.js'
+import { DRAW_DELAY_MS, DRAW_FRIENDS_MAX_AVATARS, RECENT_FRIENDS_LIMIT } from '../constants/ui.js'
 import './Home.css'
 
 const Home = () => {
@@ -43,6 +47,41 @@ const Home = () => {
   } = useDrawFilters()
   const [filterPriorities, setFilterPriorities] = useState([])
   const [ignoreWatched, setIgnoreWatched] = useState(false)
+  const [friendPickerOpen, setFriendPickerOpen] = useState(false)
+  const [drawFriends, setDrawFriends] = useLocalStorageState(
+    `${STORAGE_KEYS.DRAW_FRIENDS}:${profile?.id ?? 'anon'}`,
+    []
+  )
+  const [recentFriendIds, setRecentFriendIds] = useLocalStorageState(
+    `${STORAGE_KEYS.DRAW_FRIENDS_RECENT}:${profile?.id ?? 'anon'}`,
+    []
+  )
+  const [drawSources, setDrawSources] = useState(null)
+
+  const applyDrawFriends = (list) => {
+    setDrawFriends(list)
+    if (list.length > 0) {
+      setRecentFriendIds((prev) =>
+        [...new Set([...list.map((f) => f.id), ...prev])].slice(0, RECENT_FRIENDS_LIMIT))
+    }
+  }
+
+  // Snapshot persistido pode estar stale (nome/avatar) ou conter amizade já desfeita.
+  const friendsSyncedRef = useRef(false)
+  useEffect(() => {
+    if (friendsSyncedRef.current || drawFriends.length === 0) return
+    friendsSyncedRef.current = true
+    let cancelled = false
+    getFriends()
+      .then(({ friends }) => {
+        if (cancelled) return
+        const byId = new Map(friends.map((f) => [f.profile.id, f.profile]))
+        setDrawFriends((prev) => prev.map((f) => byId.get(f.id)).filter(Boolean))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawFriends])
 
   useEffect(() => {
     setIsLoaded(true)
@@ -54,24 +93,36 @@ const Home = () => {
   }), [userMovies])
 
   const handleDraw = async () => {
+    const withFriends = drawFriends.length > 0
     setIsDrawing(true)
     setSelectedMovie(null)
+    setDrawSources(null)
     try {
       await new Promise(resolve => setTimeout(resolve, DRAW_DELAY_MS))
-      const movie = await drawMovie({
+      const { movie, sources } = await drawMovie({
         types: filterTypes,
         priorities: filterPriorities,
         genres: filterGenres,
         providers: filterProviders,
         ignoreWatched,
+        friendIds: drawFriends.map((f) => f.id),
       })
       setSelectedMovie(movie)
+      if (withFriends) setDrawSources(sources)
     } catch (error) {
       const code = error.response?.data?.code
-      if (code === ERROR_CODES.EMPTY_LIST) {
-        toast.info('Sua lista está vazia — adicione filmes ou séries pra começar')
+      if (withFriends && error.response?.status === 403) {
+        // Amizade desfeita desde a última seleção — seleção persistida ficou órfã.
+        setDrawFriends([])
+        toast.error('Algum amigo selecionado não está mais disponível. Monte o grupo de novo.')
+      } else if (code === ERROR_CODES.EMPTY_LIST) {
+        toast.info(withFriends
+          ? 'Nenhuma das listas tem itens — adicionem filmes ou séries pra começar'
+          : 'Sua lista está vazia — adicione filmes ou séries pra começar')
       } else if (code === ERROR_CODES.NO_MATCH) {
-        toast.info('Nenhum item da sua lista corresponde aos filtros selecionados')
+        toast.info(withFriends
+          ? 'Nenhum item das listas corresponde aos filtros selecionados'
+          : 'Nenhum item da sua lista corresponde aos filtros selecionados')
       } else {
         toast.error('Erro ao sortear. Tente novamente.')
       }
@@ -80,13 +131,12 @@ const Home = () => {
     }
   }
 
-  const handleLucky = () => performLuckyDraw(
-    { types: filterTypes, genres: filterGenres, providers: filterProviders },
-    { toast, setDrawing: setIsDrawing, setResult: setSelectedMovie }
-  )
-
-  const handleGroup = () => {
-    toast.info('Em breve — você vai poder sortear com os amigos!')
+  const handleLucky = () => {
+    setDrawSources(null)
+    performLuckyDraw(
+      { types: filterTypes, genres: filterGenres, providers: filterProviders },
+      { toast, setDrawing: setIsDrawing, setResult: setSelectedMovie }
+    )
   }
 
   const onAddFromModal = async (priority) => {
@@ -114,9 +164,6 @@ const Home = () => {
         ? filterSheet.pending.priorities.filter(v => v !== value)
         : [...filterSheet.pending.priorities, value]
     )
-
-  const togglePriority = (value) =>
-    setFilterPriorities(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
 
   const ignoreWatchedToggle = (
     <label className="draw-toggle-label">
@@ -205,7 +252,7 @@ const Home = () => {
 
   const greeting = profile?.name ? `Olá, ${profile.name.split(' ')[0]}!` : 'Bem-vindo!'
   const totalItems = stats.movies + stats.series
-  const listIsEmpty = !userMoviesLoading && totalItems === 0
+  const listIsEmpty = !userMoviesLoading && totalItems === 0 && drawFriends.length === 0
   const noTypeSelected = filterTypes.length === 0
   const drawDisabled = isDrawing || noTypeSelected
 
@@ -285,10 +332,34 @@ const Home = () => {
               )}
 
               <div className="group-row">
-                <button className="btn-group" onClick={handleGroup}>
-                  <Users size={18} /> Formar grupo
-                  <span className="btn-soon btn-soon--inline">em breve</span>
+                <button className="btn-group" onClick={() => setFriendPickerOpen(true)}>
+                  <Users size={18} /> Sortear com amigos
                 </button>
+                {drawFriends.length > 0 && (
+                  <div className="draw-friends-chips">
+                    {drawFriends.slice(0, DRAW_FRIENDS_MAX_AVATARS).map((f) => (
+                      <button
+                        key={f.id}
+                        className="draw-friend-chip"
+                        onClick={() => setDrawFriends((prev) => prev.filter((p) => p.id !== f.id))}
+                        title={`Remover ${f.name} do sorteio`}
+                        aria-label={`Remover ${f.name} do sorteio`}
+                      >
+                        <Avatar src={f.avatarUrl} name={f.name} size={26} />
+                      </button>
+                    ))}
+                    {drawFriends.length > DRAW_FRIENDS_MAX_AVATARS && (
+                      <button
+                        className="draw-friend-chip draw-friend-chip--more"
+                        onClick={() => setFriendPickerOpen(true)}
+                        title="Ver todos os amigos do sorteio"
+                        aria-label="Ver todos os amigos do sorteio"
+                      >
+                        +{drawFriends.length - DRAW_FRIENDS_MAX_AVATARS}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -298,8 +369,9 @@ const Home = () => {
               item={selectedMovie}
               isDrawing={isDrawing}
               showProviders
+              sources={drawSources}
               onOpen={() => setModalOpen(true)}
-              onClose={() => { setSelectedMovie(null); setModalOpen(false) }}
+              onClose={() => { setSelectedMovie(null); setDrawSources(null); setModalOpen(false) }}
             />
           </div>
 
@@ -324,6 +396,14 @@ const Home = () => {
           }
         />
       )}
+
+      <FriendPicker
+        open={friendPickerOpen}
+        onClose={() => setFriendPickerOpen(false)}
+        selected={drawFriends}
+        onConfirm={applyDrawFriends}
+        recentIds={recentFriendIds}
+      />
 
       <FilterSheet
         open={filterSheet.open}

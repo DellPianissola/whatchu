@@ -11,9 +11,10 @@ import { prisma, truncateAll } from '../helpers/db.js'
 import {
   createUser,
   createProfile,
+  createFriendship,
   createMovie as createMovieFactory,
 } from '../helpers/factories.js'
-import { ValidationError, NotFoundError, ConflictError } from '../../lib/httpErrors.js'
+import { ValidationError, NotFoundError, ConflictError, ForbiddenError } from '../../lib/httpErrors.js'
 
 describe('movies service', () => {
   let user, profile
@@ -131,6 +132,12 @@ describe('movies service', () => {
       ).rejects.toThrow(ConflictError)
     })
 
+    it('permite mesmo externalId com types diferentes (IDs do TMDB colidem entre movie e tv)', async () => {
+      await createMovieFactory(profile.id, { title: 'Fargo', type: 'MOVIE', externalId: '275' })
+      const serie = await createMovie(user.id, { title: 'Fargo', type: 'SERIES', externalId: '275' })
+      expect(serie.type).toBe('SERIES')
+    })
+
     it('lança ConflictError para title+type duplicado (case-insensitive)', async () => {
       await createMovieFactory(profile.id, { title: 'Duplicado', type: 'MOVIE' })
       await expect(
@@ -213,7 +220,9 @@ describe('movies service', () => {
     it('retorna um filme quando a lista tem itens', async () => {
       await createMovieFactory(profile.id, { title: 'Para Sortear' })
       const result = await drawForUser(user.id)
-      expect(result.title).toBe('Para Sortear')
+      expect(result.movie.title).toBe('Para Sortear')
+      expect(result.sources).toHaveLength(1)
+      expect(result.sources[0].profileId).toBe(profile.id)
     })
 
     it('lança NotFoundError com code EMPTY_LIST quando a lista está vazia', async () => {
@@ -225,7 +234,7 @@ describe('movies service', () => {
     it('inclui filmes assistidos no sorteio', async () => {
       await createMovieFactory(profile.id, { title: 'Assistido', watched: true })
       const result = await drawForUser(user.id)
-      expect(result.title).toBe('Assistido')
+      expect(result.movie.title).toBe('Assistido')
     })
 
     it('filtra por providers via keys de streaming', async () => {
@@ -233,13 +242,33 @@ describe('movies service', () => {
       await createMovieFactory(profile.id, { title: 'OnDisney',  providers: [337] })
 
       const result = await drawForUser(user.id, { providers: ['netflix'] })
-      expect(result.title).toBe('OnNetflix')
+      expect(result.movie.title).toBe('OnNetflix')
     })
 
     it('keys de streaming inválidas são ignoradas (sem aplicar filtro)', async () => {
       await createMovieFactory(profile.id, { title: 'Any', providers: [] })
       const result = await drawForUser(user.id, { providers: ['fake-streaming'] })
-      expect(result.title).toBe('Any')
+      expect(result.movie.title).toBe('Any')
+    })
+
+    it('sorteia com a lista de um amigo aceito via friendIds', async () => {
+      const amigo       = await createUser({ username: 'amigodraw' })
+      const amigoPerfil = await createProfile(amigo.id)
+      await createFriendship(profile.id, amigoPerfil.id)
+      await createMovieFactory(amigoPerfil.id, { title: 'Do Amigo' })
+
+      const result = await drawForUser(user.id, { friendIds: [amigoPerfil.id] })
+      expect(result.movie.title).toBe('Do Amigo')
+      expect(result.sources[0].profileId).toBe(amigoPerfil.id)
+    })
+
+    it('lança ForbiddenError quando friendIds contém quem não é amigo aceito', async () => {
+      const estranho       = await createUser({ username: 'estranhodraw' })
+      const estranhoPerfil = await createProfile(estranho.id)
+      await createMovieFactory(profile.id)
+
+      await expect(drawForUser(user.id, { friendIds: [estranhoPerfil.id] }))
+        .rejects.toThrow(ForbiddenError)
     })
   })
 })

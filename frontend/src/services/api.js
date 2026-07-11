@@ -100,7 +100,13 @@ export const getMovies     = async (params = {})   => (await api.get('/movies', 
 export const createMovie   = async (data)          => (await api.post('/movies', data)).data.movie
 export const updateMovie   = async (id, data)      => (await api.put(`/movies/${id}`, data)).data.movie
 export const deleteMovie   = async (id)            => { await api.delete(`/movies/${id}`) }
-export const drawMovie     = async (filters = {})  => (await api.post('/movies/draw', filters)).data.movie
+export const drawMovie     = async (filters = {})  => (await api.post('/movies/draw', filters)).data
+
+// Friends
+export const getFriends          = async ()           => (await api.get('/friends')).data
+export const sendFriendInvite    = async (username)   => (await api.post('/friends/invites', { username })).data.invite
+export const respondFriendInvite = async (id, accept) => { await api.post(`/friends/invites/${id}/respond`, { accept }) }
+export const removeFriend        = async (id)         => { await api.delete(`/friends/${id}`) }
 
 // Auth (público — chamadas autenticadas vivem no AuthContext via api.post direto)
 export const resendVerificationPublic = async (email)          => { await api.post('/auth/resend-verification-public', { email }) }

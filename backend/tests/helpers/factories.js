@@ -55,6 +55,18 @@ export const createProfile = async (userId, overrides = {}) => {
   })
 }
 
+export const createFriendship = async (requesterId, addresseeId, overrides = {}) => {
+  const status = overrides.status ?? 'ACCEPTED'
+  return prisma.friendship.create({
+    data: {
+      requesterId,
+      addresseeId,
+      status,
+      acceptedAt: overrides.acceptedAt ?? (status === 'ACCEPTED' ? new Date() : null),
+    },
+  })
+}
+
 export const createMovie = async (profileId, overrides = {}) => {
   return prisma.movie.create({
     data: {

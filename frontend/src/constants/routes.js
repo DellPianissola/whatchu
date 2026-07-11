@@ -10,6 +10,7 @@ export const ROUTES = {
   HOME: '/app',
   SEARCH: '/app/search',
   LIST: '/app/list',
+  FRIENDS: '/app/friends',
   PROFILES: '/app/profiles',
   ONBOARDING: '/app/onboarding',
 }

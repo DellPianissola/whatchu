@@ -11,6 +11,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Search from './pages/Search'
 import MyList from './pages/MyList'
+import Friends from './pages/Friends'
 import Profiles from './pages/Profiles'
 import Onboarding from './pages/Onboarding'
 import VerifyEmail from './pages/VerifyEmail'
@@ -57,6 +58,7 @@ function App() {
               <Route path={ROUTES.HOME}            element={protect(<Home />)} />
               <Route path={ROUTES.SEARCH}          element={protect(<Search />)} />
               <Route path={ROUTES.LIST}            element={protect(<MyList />)} />
+              <Route path={ROUTES.FRIENDS}         element={protect(<Friends />)} />
               <Route path={ROUTES.PROFILES}        element={protect(<Profiles />)} />
               <Route path={ROUTES.ONBOARDING}      element={protect(<Onboarding />, { requireOnboarding: false })} />
               <Route path="/search"    element={<Navigate to={ROUTES.SEARCH} replace />} />

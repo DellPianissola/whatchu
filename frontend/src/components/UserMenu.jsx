@@ -5,13 +5,9 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { useTheme } from '../hooks/useTheme.js'
 import { useClickOutside } from '../hooks/useClickOutside.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
+import Avatar from './Avatar.jsx'
 import { ROUTES } from '../constants/routes.js'
 import './UserMenu.css'
-
-const getInitial = (name, email) => {
-  const source = name?.trim() || email?.trim() || '?'
-  return source.charAt(0).toUpperCase()
-}
 
 const UserMenu = () => {
   const navigate = useNavigate()
@@ -53,12 +49,7 @@ const UserMenu = () => {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <span className="ui-user-menu-avatar">
-          {avatarUrl
-            ? <img src={avatarUrl} alt="" />
-            : <span className="ui-user-menu-initial">{getInitial(displayName, email)}</span>
-          }
-        </span>
+        <Avatar src={avatarUrl} name={displayName} className="ui-user-menu-avatar" />
         <span className="ui-user-menu-name">{displayName}</span>
         <ChevronDown size={16} className="ui-user-menu-caret" />
       </button>
@@ -66,12 +57,7 @@ const UserMenu = () => {
       {open && (
         <div className="ui-user-menu-panel" role="menu">
             <header className="ui-user-menu-header">
-              <span className="ui-user-menu-avatar ui-user-menu-avatar--lg">
-                {avatarUrl
-                  ? <img src={avatarUrl} alt="" />
-                  : <span className="ui-user-menu-initial">{getInitial(displayName, email)}</span>
-                }
-              </span>
+              <Avatar src={avatarUrl} name={displayName} className="ui-user-menu-avatar ui-user-menu-avatar--lg" />
               <div className="ui-user-menu-identity">
                 <span className="ui-user-menu-identity-name">{displayName}</span>
                 {email && <span className="ui-user-menu-identity-email">{email}</span>}

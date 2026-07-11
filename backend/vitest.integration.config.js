@@ -17,6 +17,7 @@ export default defineConfig({
       'tests/services/auth.test.js',
       'tests/services/movies.test.js',
       'tests/services/storage.test.js',
+      'tests/services/friends.test.js',
     ],
 
     environment: 'node',
@@ -45,6 +46,7 @@ export default defineConfig({
         'services/auth.js',
         'services/movies.js',
         'services/storage.js',
+        'services/friends.js',
       ],
       thresholds: { lines: 85, functions: 85, branches: 80, statements: 85 },
     },

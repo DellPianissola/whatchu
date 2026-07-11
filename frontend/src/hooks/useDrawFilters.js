@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { getExternalGenres } from '../services/api.js'
 import { useStreamingProviders } from './useStreamingProviders.js'
-import { ALL_TYPES } from '../components/TypeFilterPills.jsx'
+import { ALL_TYPES } from '../utils/content.js'
 
 export const useDrawFilters = () => {
   const { options: streamingOptions } = useStreamingProviders()

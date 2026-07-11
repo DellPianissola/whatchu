@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js'
 import moviesRoutes from './routes/movies.js'
 import profilesRoutes from './routes/profiles.js'
 import externalRoutes from './routes/external.js'
+import friendsRoutes from './routes/friends.js'
 
 dotenv.config()
 
@@ -65,6 +66,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/movies', authenticateToken, moviesRoutes)
 app.use('/api/profiles', authenticateToken, profilesRoutes)
 app.use('/api/external', externalRoutes)
+app.use('/api/friends', authenticateToken, friendsRoutes)
 
 app.use(errorHandler)
 

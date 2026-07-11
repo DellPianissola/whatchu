@@ -93,6 +93,18 @@ describe('profiles service', () => {
       expect(updated.name).toBe('Original')
     })
 
+    it('atualiza shareListWithFriends (default true)', async () => {
+      const user = await createUser()
+      const profile = await createProfileFactory(user.id)
+      expect(profile.shareListWithFriends).toBe(true)
+
+      const updated = await updateProfile(user.id, { shareListWithFriends: false })
+      expect(updated.shareListWithFriends).toBe(false)
+
+      const back = await updateProfile(user.id, { shareListWithFriends: true })
+      expect(back.shareListWithFriends).toBe(true)
+    })
+
     it('lança ValidationError se tentar alterar username pelo payload', async () => {
       const user = await createUser({ username: 'username_original' })
       await createProfileFactory(user.id)

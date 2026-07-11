@@ -101,9 +101,11 @@ export const createMovie   = async (data)          => (await api.post('/movies',
 export const updateMovie   = async (id, data)      => (await api.put(`/movies/${id}`, data)).data.movie
 export const deleteMovie   = async (id)            => { await api.delete(`/movies/${id}`) }
 export const drawMovie     = async (filters = {})  => (await api.post('/movies/draw', filters)).data
+export const previewDraw   = async (filters = {})  => (await api.post('/movies/draw/preview', filters)).data
 
 // Friends
-export const getFriends          = async ()           => (await api.get('/friends')).data
+export const getFriends             = async ()        => (await api.get('/friends')).data
+export const getPendingInvitesCount = async ()        => (await api.get('/friends/pending/count')).data.count
 export const sendFriendInvite    = async (username)   => (await api.post('/friends/invites', { username })).data.invite
 export const respondFriendInvite = async (id, accept) => { await api.post(`/friends/invites/${id}/respond`, { accept }) }
 export const removeFriend        = async (id)         => { await api.delete(`/friends/${id}`) }

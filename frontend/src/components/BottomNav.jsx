@@ -1,6 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { Home, Search, ListVideo, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useFriendInvites } from '../contexts/FriendInvitesContext.jsx'
+import NavBadge from './NavBadge.jsx'
 import { ROUTES } from '../constants/routes.js'
 import './BottomNav.css'
 
@@ -8,7 +10,7 @@ const TABS = [
   { to: ROUTES.HOME,   label: 'Início', Icon: Home },
   { to: ROUTES.SEARCH, label: 'Buscar', Icon: Search },
   { to: ROUTES.LIST,   label: 'Lista',  Icon: ListVideo },
-  { to: ROUTES.FRIENDS, label: 'Amigos', Icon: Users },
+  { to: ROUTES.FRIENDS, label: 'Amigos', Icon: Users, showInviteBadge: true },
 ]
 
 const HIDDEN_ROUTES = new Set([
@@ -23,6 +25,7 @@ const HIDDEN_ROUTES = new Set([
 
 const BottomNav = () => {
   const { isAuthenticated } = useAuth()
+  const { pendingCount } = useFriendInvites()
   const location = useLocation()
 
   if (!isAuthenticated) return null
@@ -30,7 +33,7 @@ const BottomNav = () => {
 
   return (
     <nav className="ui-bottom-nav" aria-label="Navegação principal">
-      {TABS.map(({ to, label, Icon }) => (
+      {TABS.map(({ to, label, Icon, showInviteBadge }) => (
         <NavLink
           key={to}
           to={to}
@@ -42,7 +45,13 @@ const BottomNav = () => {
           {({ isActive }) => (
             <>
               <span className="ui-bottom-nav-icon">
-                <Icon size={22} fill={isActive ? 'currentColor' : 'none'} strokeWidth={isActive ? 1.5 : 2} />
+                {showInviteBadge ? (
+                  <NavBadge count={pendingCount}>
+                    <Icon size={22} fill={isActive ? 'currentColor' : 'none'} strokeWidth={isActive ? 1.5 : 2} />
+                  </NavBadge>
+                ) : (
+                  <Icon size={22} fill={isActive ? 'currentColor' : 'none'} strokeWidth={isActive ? 1.5 : 2} />
+                )}
               </span>
               <span className="ui-bottom-nav-label">{label}</span>
             </>

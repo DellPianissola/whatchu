@@ -132,57 +132,10 @@
 }
 
 .draw-filters-toggle-row {
-  display: block;
-}
-
-
-/* Toggle "Ignorar assistidos" */
-.draw-toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  cursor: pointer;
-  width: fit-content;
-}
-
-.draw-toggle-input {
-  display: none;
-}
-
-.draw-toggle-track {
-  width: 36px;
-  height: 20px;
-  border-radius: 99px;
-  background: var(--surface-light);
-  position: relative;
-  flex-shrink: 0;
-  transition: background 0.2s;
-}
-
-.draw-toggle-track::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  transition: transform 0.2s, background 0.2s;
-}
-
-.draw-toggle-input:checked + .draw-toggle-track {
-  background: rgba(var(--primary-rgb), 0.3);
-}
-
-.draw-toggle-input:checked + .draw-toggle-track::after {
-  transform: translateX(16px);
-  background: var(--primary);
-}
-
-.draw-toggle-text {
-  font-size: 0.85rem;
-  color: var(--text-muted);
+  gap: var(--space-4);
+  flex-wrap: wrap;
 }
 
 /* ── Botões de ação ──────────────────────────────── */
@@ -451,10 +404,6 @@
 
   .home .ui-filter-sheet-trigger {
     display: inline-flex;
-  }
-
-  .draw-toggle-label {
-    min-height: 44px;
   }
 
   .btn-group {

@@ -5,6 +5,7 @@ import {
   respondInvite,
   removeFriendship,
   requireAcceptedFriendIds,
+  countPendingInvites,
 } from '../../services/friends.js'
 import { prisma, truncateAll } from '../helpers/db.js'
 import { createUser, createProfile, createFriendship, createMovie } from '../helpers/factories.js'
@@ -185,6 +186,25 @@ describe('friends service', () => {
       const terceiroPerfil = await createProfile(terceiro.id)
       const f = await createFriendship(amigoPerfil.id, terceiroPerfil.id)
       await expect(removeFriendship(user.id, f.id)).rejects.toThrow(NotFoundError)
+    })
+  })
+
+  describe('countPendingInvites', () => {
+    it('conta só convites RECEBIDOS pendentes', async () => {
+      const terceiro       = await createUser({ username: 'terceiro' })
+      const terceiroPerfil = await createProfile(terceiro.id)
+
+      await createFriendship(amigoPerfil.id, profile.id, { status: 'PENDING' })
+      await createFriendship(profile.id, terceiroPerfil.id, { status: 'PENDING' })
+      await createFriendship(terceiroPerfil.id, amigoPerfil.id)
+
+      expect(await countPendingInvites(user.id)).toBe(1)
+      expect(await countPendingInvites(amigo.id)).toBe(0)
+    })
+
+    it('devolve 0 para usuário sem profile', async () => {
+      const semPerfil = await createUser({ username: 'semperfilcount' })
+      expect(await countPendingInvites(semPerfil.id)).toBe(0)
     })
   })
 

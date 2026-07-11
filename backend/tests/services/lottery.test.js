@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { drawMovie } from '../../services/lottery/index.js'
+import { drawMovie, previewPot } from '../../services/lottery/index.js'
 import { truncateAll } from '../helpers/db.js'
 import { createUser, createProfile, createMovie } from '../helpers/factories.js'
 
@@ -196,6 +196,85 @@ describe('lottery: drawMovie', () => {
       await createMovie(amigoPerfil.id, { title: 'Único do grupo' })
       const result = await drawMovie([profile.id, amigoPerfil.id])
       expect(result.movie.title).toBe('Único do grupo')
+    })
+
+    it('onlyCommon limita o pote a itens presentes em 2+ listas', async () => {
+      await createMovie(profile.id,     { title: 'Comum', externalId: '100' })
+      await createMovie(amigoPerfil.id, { title: 'Comum', externalId: '100' })
+      await createMovie(amigoPerfil.id, { title: 'Exclusivo', externalId: '200' })
+
+      const result = await drawMovie([profile.id, amigoPerfil.id], { onlyCommon: true })
+      expect(result.movie.title).toBe('Comum')
+      expect(result.sources).toHaveLength(2)
+    })
+
+    it('onlyCommon sem itens em comum devolve NO_MATCH', async () => {
+      await createMovie(profile.id,     { title: 'Meu',      externalId: '100' })
+      await createMovie(amigoPerfil.id, { title: 'Do Amigo', externalId: '200' })
+
+      const result = await drawMovie([profile.id, amigoPerfil.id], { onlyCommon: true })
+      expect(result.movie).toBeNull()
+      expect(result.reason).toBe('NO_MATCH')
+    })
+
+    describe('privacidade (shareListWithFriends: false)', () => {
+      let privadoPerfil
+
+      beforeEach(async () => {
+        const privado = await createUser({ username: 'privado' })
+        privadoPerfil = await createProfile(privado.id, {
+          name: 'Privado',
+          shareListWithFriends: false,
+        })
+      })
+
+      it('item exclusivo de amigo bloqueado fica fora do pote', async () => {
+        await createMovie(privadoPerfil.id, { title: 'Segredo', externalId: '300' })
+
+        const result = await drawMovie([profile.id, privadoPerfil.id])
+        expect(result.movie).toBeNull()
+        expect(result.reason).toBe('NO_MATCH')
+      })
+
+      it('item em comum com amigo bloqueado participa normalmente', async () => {
+        await createMovie(profile.id,        { title: 'Duna', externalId: '400' })
+        await createMovie(privadoPerfil.id,  { title: 'Duna', externalId: '400' })
+        await createMovie(privadoPerfil.id,  { title: 'Segredo', externalId: '300' })
+
+        for (let i = 0; i < 20; i++) {
+          const r = await drawMovie([profile.id, privadoPerfil.id])
+          expect(r.movie.title).toBe('Duna')
+        }
+      })
+
+      it('bloqueio não afeta o sorteio solo do próprio dono', async () => {
+        await createMovie(privadoPerfil.id, { title: 'Segredo', externalId: '300' })
+
+        const result = await drawMovie(privadoPerfil.id)
+        expect(result.movie.title).toBe('Segredo')
+      })
+    })
+
+    describe('previewPot', () => {
+      it('conta total e itens em comum do pote', async () => {
+        await createMovie(profile.id,     { title: 'Comum',  externalId: '100' })
+        await createMovie(amigoPerfil.id, { title: 'Comum',  externalId: '100' })
+        await createMovie(amigoPerfil.id, { title: 'Só dele' })
+        await createMovie(profile.id,     { title: 'Só meu' })
+
+        const result = await previewPot([profile.id, amigoPerfil.id])
+        expect(result).toEqual({ total: 3, common: 1 })
+      })
+
+      it('aplica a privacidade no preview', async () => {
+        const privado = await createUser({ username: 'privadoprev' })
+        const privadoPerfil = await createProfile(privado.id, { shareListWithFriends: false })
+        await createMovie(privadoPerfil.id, { title: 'Segredo' })
+        await createMovie(profile.id, { title: 'Meu' })
+
+        const result = await previewPot([profile.id, amigoPerfil.id, privadoPerfil.id])
+        expect(result).toEqual({ total: 1, common: 0 })
+      })
     })
   })
 })

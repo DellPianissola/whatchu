@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Users, Settings, Search, Check } from 'lucide-react'
-import { getFriends, apiErrorMessage } from '../services/api.js'
+import { getFriends, previewDraw, apiErrorMessage } from '../services/api.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import Modal from './Modal.jsx'
@@ -13,6 +13,7 @@ import { pluralize } from '../utils/content.js'
 import './FriendPicker.css'
 
 const SEARCH_MIN_FRIENDS = 6
+const POT_PREVIEW_DEBOUNCE_MS = 350
 
 const FriendPicker = ({ open, onClose, selected, onConfirm, recentIds = [] }) => {
   const { profile } = useAuth()
@@ -20,6 +21,7 @@ const FriendPicker = ({ open, onClose, selected, onConfirm, recentIds = [] }) =>
   const [friends, setFriends] = useState(null)
   const [pending, setPending] = useState([])
   const [query, setQuery] = useState('')
+  const [pot, setPot] = useState(null)
 
   useEffect(() => {
     if (!open) return
@@ -51,6 +53,18 @@ const FriendPicker = ({ open, onClose, selected, onConfirm, recentIds = [] }) =>
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  useEffect(() => {
+    if (!open || friends === null) return
+    let cancelled = false
+    setPot(null)
+    const timer = setTimeout(() => {
+      previewDraw({ friendIds: pending })
+        .then((result) => { if (!cancelled) setPot(result) })
+        .catch(() => {})
+    }, POT_PREVIEW_DEBOUNCE_MS)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [open, friends, pending])
 
   const toggle = (profileId) =>
     setPending((prev) => prev.includes(profileId)
@@ -114,6 +128,18 @@ const FriendPicker = ({ open, onClose, selected, onConfirm, recentIds = [] }) =>
                 </span>
               )}
             </div>
+            <p className="friend-picker-pot" aria-live="polite">
+              {pot === null ? (
+                'calculando o pote…'
+              ) : (
+                <>
+                  ≈ {pot.total} {pluralize(pot.total, 'título', 'títulos')} no pote
+                  {pot.common > 0 && (
+                    <> · <strong>{pot.common} em comum ⚡</strong></>
+                  )}
+                </>
+              )}
+            </p>
           </div>
 
           {friends.length >= SEARCH_MIN_FRIENDS && (

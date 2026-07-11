@@ -125,6 +125,15 @@ export const listFriends = async (userId) => {
   }
 }
 
+export const countPendingInvites = async (userId) => {
+  // 0 em vez de 404 sem profile: badge não pode quebrar pré-onboarding.
+  const profile = await prisma.profile.findUnique({ where: { userId } })
+  if (!profile) return 0
+  return prisma.friendship.count({
+    where: { addresseeId: profile.id, status: FriendshipStatus.PENDING },
+  })
+}
+
 export const respondInvite = async (userId, friendshipId, accept) => {
   if (typeof accept !== 'boolean') {
     throw new ValidationError('accept deve ser booleano')

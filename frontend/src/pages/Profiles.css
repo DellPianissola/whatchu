@@ -305,6 +305,10 @@
   margin: 0;
 }
 
+.privacy-hint {
+  margin-top: 0.6rem;
+}
+
 .form-actions {
   display: flex;
   gap: 0.75rem;

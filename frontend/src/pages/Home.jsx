@@ -23,6 +23,7 @@ import Button from '../components/Button.jsx'
 import DrawResultPanel from '../components/DrawResultPanel.jsx'
 import FriendPicker from '../components/FriendPicker.jsx'
 import Avatar from '../components/Avatar.jsx'
+import Switch from '../components/Switch.jsx'
 import { PRIORITY_OPTIONS } from '../utils/content.js'
 import { ERROR_CODES } from '../constants/errorCodes.js'
 import { ROUTES } from '../constants/routes.js'
@@ -46,7 +47,8 @@ const Home = () => {
     availableGenres, streamingOptions,
   } = useDrawFilters()
   const [filterPriorities, setFilterPriorities] = useState([])
-  const [ignoreWatched, setIgnoreWatched] = useState(false)
+  const [ignoreWatched, setIgnoreWatched] = useState(true)
+  const [onlyCommon, setOnlyCommon] = useState(false)
   const [friendPickerOpen, setFriendPickerOpen] = useState(false)
   const [drawFriends, setDrawFriends] = useLocalStorageState(
     `${STORAGE_KEYS.DRAW_FRIENDS}:${profile?.id ?? 'anon'}`,
@@ -105,6 +107,7 @@ const Home = () => {
         genres: filterGenres,
         providers: filterProviders,
         ignoreWatched,
+        onlyCommon: withFriends && onlyCommon,
         friendIds: drawFriends.map((f) => f.id),
       })
       setSelectedMovie(movie)
@@ -145,15 +148,17 @@ const Home = () => {
   }
 
   const activeFilterCount =
-    filterPriorities.length + filterGenres.length + filterProviders.length + (ignoreWatched ? 1 : 0)
+    filterPriorities.length + filterGenres.length + filterProviders.length +
+    (ignoreWatched ? 1 : 0) + (drawFriends.length > 0 && onlyCommon ? 1 : 0)
 
   const filterSheet = useFilterSheet({
-    defaults: { priorities: [], genres: [], providers: [], ignoreWatched: false },
-    onCommit: ({ priorities, genres, providers, ignoreWatched: ignored }) => {
+    defaults: { priorities: [], genres: [], providers: [], ignoreWatched: true, onlyCommon: false },
+    onCommit: ({ priorities, genres, providers, ignoreWatched: ignored, onlyCommon: common }) => {
       setFilterPriorities(priorities)
       setFilterGenres(genres)
       setFilterProviders(providers)
       setIgnoreWatched(ignored)
+      setOnlyCommon(common)
     },
   })
 
@@ -165,30 +170,30 @@ const Home = () => {
         : [...filterSheet.pending.priorities, value]
     )
 
-  const ignoreWatchedToggle = (
-    <label className="draw-toggle-label">
-      <input
-        type="checkbox"
-        checked={ignoreWatched}
-        onChange={(e) => setIgnoreWatched(e.target.checked)}
-        className="draw-toggle-input"
-      />
-      <span className="draw-toggle-track" />
-      <span className="draw-toggle-text">Ignorar já assistidos</span>
-    </label>
+  const drawToggles = (
+    <>
+      <Switch checked={ignoreWatched} onChange={setIgnoreWatched} label="Ignorar já assistidos" />
+      {drawFriends.length > 0 && (
+        <Switch checked={onlyCommon} onChange={setOnlyCommon} label="Só itens em comum" />
+      )}
+    </>
   )
 
-  const pendingIgnoreWatchedToggle = (
-    <label className="draw-toggle-label">
-      <input
-        type="checkbox"
+  const pendingDrawToggles = (
+    <>
+      <Switch
         checked={filterSheet.pending.ignoreWatched}
-        onChange={(e) => filterSheet.setField('ignoreWatched', e.target.checked)}
-        className="draw-toggle-input"
+        onChange={(val) => filterSheet.setField('ignoreWatched', val)}
+        label="Ignorar já assistidos"
       />
-      <span className="draw-toggle-track" />
-      <span className="draw-toggle-text">Ignorar já assistidos</span>
-    </label>
+      {drawFriends.length > 0 && (
+        <Switch
+          checked={filterSheet.pending.onlyCommon}
+          onChange={(val) => filterSheet.setField('onlyCommon', val)}
+          label="Só itens em comum"
+        />
+      )}
+    </>
   )
 
   const sheetFilters = (
@@ -222,7 +227,7 @@ const Home = () => {
       />
 
       <section className="filter-section">
-        {pendingIgnoreWatchedToggle}
+        {pendingDrawToggles}
       </section>
     </>
   )
@@ -289,11 +294,12 @@ const Home = () => {
                     genres: filterGenres,
                     providers: filterProviders,
                     ignoreWatched,
+                    onlyCommon,
                   })}
                 />
               </div>
               <div className="draw-filters-toggle-row">
-                {ignoreWatchedToggle}
+                {drawToggles}
               </div>
             </div>
 

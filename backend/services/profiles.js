@@ -62,6 +62,9 @@ export const updateProfile = async (userId, payload) => {
 
   const profileData = {}
   if (payload.name !== undefined) profileData.name = payload.name
+  if (payload.shareListWithFriends !== undefined) {
+    profileData.shareListWithFriends = Boolean(payload.shareListWithFriends)
+  }
 
   // birthDate vive em User (login), não em Profile.
   if (payload.birthDate !== undefined) {

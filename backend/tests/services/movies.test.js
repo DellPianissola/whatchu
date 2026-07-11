@@ -6,6 +6,7 @@ import {
   updateMovie,
   deleteMovie,
   drawForUser,
+  previewDrawForUser,
 } from '../../services/movies.js'
 import { prisma, truncateAll } from '../helpers/db.js'
 import {
@@ -268,6 +269,29 @@ describe('movies service', () => {
       await createMovieFactory(profile.id)
 
       await expect(drawForUser(user.id, { friendIds: [estranhoPerfil.id] }))
+        .rejects.toThrow(ForbiddenError)
+    })
+  })
+
+  describe('previewDrawForUser', () => {
+    it('devolve total e comuns do pote combinado', async () => {
+      const amigo       = await createUser({ username: 'amigoprev' })
+      const amigoPerfil = await createProfile(amigo.id)
+      await createFriendship(profile.id, amigoPerfil.id)
+
+      await createMovieFactory(profile.id,     { title: 'Comum', externalId: '100' })
+      await createMovieFactory(amigoPerfil.id, { title: 'Comum', externalId: '100' })
+      await createMovieFactory(amigoPerfil.id, { title: 'Extra', externalId: '200' })
+
+      const result = await previewDrawForUser(user.id, { friendIds: [amigoPerfil.id] })
+      expect(result).toEqual({ total: 2, common: 1 })
+    })
+
+    it('valida amizade como no draw (ForbiddenError)', async () => {
+      const estranho       = await createUser({ username: 'estranhoprev' })
+      const estranhoPerfil = await createProfile(estranho.id)
+
+      await expect(previewDrawForUser(user.id, { friendIds: [estranhoPerfil.id] }))
         .rejects.toThrow(ForbiddenError)
     })
   })

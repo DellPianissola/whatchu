@@ -1,6 +1,6 @@
 import { MovieType, Priority } from '@prisma/client'
 import { prisma } from '../config/database.js'
-import { drawMovie as drawFromLottery } from './lottery/index.js'
+import { drawMovie as drawFromLottery, previewPot } from './lottery/index.js'
 import tmdbService from './tmdb.js'
 import { requireUserProfile } from '../lib/profileHelpers.js'
 import { requireAcceptedFriendIds } from './friends.js'
@@ -245,18 +245,27 @@ const normalizeDrawFilters = (filters = {}) => {
   if (filters.ignoreWatched) {
     out.ignoreWatched = true
   }
+  if (filters.onlyCommon) {
+    out.onlyCommon = true
+  }
 
   return out
 }
 
-export const drawForUser = async (userId, filters = {}) => {
+const resolveDrawContext = async (userId, filters) => {
   const profile = await requireUserProfile(userId)
   const friendIds = await requireAcceptedFriendIds(profile.id, filters.friendIds)
-  const normalized = normalizeDrawFilters(filters)
-  const { movie, sources, reason } = await drawFromLottery([profile.id, ...friendIds], normalized)
-  if (movie) return { movie, sources }
+  return {
+    profileIds: [profile.id, ...friendIds],
+    withFriends: friendIds.length > 0,
+    normalized: normalizeDrawFilters(filters),
+  }
+}
 
-  const withFriends = friendIds.length > 0
+export const drawForUser = async (userId, filters = {}) => {
+  const { profileIds, withFriends, normalized } = await resolveDrawContext(userId, filters)
+  const { movie, sources, reason } = await drawFromLottery(profileIds, normalized)
+  if (movie) return { movie, sources }
   if (reason === 'NO_MATCH') {
     throw new NotFoundError(
       withFriends ? 'Nenhum item das listas corresponde aos filtros' : 'Nenhum item da sua lista corresponde aos filtros',
@@ -267,4 +276,9 @@ export const drawForUser = async (userId, filters = {}) => {
     withFriends ? 'Nenhuma das listas tem itens' : 'Sua lista está vazia',
     { code: 'EMPTY_LIST' }
   )
+}
+
+export const previewDrawForUser = async (userId, filters = {}) => {
+  const { profileIds, normalized } = await resolveDrawContext(userId, filters)
+  return previewPot(profileIds, normalized)
 }

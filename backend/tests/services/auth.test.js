@@ -277,6 +277,7 @@ describe('auth service', () => {
       expect(me.username).toBe('meuser')
       expect(me.password).toBeUndefined()
       expect(me.profile).toBeDefined()
+      expect(me.profile.shareListWithFriends).toBe(true)
     })
 
     it('lança NotFoundError para userId inexistente', async () => {

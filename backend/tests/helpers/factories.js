@@ -48,9 +48,10 @@ export const createPendingRegistration = async (overrides = {}) => {
 export const createProfile = async (userId, overrides = {}) => {
   return prisma.profile.create({
     data: {
-      name:        overrides.name        ?? 'Test Profile',
+      name:                 overrides.name                 ?? 'Test Profile',
       userId,
-      onboardedAt: overrides.onboardedAt ?? null,
+      onboardedAt:          overrides.onboardedAt          ?? null,
+      shareListWithFriends: overrides.shareListWithFriends ?? true,
     },
   })
 }

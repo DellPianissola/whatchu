@@ -3,6 +3,7 @@ import { createProfile, updateProfile, changeEmail, uploadAvatar, apiErrorMessag
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import Avatar from '../components/Avatar.jsx'
+import Switch from '../components/Switch.jsx'
 import { pluralize, todayISODate } from '../utils/content.js'
 import { AVATAR_ACCEPT } from '../constants/ui.js'
 import './Profiles.css'
@@ -13,6 +14,7 @@ const Profiles = () => {
   const { user, profile, updateProfile: updateAuthProfile, refreshUser } = useAuth()
   const { toast } = useNotify()
   const [loading, setLoading] = useState(false)
+  const [savingShare, setSavingShare] = useState(false)
   const [editingSection, setEditingSection] = useState(null)
   const avatarInputRef = useRef(null)
 
@@ -88,6 +90,21 @@ const Profiles = () => {
     } finally {
       setLoading(false)
       e.target.value = ''
+    }
+  }
+
+  const handleShareToggle = async (next) => {
+    setSavingShare(true)
+    try {
+      await updateProfile(null, { shareListWithFriends: next })
+      await refreshUser()
+      toast.success(next
+        ? 'Amigos podem sortear qualquer item da sua lista'
+        : 'Agora só itens em comum entram nos sorteios dos seus amigos')
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Erro ao salvar preferência'))
+    } finally {
+      setSavingShare(false)
     }
   }
 
@@ -251,6 +268,19 @@ const Profiles = () => {
               </div>
             </>
           )}
+        </div>
+
+        <div className="profile-section">
+          <h3 className="section-title">Privacidade</h3>
+          <Switch
+            checked={profile?.shareListWithFriends ?? true}
+            onChange={handleShareToggle}
+            disabled={savingShare || !profile}
+            label="Amigos podem sortear qualquer item da minha lista"
+          />
+          <p className="form-hint-text privacy-hint">
+            Desligado, apenas itens em comum com quem sorteia entram nos sorteios em grupo dos seus amigos.
+          </p>
         </div>
 
       </div>

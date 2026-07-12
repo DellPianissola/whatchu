@@ -8,6 +8,7 @@ import {
   apiErrorMessage,
 } from '../services/api.js'
 import { useNotify } from '../contexts/NotificationContext.jsx'
+import { useFriendInvites } from '../contexts/FriendInvitesContext.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Spinner from '../components/Spinner.jsx'
 import EmptyState from '../components/EmptyState.jsx'
@@ -30,6 +31,7 @@ const FriendRow = ({ friendship, children }) => (
 
 const Friends = () => {
   const { toast } = useNotify()
+  const { refresh: refreshInviteBadge } = useFriendInvites()
   const [data, setData] = useState(EMPTY_DATA)
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState('')
@@ -73,6 +75,7 @@ const Friends = () => {
         ? `Agora você e ${friendship.profile.name} são amigos`
         : 'Convite recusado')
       await refresh()
+      refreshInviteBadge()
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Erro ao responder convite'))
     } finally {

@@ -11,6 +11,11 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json(result)
 }))
 
+// GET /api/friends/pending/count - Contagem de convites recebidos pendentes (badge)
+router.get('/pending/count', asyncHandler(async (req, res) => {
+  res.json({ count: await friendsService.countPendingInvites(req.user.id) })
+}))
+
 // POST /api/friends/invites - Envia convite de amizade por username
 router.post('/invites', friendInviteLimiter, asyncHandler(async (req, res) => {
   const invite = await friendsService.sendInvite(req.user.id, req.body || {})

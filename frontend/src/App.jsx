@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import { UserMoviesProvider } from './contexts/UserMoviesContext.jsx'
+import { FriendInvitesProvider } from './contexts/FriendInvitesContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Landing from './pages/Landing'
 import Draw from './pages/Draw'
@@ -42,6 +43,7 @@ function App() {
     <AuthProvider>
       <NotificationProvider>
         <UserMoviesProvider>
+          <FriendInvitesProvider>
           <Router>
             <PageViewTracker />
             <NavBar />
@@ -69,6 +71,7 @@ function App() {
             </Routes>
             <BottomNav />
           </Router>
+          </FriendInvitesProvider>
         </UserMoviesProvider>
       </NotificationProvider>
     </AuthProvider>

@@ -101,7 +101,6 @@ export const createMovie   = async (data)          => (await api.post('/movies',
 export const updateMovie   = async (id, data)      => (await api.put(`/movies/${id}`, data)).data.movie
 export const deleteMovie   = async (id)            => { await api.delete(`/movies/${id}`) }
 export const drawMovie     = async (filters = {})  => (await api.post('/movies/draw', filters)).data
-export const previewDraw   = async (filters = {})  => (await api.post('/movies/draw/preview', filters)).data
 
 // Friends
 export const getFriends             = async ()        => (await api.get('/friends')).data

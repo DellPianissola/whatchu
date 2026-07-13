@@ -55,7 +55,7 @@
   border-radius: 24px;
   padding: 0;
   box-shadow: 0 20px 60px rgba(var(--shadow-rgb), 0.3);
-  border: 1px solid rgba(var(--media-rgb), 0.1);
+  border: 1px solid var(--border);
   backdrop-filter: blur(10px);
   display: grid;
   grid-template-columns: 1fr 480px;

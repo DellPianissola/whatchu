@@ -48,6 +48,18 @@
   border-color: color-mix(in srgb, var(--primary), #000 35%);
 }
 
+/* No light, misturar com preto vira um pill quase-preto — inativo fica tonal */
+[data-theme="light"] .ui-btn--filter:not(.ui-btn--active) {
+  background: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--primary-rgb), 0.25);
+  color: var(--primary-dark);
+}
+
+[data-theme="light"] .ui-btn--filter:not(.ui-btn--active):hover:not(:disabled):not([aria-disabled="true"]) {
+  background: rgba(var(--primary-rgb), 0.18);
+  border-color: rgba(var(--primary-rgb), 0.4);
+}
+
 @media (max-width: 640px) {
   .ui-btn--sm { min-height: 44px; padding: 0.5rem 1rem; font-size: 0.85rem; }
   .ui-btn--md { min-height: 44px; }

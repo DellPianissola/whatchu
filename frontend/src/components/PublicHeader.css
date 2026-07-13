@@ -8,7 +8,7 @@
   gap: 1rem;
   height: var(--navbar-height);
   padding: 0 2rem;
-  background: rgba(var(--shadow-rgb), 0.6);
+  background: rgba(var(--background-rgb), 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);

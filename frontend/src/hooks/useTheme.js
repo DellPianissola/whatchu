@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
-
-const STORAGE_KEY = 'theme'
+import { STORAGE_KEYS } from '../constants/storageKeys.js'
 
 const readTheme = () => document.documentElement.getAttribute('data-theme') || 'dark'
 
+// O primeiro paint do meta theme-color é responsabilidade do script inline
+// do index.html; aqui só acompanhamos o toggle em runtime
+const syncMetaThemeColor = () => {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) return
+  const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
+  if (background) meta.setAttribute('content', background)
+}
+
 const applyTheme = (theme) => {
   document.documentElement.setAttribute('data-theme', theme)
+  syncMetaThemeColor()
   try {
-    localStorage.setItem(STORAGE_KEY, theme)
+    localStorage.setItem(STORAGE_KEYS.THEME, theme)
   } catch {
     // localStorage indisponível — tema persiste só na sessão
   }

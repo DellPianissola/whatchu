@@ -94,7 +94,7 @@
 
 .landing-widget-card {
   background: var(--surface);
-  border: 1px solid rgba(var(--media-rgb), 0.1);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   box-shadow: 0 20px 60px rgba(var(--shadow-rgb), 0.3);

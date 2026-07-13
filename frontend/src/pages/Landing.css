@@ -156,21 +156,6 @@
   font-weight: 700;
   margin: 0;
   color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.landing-feature-badge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  background: var(--surface-light);
-  padding: 0.18rem 0.5rem;
-  border-radius: var(--radius-pill);
 }
 
 .landing-feature-text {

@@ -23,8 +23,7 @@ const FEATURES = [
   {
     Icon: Users,
     title: 'Decida em grupo',
-    text: 'Sorteie o próximo título junto com os amigos e acabe com a indecisão coletiva.',
-    soon: true,
+    text: 'Adicione amigos e sorteie juntando as listas de todo mundo. O que está em mais de uma lista ganha chance extra — e o sorteado mostra de qual lista veio.',
   },
 ]
 
@@ -36,6 +35,10 @@ const FAQ = [
   {
     q: 'O Whatchu é gratuito?',
     a: 'Sim. Você pode criar sua conta, montar suas listas e sortear sem custo.',
+  },
+  {
+    q: 'Como funciona o sorteio com amigos?',
+    a: 'Você adiciona amigos pelo username e, aceito o convite, pode incluir as listas deles nos seus sorteios quando quiser — ninguém precisa estar online junto. Itens presentes em mais de uma lista têm chance maior de sair, e dá pra sortear só o que vocês têm em comum.',
   },
   {
     q: 'De onde vêm os filmes e séries?',
@@ -63,8 +66,9 @@ const Landing = () => {
               Pare de perder tempo decidindo o que assistir
             </h1>
             <p className="landing-subhead">
-              O Whatchu sorteia o próximo filme ou série pra você. Monte sua watchlist,
-              filtre por gênero e streaming, e deixe a sorte resolver a indecisão.
+              O Whatchu sorteia o próximo filme ou série pra você — sozinho ou com amigos.
+              Monte sua watchlist, junte as listas da galera, filtre por gênero e streaming,
+              e deixe a sorte resolver a indecisão.
             </p>
             <div className="landing-hero-ctas">
               <Link to={ROUTES.REGISTER} className="landing-cta-primary">Criar conta grátis</Link>
@@ -82,13 +86,10 @@ const Landing = () => {
         <section className="landing-features">
           <h2 className="landing-section-title">Como o Whatchu ajuda</h2>
           <div className="landing-features-grid">
-            {FEATURES.map(({ Icon, title, text, soon }) => (
+            {FEATURES.map(({ Icon, title, text }) => (
               <article key={title} className="landing-feature">
                 <span className="landing-feature-icon"><Icon size={24} /></span>
-                <h3 className="landing-feature-title">
-                  {title}
-                  {soon && <span className="landing-feature-badge">Em breve</span>}
-                </h3>
+                <h3 className="landing-feature-title">{title}</h3>
                 <p className="landing-feature-text">{text}</p>
               </article>
             ))}

@@ -50,7 +50,6 @@
   color: var(--text-muted);
   margin: 0;
   max-width: 38ch;
-  text-align: justify;
 }
 
 .landing-hero-ctas {
@@ -163,7 +162,6 @@
   line-height: 1.55;
   color: var(--text-muted);
   margin: 0;
-  text-align: justify;
 }
 
 /* ── FAQ ──────────────────────────────────────────── */

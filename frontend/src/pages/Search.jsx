@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown } from 'lucide-react'
+import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Info, Check, Plus } from 'lucide-react'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
   mapUpstreamError,
@@ -15,6 +15,8 @@ import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
+import IconButton from '../components/IconButton.jsx'
+import Spinner from '../components/Spinner.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
@@ -412,11 +414,47 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           <div className={viewMode === VIEW_MODES.POSTERS ? 'ui-poster-grid' : 'results-grid'}>
             {results.map((item) => {
               const userMovie = findByItem(item)
+              const inList = Boolean(userMovie)
+
+              if (viewMode === VIEW_MODES.POSTERS) {
+                const processing = processingId === item.id
+                return (
+                  <MovieCard
+                    key={item.id}
+                    item={item}
+                    layout="poster"
+                    inList={inList}
+                    watched={userMovie?.watched}
+                    onClick={() => {
+                      if (processing || !profile) return
+                      if (inList) removeMovie(item)
+                      else addMovie(item)
+                    }}
+                    posterOverlay={
+                      <>
+                        <IconButton
+                          icon={<Info size={16} />}
+                          label="Ver detalhes"
+                          size="sm"
+                          className="ui-poster-details-btn"
+                          onClick={(e) => { e.stopPropagation(); setExpandedItem(item) }}
+                        />
+                        <span
+                          className={`ui-poster-state ${processing ? 'ui-poster-state--busy' : (inList ? 'ui-poster-state--in' : 'ui-poster-state--out')}`}
+                          aria-hidden="true"
+                        >
+                          {processing ? <Spinner size="sm" /> : (inList ? <Check size={16} /> : <Plus size={16} />)}
+                        </span>
+                      </>
+                    }
+                  />
+                )
+              }
+
               return (
                 <MovieCard
                   key={item.id}
                   item={item}
-                  layout={viewMode === VIEW_MODES.POSTERS ? 'poster' : 'list'}
                   watched={userMovie?.watched}
                   onClick={() => setExpandedItem(item)}
                   posterOverlay={
@@ -426,7 +464,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                   }
                   actions={
                     <AddToListButton
-                      inList={Boolean(userMovie)}
+                      inList={inList}
                       currentPriority={userMovie?.priority}
                       processing={processingId === item.id}
                       disabled={!profile}

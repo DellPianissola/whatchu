@@ -47,6 +47,7 @@ const MovieCard = ({
   actions,
   watched = false,
   layout = 'list',
+  inList = false,
   className = '',
 }) => {
   const interactive = Boolean(onClick)
@@ -64,6 +65,7 @@ const MovieCard = ({
       className={[
         'ui-movie-card',
         isPoster ? 'ui-movie-card--poster' : '',
+        isPoster && inList ? 'ui-movie-card--in-list' : '',
         watched ? 'ui-movie-card--watched' : '',
         interactive ? 'ui-movie-card--interactive' : '',
         className,

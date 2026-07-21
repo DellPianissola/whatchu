@@ -6,6 +6,7 @@ import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
+import ViewModeToggle from '../components/ViewModeToggle.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills from '../components/TypeFilterPills.jsx'
@@ -19,8 +20,10 @@ import Pagination from '../components/Pagination.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
+import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
 import { ROUTES } from '../constants/routes.js'
-import { SEARCH_DEBOUNCE_MS } from '../constants/ui.js'
+import { SEARCH_DEBOUNCE_MS, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/ui.js'
+import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import { TYPE_LABEL, ALL_TYPES } from '../utils/content.js'
 import { parseCsvParam } from '../utils/queryParams.js'
 import { cycleSort, getSortIcon } from '../utils/sort.jsx'
@@ -155,6 +158,7 @@ const MyList = () => {
 
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+  const [viewMode, setViewMode] = useLocalStorageState(STORAGE_KEYS.VIEW_MODE, DEFAULT_VIEW_MODE)
 
   const expandedLive = userMovies.find((m) => m.id === expandedItemId) ?? null
   const [expandedSnapshot, setExpandedSnapshot] = useState(null)
@@ -353,6 +357,21 @@ const MyList = () => {
   }
 
   const renderMovieCard = (movie) => {
+    if (viewMode === VIEW_MODES.POSTERS) {
+      return (
+        <MovieCard
+          key={movie.id}
+          item={movie}
+          layout="poster"
+          watched={movie.watched}
+          onClick={() => setExpandedItemId(movie.id)}
+          posterOverlay={
+            <WatchedToggle watched={movie.watched} onToggle={() => setWatched(movie)} />
+          }
+        />
+      )
+    }
+
     const isConfirming = confirmingDeleteId === movie.id
     return (
       <div
@@ -532,6 +551,7 @@ const MyList = () => {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar na lista..."
             />
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>
 
           <div className="mylist-types">
@@ -572,7 +592,7 @@ const MyList = () => {
           )
         ) : (
           <>
-            <div className="movies-grid">
+            <div className={viewMode === VIEW_MODES.POSTERS ? 'ui-poster-grid' : 'movies-grid'}>
               {pagedMovies.map(renderMovieCard)}
             </div>
             {totalPages > 1 && (

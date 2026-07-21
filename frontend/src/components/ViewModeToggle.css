@@ -1,0 +1,32 @@
+.ui-view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
+.ui-view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ui-view-toggle-btn:hover {
+  color: var(--text);
+  background: var(--surface-light);
+}
+
+.ui-view-toggle-btn.active {
+  background: var(--primary);
+  color: var(--text-on-media);
+}

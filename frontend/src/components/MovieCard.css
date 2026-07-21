@@ -153,13 +153,32 @@
   align-items: center;
 }
 
+/* ── Layout "só pôster" (grid de capas) ── */
+.ui-poster-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+@media (min-width: 641px) {
+  .ui-poster-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 769px) {
+  .ui-poster-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
-  .ui-movie-card {
+  .ui-movie-card:not(.ui-movie-card--poster) {
     flex-direction: row;
     align-items: stretch;
   }
 
-  .ui-movie-card-poster {
+  .ui-movie-card:not(.ui-movie-card--poster) .ui-movie-card-poster {
     width: 110px;
     height: 165px;
     flex-shrink: 0;

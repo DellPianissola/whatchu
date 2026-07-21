@@ -17,3 +17,7 @@ export const DRAW_FRIENDS_MAX_AVATARS = 3
 export const RECENT_FRIENDS_LIMIT = 20
 
 export const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp'
+
+export const VIEW_MODES = { LIST: 'list', POSTERS: 'posters' }
+
+export const DEFAULT_VIEW_MODE = VIEW_MODES.LIST

@@ -14,6 +14,7 @@ import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
+import ViewModeToggle from '../components/ViewModeToggle.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
@@ -24,9 +25,11 @@ import SortCategoriesSection from '../components/SortCategoriesSection.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
+import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
 import { parseCsvParam } from '../utils/queryParams.js'
 import { cycleSort, getSortIcon } from '../utils/sort.jsx'
-import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT } from '../constants/ui.js'
+import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/ui.js'
+import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import './Search.css'
 
 const MODE = { PAGE: 'page', ONBOARDING: 'onboarding' }
@@ -83,6 +86,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [availableGenres, setAvailableGenres] = useState([])
   const { options: streamingOptions } = useStreamingProviders()
   const [expandedItem, setExpandedItem] = useState(null)
+  const [viewMode, setViewMode] = useLocalStorageState(STORAGE_KEYS.VIEW_MODE, DEFAULT_VIEW_MODE)
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
@@ -333,6 +337,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                 placeholder="Digite o nome do filme ou série..."
                 className="ui-search-input"
               />
+              <ViewModeToggle value={viewMode} onChange={setViewMode} />
             </div>
 
             <div className="search-sort-filters">
@@ -404,13 +409,14 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
         )}
 
         {!loading && results.length > 0 && (
-          <div className="results-grid">
+          <div className={viewMode === VIEW_MODES.POSTERS ? 'ui-poster-grid' : 'results-grid'}>
             {results.map((item) => {
               const userMovie = findByItem(item)
               return (
                 <MovieCard
                   key={item.id}
                   item={item}
+                  layout={viewMode === VIEW_MODES.POSTERS ? 'poster' : 'list'}
                   watched={userMovie?.watched}
                   onClick={() => setExpandedItem(item)}
                   posterOverlay={

@@ -20,6 +20,14 @@
 .mylist-search {
   flex: 1 1 280px;
   min-width: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mylist-search .ui-search-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .mylist-types {

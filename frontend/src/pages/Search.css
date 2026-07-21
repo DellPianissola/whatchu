@@ -33,6 +33,14 @@
 .search-input-group {
   flex: 1;
   min-width: 300px;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.search-input-group .ui-search-input {
+  flex: 1;
+  min-width: 0;
 }
 
 

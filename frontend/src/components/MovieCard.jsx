@@ -46,9 +46,11 @@ const MovieCard = ({
   titleBadge,
   actions,
   watched = false,
+  layout = 'list',
   className = '',
 }) => {
   const interactive = Boolean(onClick)
+  const isPoster = layout === 'poster'
 
   const onKeyDown = (event) => {
     if (interactive && isActivationKey(event)) {
@@ -61,6 +63,7 @@ const MovieCard = ({
     <article
       className={[
         'ui-movie-card',
+        isPoster ? 'ui-movie-card--poster' : '',
         watched ? 'ui-movie-card--watched' : '',
         interactive ? 'ui-movie-card--interactive' : '',
         className,
@@ -69,18 +72,21 @@ const MovieCard = ({
       onKeyDown={interactive ? onKeyDown : undefined}
       tabIndex={interactive ? 0 : undefined}
       role={interactive ? 'button' : undefined}
+      aria-label={isPoster ? item.title : undefined}
     >
       <MovieCardPoster item={item} overlay={posterOverlay} badge={posterBadge} />
-      <div className="ui-movie-card-info">
-        <header className="ui-movie-card-header">
-          <h3 className="ui-movie-card-title">{item.title}</h3>
-          {titleBadge}
-        </header>
-        <div className="ui-movie-card-footer">
-          <MovieCardMeta item={item} />
-          {actions && <div className="ui-movie-card-actions">{actions}</div>}
+      {!isPoster && (
+        <div className="ui-movie-card-info">
+          <header className="ui-movie-card-header">
+            <h3 className="ui-movie-card-title">{item.title}</h3>
+            {titleBadge}
+          </header>
+          <div className="ui-movie-card-footer">
+            <MovieCardMeta item={item} />
+            {actions && <div className="ui-movie-card-actions">{actions}</div>}
+          </div>
         </div>
-      </div>
+      )}
     </article>
   )
 }

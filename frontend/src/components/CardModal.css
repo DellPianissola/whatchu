@@ -79,6 +79,13 @@
   pointer-events: none;
 }
 
+.ui-detail-poster-overlay {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 3;
+}
+
 .ui-detail-close {
   position: absolute;
   top: 0.75rem;

@@ -13,6 +13,7 @@ import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
+import WatchedToggle from '../components/WatchedToggle.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
@@ -71,7 +72,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const { profile } = useAuth()
   const { toast } = useNotify()
   const { userMovies } = useUserMovies()
-  const { processingId, addMovie, removeMovie, setPriority, findByItem } = useMovieActions()
+  const { processingId, addMovie, removeMovie, setPriority, setWatched, findByItem } = useMovieActions()
   const isOnboarding = mode === MODE.ONBOARDING
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -209,8 +210,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     e.preventDefault()
   }
 
-  const isMovieInList = (movie) => Boolean(findByItem(movie))
-
   const goToPage = (page) => {
     setCurrentPage(page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -292,6 +291,8 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       )}
     </>
   )
+
+  const expandedUserMovie = findByItem(expandedItem)
 
   return (
     <div className={`search-page ${isOnboarding ? 'search-page-onboarding' : ''}`}>
@@ -404,24 +405,33 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
 
         {!loading && results.length > 0 && (
           <div className="results-grid">
-            {results.map((item) => (
-              <MovieCard
-                key={item.id}
-                item={item}
-                onClick={() => setExpandedItem(item)}
-                actions={
-                  <AddToListButton
-                    inList={isMovieInList(item)}
-                    currentPriority={findByItem(item)?.priority}
-                    processing={processingId === item.id}
-                    disabled={!profile}
-                    onAdd={(priority) => addMovie(item, priority)}
-                    onChangePriority={(priority) => setPriority(item, priority)}
-                    onRemove={() => removeMovie(item)}
-                  />
-                }
-              />
-            ))}
+            {results.map((item) => {
+              const userMovie = findByItem(item)
+              return (
+                <MovieCard
+                  key={item.id}
+                  item={item}
+                  watched={userMovie?.watched}
+                  onClick={() => setExpandedItem(item)}
+                  posterOverlay={
+                    userMovie
+                      ? <WatchedToggle watched={userMovie.watched} onToggle={() => setWatched(userMovie)} />
+                      : null
+                  }
+                  actions={
+                    <AddToListButton
+                      inList={Boolean(userMovie)}
+                      currentPriority={userMovie?.priority}
+                      processing={processingId === item.id}
+                      disabled={!profile}
+                      onAdd={(priority) => addMovie(item, priority)}
+                      onChangePriority={(priority) => setPriority(item, priority)}
+                      onRemove={() => removeMovie(item)}
+                    />
+                  }
+                />
+              )
+            })}
           </div>
         )}
 
@@ -440,10 +450,15 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
         <CardModal
           item={expandedItem}
           onClose={() => setExpandedItem(null)}
+          posterOverlay={
+            expandedUserMovie
+              ? <WatchedToggle watched={expandedUserMovie.watched} onToggle={() => setWatched(expandedUserMovie)} />
+              : null
+          }
           actions={
             <AddToListButton
-              inList={isMovieInList(expandedItem)}
-              currentPriority={findByItem(expandedItem)?.priority}
+              inList={Boolean(expandedUserMovie)}
+              currentPriority={expandedUserMovie?.priority}
               processing={processingId === expandedItem.id}
               disabled={!profile}
               compactPriority={false}

@@ -136,7 +136,6 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
           ) : (
             <PosterPlaceholder title={item.title} type={item.type} />
           )}
-          {posterOverlay}
         </aside>
 
         {/* Mobile: hero backdrop overlay com título */}
@@ -292,6 +291,10 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             <footer className="ui-detail-actions">{actions}</footer>
           )}
         </div>
+
+        {posterOverlay && (
+          <div className="ui-detail-poster-overlay">{posterOverlay}</div>
+        )}
       </article>
     </div>
   )

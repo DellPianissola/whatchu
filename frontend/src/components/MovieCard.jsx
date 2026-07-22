@@ -48,6 +48,8 @@ const MovieCard = ({
   watched = false,
   layout = 'list',
   inList = false,
+  ariaLabel,
+  ariaPressed,
   className = '',
 }) => {
   const interactive = Boolean(onClick)
@@ -74,7 +76,8 @@ const MovieCard = ({
       onKeyDown={interactive ? onKeyDown : undefined}
       tabIndex={interactive ? 0 : undefined}
       role={interactive ? 'button' : undefined}
-      aria-label={isPoster ? item.title : undefined}
+      aria-label={ariaLabel ?? (isPoster ? item.title : undefined)}
+      aria-pressed={ariaPressed}
     >
       <MovieCardPoster item={item} overlay={posterOverlay} badge={posterBadge} />
       {!isPoster && (

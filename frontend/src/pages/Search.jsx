@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Info, Check, Plus } from 'lucide-react'
+import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
   mapUpstreamError,
@@ -15,7 +15,7 @@ import Dropdown from '../components/Dropdown.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
-import IconButton from '../components/IconButton.jsx'
+import PosterDetailsButton from '../components/PosterDetailsButton.jsx'
 import Spinner from '../components/Spinner.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import Pagination from '../components/Pagination.jsx'
@@ -425,20 +425,14 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                     layout="poster"
                     inList={inList}
                     watched={userMovie?.watched}
-                    onClick={() => {
-                      if (processing || !profile) return
-                      if (inList) removeMovie(item)
-                      else addMovie(item)
-                    }}
+                    ariaLabel={inList
+                      ? `${item.title}, na lista. Tocar para remover`
+                      : `${item.title}. Tocar para adicionar à lista`}
+                    ariaPressed={inList}
+                    onClick={() => (inList ? removeMovie(item) : addMovie(item))}
                     posterOverlay={
                       <>
-                        <IconButton
-                          icon={<Info size={16} />}
-                          label="Ver detalhes"
-                          size="sm"
-                          className="ui-poster-details-btn"
-                          onClick={(e) => { e.stopPropagation(); setExpandedItem(item) }}
-                        />
+                        <PosterDetailsButton onOpen={() => setExpandedItem(item)} />
                         <span
                           className={`ui-poster-state ${processing ? 'ui-poster-state--busy' : (inList ? 'ui-poster-state--in' : 'ui-poster-state--out')}`}
                           aria-hidden="true"

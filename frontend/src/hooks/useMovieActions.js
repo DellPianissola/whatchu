@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
@@ -10,6 +10,9 @@ export const useMovieActions = () => {
   const { toast } = useNotify()
   const { addToList, removeFromList, changePriority, toggleWatched, findByItem } = useUserMovies()
   const [processingId, setProcessingId] = useState(null)
+  // Guarda síncrona: processingId é state e atrasa um render, deixando dois
+  // toques rápidos passarem. O Set bloqueia a reentrância no mesmo id na hora.
+  const inFlight = useRef(new Set())
 
   const addMovie = useCallback(async (movie, priority) => {
     if (!profile) {
@@ -17,6 +20,8 @@ export const useMovieActions = () => {
       return null
     }
     if (findByItem(movie)) return null
+    if (inFlight.current.has(movie.id)) return null
+    inFlight.current.add(movie.id)
     setProcessingId(movie.id)
     try {
       const created = await addToList(movie, priority)
@@ -27,6 +32,7 @@ export const useMovieActions = () => {
       toast.error(apiErrorMessage(error, 'Erro ao adicionar filme'))
       return null
     } finally {
+      inFlight.current.delete(movie.id)
       setProcessingId(null)
     }
   }, [profile, addToList, findByItem, toast])
@@ -34,6 +40,8 @@ export const useMovieActions = () => {
   const removeMovie = useCallback(async (movie) => {
     const userMovie = findByItem(movie) || movie
     if (!userMovie?.id) return
+    if (inFlight.current.has(movie.id)) return
+    inFlight.current.add(movie.id)
     setProcessingId(movie.id)
     try {
       await removeFromList(userMovie.id)
@@ -42,6 +50,7 @@ export const useMovieActions = () => {
       console.error('Erro ao remover filme:', error)
       toast.error(apiErrorMessage(error, 'Erro ao remover filme'))
     } finally {
+      inFlight.current.delete(movie.id)
       setProcessingId(null)
     }
   }, [removeFromList, findByItem, toast])

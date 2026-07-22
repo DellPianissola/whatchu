@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp, Info } from 'lucide-react'
+import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp } from 'lucide-react'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
 import MovieCard from '../components/MovieCard.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
-import IconButton from '../components/IconButton.jsx'
+import PosterDetailsButton from '../components/PosterDetailsButton.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills from '../components/TypeFilterPills.jsx'
@@ -138,6 +138,28 @@ const sortMovies = (list, sortBy) => {
     return cmp * dir
   })
 }
+
+const DeleteConfirmWrap = ({ movie, confirming, onConfirm, children }) => (
+  <div
+    data-card-id={movie.id}
+    className={confirming ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
+  >
+    {children}
+    {confirming && (
+      <div className="card-delete-overlay">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onConfirm() }}
+          className="card-delete-icon"
+          title="Confirmar remoção"
+          aria-label="Confirmar remoção"
+        >
+          <Trash2 size={48} />
+        </button>
+      </div>
+    )}
+  </div>
+)
 
 const MyList = () => {
   const navigate = useNavigate()
@@ -358,61 +380,25 @@ const MyList = () => {
   }
 
   const renderMovieCard = (movie) => {
+    const isConfirming = confirmingDeleteId === movie.id
+
     if (viewMode === VIEW_MODES.POSTERS) {
-      const isConfirming = confirmingDeleteId === movie.id
       return (
-        <div
-          key={movie.id}
-          data-card-id={movie.id}
-          className={isConfirming ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
-        >
+        <DeleteConfirmWrap key={movie.id} movie={movie} confirming={isConfirming} onConfirm={() => performDelete(movie)}>
           <MovieCard
             item={movie}
             layout="poster"
             watched={movie.watched}
-            onClick={() => {
-              if (isConfirming) {
-                setConfirmingDeleteId(null)
-                return
-              }
-              setConfirmingDeleteId(movie.id)
-            }}
-            posterOverlay={
-              isConfirming ? null : (
-                <IconButton
-                  icon={<Info size={16} />}
-                  label="Ver detalhes"
-                  size="sm"
-                  className="ui-poster-details-btn"
-                  onClick={(e) => { e.stopPropagation(); setExpandedItemId(movie.id) }}
-                />
-              )
-            }
+            ariaLabel={`${movie.title}. Tocar para remover da lista`}
+            onClick={() => setConfirmingDeleteId(isConfirming ? null : movie.id)}
+            posterOverlay={isConfirming ? null : <PosterDetailsButton onOpen={() => setExpandedItemId(movie.id)} />}
           />
-          {isConfirming && (
-            <div className="card-delete-overlay">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); performDelete(movie) }}
-                className="card-delete-icon"
-                title="Confirmar remoção"
-                aria-label="Confirmar remoção"
-              >
-                <Trash2 size={48} />
-              </button>
-            </div>
-          )}
-        </div>
+        </DeleteConfirmWrap>
       )
     }
 
-    const isConfirming = confirmingDeleteId === movie.id
     return (
-      <div
-        key={movie.id}
-        data-card-id={movie.id}
-        className={isConfirming ? 'ui-movie-card-wrap ui-movie-card-wrap--deleting' : 'ui-movie-card-wrap'}
-      >
+      <DeleteConfirmWrap key={movie.id} movie={movie} confirming={isConfirming} onConfirm={() => performDelete(movie)}>
         <MovieCard
           item={movie}
           watched={movie.watched}
@@ -440,20 +426,7 @@ const MyList = () => {
             />
           }
         />
-        {isConfirming && (
-          <div className="card-delete-overlay">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); performDelete(movie) }}
-              className="card-delete-icon"
-              title="Confirmar remoção"
-              aria-label="Confirmar remoção"
-            >
-              <Trash2 size={48} />
-            </button>
-          </div>
-        )}
-      </div>
+      </DeleteConfirmWrap>
     )
   }
 

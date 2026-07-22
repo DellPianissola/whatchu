@@ -10,6 +10,7 @@ import { providerUrl } from '../utils/providers.js'
 import { ageRatingTier } from '../utils/ageRating.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
+import { useHistoryBackClose } from '../hooks/useHistoryBackClose.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import Tooltip from './Tooltip.jsx'
 import './CardModal.css'
@@ -56,6 +57,7 @@ const Stat = ({ label, value }) => (
 const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   useEscapeKey(onClose, !!item)
   useBodyScrollLock(!!item)
+  useHistoryBackClose(!!item, onClose)
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(item)
   const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [descriptionOverflows, setDescriptionOverflows] = useState(false)

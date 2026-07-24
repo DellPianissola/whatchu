@@ -17,50 +17,6 @@
   margin-bottom: 2rem;
 }
 
-.search-header {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-query-group {
-  flex: 1 1 280px;
-  min-width: 0;
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-.search-query-group .search-query {
-  flex: 1;
-  min-width: 0;
-}
-
-.search-scope {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-/* Linha 2: ordenação ancorada à esquerda, filtros à direita — as duas pontas
-   encostam nas bordas do grid de resultados. */
-.search-sort-filters {
-  display: flex;
-  flex: 1 1 100%;
-  gap: var(--space-4);
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-.search-filters {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
 .results-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -73,48 +29,12 @@
     padding: 1rem;
   }
 
-  .search-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-2);
-  }
-
-  .search-query-group {
-    flex: 1 1 auto;
-  }
-
-  .search-sort-filters {
-    display: none;
-  }
-
-  .search-page .ui-filter-sheet-trigger {
-    display: inline-flex;
-    margin-left: auto;
-  }
-
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .search-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "search  search"
-      "types   filtros";
-    gap: var(--space-2);
-  }
-
-  .search-query-group { grid-area: search; }
-  .search-scope       { grid-area: types; min-width: 0; }
-
-  .search-page .ui-filter-sheet-trigger {
-    grid-area: filtros;
-    margin-left: 0;
-  }
-
   .results-grid {
     grid-template-columns: 1fr;
     gap: var(--space-2);

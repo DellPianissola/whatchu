@@ -2,8 +2,6 @@ export const MIN_PASSWORD_LENGTH = 8
 
 export const ONBOARDING_TARGET = 3
 
-export const PAGE_WINDOW_SIZE = 5
-
 export const SEARCH_DEBOUNCE_MS = 500
 
 export const DRAW_DELAY_MS = 1000

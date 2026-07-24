@@ -24,3 +24,16 @@ export const buildSortValues = (fields) =>
   fields.flatMap(({ field, directionless }) =>
     directionless ? [field] : [`${field}_asc`, `${field}_desc`]
   )
+
+// ↓ = ascendente (menor primeiro), ↑ = descendente (maior primeiro)
+export const buildSortCategories = (fields) =>
+  fields.map(({ field, label, Icon, directionless, sheetLabel, ascLabel, descLabel }) => ({
+    Icon,
+    label,
+    options: directionless
+      ? [{ value: field, ariaLabel: sheetLabel, Icon }]
+      : [
+          { value: `${field}_asc`,  ariaLabel: ascLabel,  Icon: ArrowDown },
+          { value: `${field}_desc`, ariaLabel: descLabel, Icon: ArrowUp   },
+        ],
+  }))

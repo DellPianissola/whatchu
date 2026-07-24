@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Film, Tv, Tv2, Calendar, Star, Flame, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
+import { Film, Tv, Tv2, Calendar, Star, Flame, Tags, Check, Plus } from 'lucide-react'
 import { TYPE_LABEL_PLURAL } from '../utils/content.js'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
@@ -16,6 +16,7 @@ import Dropdown from '../components/Dropdown.jsx'
 import TypeFilterPills from '../components/TypeFilterPills.jsx'
 import SearchInput from '../components/SearchInput.jsx'
 import SortSegmented from '../components/SortSegmented.jsx'
+import Toolbar from '../components/Toolbar.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
@@ -34,12 +35,14 @@ import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js'
 import { parseCsvParam } from '../utils/queryParams.js'
-import { buildSortValues } from '../utils/sort.jsx'
+import { buildSortValues, buildSortCategories } from '../utils/sort.jsx'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT, VIEW_MODES, DEFAULT_VIEW_MODE, TMDB_MAX_PAGE } from '../constants/ui.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import './Search.css'
 
 const MODE = { PAGE: 'page', ONBOARDING: 'onboarding' }
+
+const TEXT_SEARCH_TOOLTIP = 'Indisponível durante busca por texto'
 
 // TMDB usa `movie`/`series` minúsculo no param — não é o enum interno de TYPE_LABEL.
 const TYPE_OPTIONS = [
@@ -60,17 +63,7 @@ const DEFAULT_SORT = 'popularity'
 const VALID_TYPES = TYPE_OPTIONS.map(({ value }) => value)
 const VALID_SORTS = buildSortValues(SORT_FIELDS)
 
-// ↓ = ascendente (menor primeiro), ↑ = descendente (maior primeiro)
-const SORT_CATEGORIES = SORT_FIELDS.map(({ field, label, Icon, directionless, sheetLabel, ascLabel, descLabel }) => ({
-  Icon,
-  label,
-  options: directionless
-    ? [{ value: field, ariaLabel: sheetLabel, Icon }]
-    : [
-        { value: `${field}_asc`,  ariaLabel: ascLabel,  Icon: ArrowDown },
-        { value: `${field}_desc`, ariaLabel: descLabel, Icon: ArrowUp   },
-      ],
-}))
+const SORT_CATEGORIES = buildSortCategories(SORT_FIELDS)
 
 // TMDB repete itens entre páginas — sem dedupe o append quebra a key do React.
 const dedupeById = (items) => {
@@ -302,7 +295,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           value={filterSheet.pending.genres}
           onChange={(val) => filterSheet.setField('genres', val)}
           disabled={sortAndGenreDisabled}
-          disabledTitle="Indisponível durante busca por texto"
+          disabledTitle={TEXT_SEARCH_TOOLTIP}
           emptyMessage="Nenhum gênero disponível"
         />
       </section>
@@ -319,7 +312,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
             value={filterSheet.pending.providers}
             onChange={(val) => filterSheet.setField('providers', val)}
             disabled={sortAndGenreDisabled}
-            disabledTitle="Indisponível durante busca por texto"
+            disabledTitle={TEXT_SEARCH_TOOLTIP}
             emptyMessage="Nenhum streaming disponível"
           />
         </section>
@@ -342,36 +335,36 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
 
       <div className="search-container">
         <form onSubmit={handleSearchSubmit} className="search-form">
-          <div className="search-header">
-            <div className="search-query-group">
-              <SearchInput
-                className="search-query"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Digite o nome do filme ou série..."
-              />
-              <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            </div>
-
-            <div className="search-scope">
+          <Toolbar
+            search={
+              <>
+                <SearchInput
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Digite o nome do filme ou série..."
+                />
+                <ViewModeToggle value={viewMode} onChange={setViewMode} />
+              </>
+            }
+            scope={
               <TypeFilterPills
                 multi={false}
                 options={TYPE_OPTIONS}
                 value={type}
                 onChange={setType}
               />
-            </div>
-
-            <div className="search-sort-filters">
+            }
+            sort={
               <SortSegmented
                 fields={SORT_FIELDS}
                 value={sortBy}
                 onChange={setSortBy}
                 disabled={sortAndGenreDisabled}
-                disabledTitle="Indisponível durante busca por texto"
+                disabledTitle={TEXT_SEARCH_TOOLTIP}
               />
-
-              <div className="search-filters">
+            }
+            filters={
+              <>
                 <Dropdown
                   multi
                   trigger="button"
@@ -382,7 +375,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                   value={selectedGenres}
                   onChange={setSelectedGenres}
                   disabled={sortAndGenreDisabled}
-                  disabledTitle="Indisponível durante busca por texto"
+                  disabledTitle={TEXT_SEARCH_TOOLTIP}
                   emptyMessage="Nenhum gênero disponível"
                 />
 
@@ -397,18 +390,19 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
                     value={selectedProviders}
                     onChange={setSelectedProviders}
                     disabled={sortAndGenreDisabled}
-                    disabledTitle="Indisponível durante busca por texto"
+                    disabledTitle={TEXT_SEARCH_TOOLTIP}
                     emptyMessage="Nenhum streaming disponível"
                   />
                 )}
-              </div>
-            </div>
-
-            <FilterSheetTrigger
-              count={activeFilterCount}
-              onClick={() => filterSheet.openWith({ sortBy, genres: selectedGenres, providers: selectedProviders })}
-            />
-          </div>
+              </>
+            }
+            sheetTrigger={
+              <FilterSheetTrigger
+                count={activeFilterCount}
+                onClick={() => filterSheet.openWith({ sortBy, genres: selectedGenres, providers: selectedProviders })}
+              />
+            }
+          />
         </form>
 
         {loading && results.length === 0 && (

@@ -1,0 +1,83 @@
+.ui-toolbar {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ui-toolbar-search {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.ui-toolbar-search .ui-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-toolbar-scope {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* space-between ancora ordenação e filtros nas bordas do grid de resultados. */
+.ui-toolbar-advanced {
+  display: flex;
+  flex: 1 1 100%;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.ui-toolbar-filters {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .ui-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .ui-toolbar-search {
+    flex: 1 1 auto;
+  }
+
+  .ui-toolbar-advanced {
+    display: none;
+  }
+
+  .ui-toolbar .ui-filter-sheet-trigger {
+    display: inline-flex;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "search  search"
+      "scope   sheet";
+    gap: var(--space-2);
+  }
+
+  .ui-toolbar-search { grid-area: search; }
+  .ui-toolbar-scope  { grid-area: scope; }
+
+  .ui-toolbar .ui-filter-sheet-trigger {
+    grid-area: sheet;
+    margin-left: 0;
+  }
+}

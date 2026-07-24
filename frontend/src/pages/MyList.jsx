@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react'
+import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, Eye, EyeOff } from 'lucide-react'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
@@ -14,6 +14,7 @@ import TypeFilterPills from '../components/TypeFilterPills.jsx'
 import SearchInput from '../components/SearchInput.jsx'
 import SortSegmented from '../components/SortSegmented.jsx'
 import Segmented from '../components/Segmented.jsx'
+import Toolbar from '../components/Toolbar.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import StatPills from '../components/StatPills.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -30,6 +31,10 @@ import { SEARCH_DEBOUNCE_MS, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import { TYPE_LABEL, ALL_TYPES } from '../utils/content.js'
 import { parseCsvParam, toggleInList } from '../utils/queryParams.js'
+import { buildSortValues, buildSortCategories } from '../utils/sort.jsx'
+import {
+  WATCHED_VALUES, WATCHED_NONE, parseWatchedParam, encodeWatched, matchesWatched,
+} from '../utils/watchedFilter.js'
 import './MyList.css'
 
 const PAGE_SIZE = 20
@@ -37,86 +42,23 @@ const DEFAULT_SORT = 'added_desc'
 
 const PRIORITY_ORDER = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 }
 
-const VALID_SORTS = [
-  'added_asc',    'added_desc',
-  'release_asc',  'release_desc',
-  'priority_asc', 'priority_desc',
-  'rating_asc',   'rating_desc',
-  'title_asc',    'title_desc',
-]
-
-const SORT_CATEGORIES = [
-  {
-    Icon: Calendar,
-    label: 'Adicionado',
-    options: [
-      { value: 'added_asc',  ariaLabel: 'Adicionado há mais tempo', Icon: ArrowDown },
-      { value: 'added_desc', ariaLabel: 'Adicionado recentemente',  Icon: ArrowUp   },
-    ],
-  },
-  {
-    Icon: Clapperboard,
-    label: 'Lançamento',
-    options: [
-      { value: 'release_asc',  ariaLabel: 'Lançamento mais antigo',   Icon: ArrowDown },
-      { value: 'release_desc', ariaLabel: 'Lançamento mais recente',  Icon: ArrowUp   },
-    ],
-  },
-  {
-    Icon: Flame,
-    label: 'Prioridade',
-    options: [
-      { value: 'priority_asc',  ariaLabel: 'Baixa prioridade primeiro', Icon: ArrowDown },
-      { value: 'priority_desc', ariaLabel: 'Alta prioridade primeiro',  Icon: ArrowUp   },
-    ],
-  },
-  {
-    Icon: Star,
-    label: 'Nota',
-    options: [
-      { value: 'rating_asc',  ariaLabel: 'Menor nota primeiro', Icon: ArrowDown },
-      { value: 'rating_desc', ariaLabel: 'Maior nota primeiro', Icon: ArrowUp   },
-    ],
-  },
-  {
-    Icon: Type,
-    label: 'Título',
-    options: [
-      { value: 'title_asc',  ariaLabel: 'A a Z', Icon: ArrowDown },
-      { value: 'title_desc', ariaLabel: 'Z a A', Icon: ArrowUp   },
-    ],
-  },
-]
-
-const WATCHED_OPTIONS = [
-  { value: 'false', label: 'Não assistidos', Icon: EyeOff },
-  { value: 'true',  label: 'Assistidos',     Icon: Eye    },
-]
-
-const WATCHED_ALL  = WATCHED_OPTIONS.map(({ value }) => value)
-const WATCHED_NONE = 'none'
-
-// Param ausente = ambos ligados. Só o estado "nenhum" precisa de valor próprio,
-// senão seria indistinguível do default.
-const parseWatchedParam = (value) => {
-  if (WATCHED_ALL.includes(value)) return [value]
-  if (value === WATCHED_NONE) return []
-  return WATCHED_ALL
-}
-
-const encodeWatched = (list) => {
-  if (list.length === 0) return WATCHED_NONE
-  if (list.length === 1) return list[0]
-  return ''
-}
-
 const SORT_FIELDS = [
-  { field: 'added',    label: 'Adicionado',  Icon: Calendar },
-  { field: 'release',  label: 'Lançamento',  Icon: Clapperboard },
-  { field: 'priority', label: 'Prioridade',  Icon: Flame },
-  { field: 'rating',   label: 'Nota',        Icon: Star },
-  { field: 'title',    label: 'Título',      Icon: Type },
+  { field: 'added',    label: 'Adicionado', Icon: Calendar,     ascLabel: 'Adicionado há mais tempo',   descLabel: 'Adicionado recentemente'  },
+  { field: 'release',  label: 'Lançamento', Icon: Clapperboard, ascLabel: 'Lançamento mais antigo',     descLabel: 'Lançamento mais recente'  },
+  { field: 'priority', label: 'Prioridade', Icon: Flame,        ascLabel: 'Baixa prioridade primeiro',  descLabel: 'Alta prioridade primeiro' },
+  { field: 'rating',   label: 'Nota',       Icon: Star,         ascLabel: 'Menor nota primeiro',        descLabel: 'Maior nota primeiro'      },
+  { field: 'title',    label: 'Título',     Icon: Type,         ascLabel: 'A a Z',                      descLabel: 'Z a A'                    },
 ]
+
+const VALID_SORTS     = buildSortValues(SORT_FIELDS)
+const SORT_CATEGORIES = buildSortCategories(SORT_FIELDS)
+
+const WATCHED_LABELS = {
+  false: { label: 'Não assistidos', Icon: EyeOff },
+  true:  { label: 'Assistidos',     Icon: Eye    },
+}
+
+const WATCHED_OPTIONS = WATCHED_VALUES.map((value) => ({ value, ...WATCHED_LABELS[value] }))
 
 const parseTypesParam = (csv) => {
   if (csv === null) return ALL_TYPES
@@ -125,7 +67,7 @@ const parseTypesParam = (csv) => {
   return list
 }
 
-const parseSortParam = (value) => VALID_SORTS.includes(value) ? value : null
+const parseSortParam = (value) => VALID_SORTS.includes(value) ? value : DEFAULT_SORT
 
 const sortMovies = (list, sortBy) => {
   const [field, direction] = (sortBy || DEFAULT_SORT).split('_')
@@ -178,7 +120,7 @@ const MyList = () => {
   const types          = parseTypesParam(searchParams.get('types'))
   const watched        = searchParams.get('watched') ?? ''
   const watchedList    = parseWatchedParam(watched)
-  const sortBy         = parseSortParam(searchParams.get('sortBy')) ?? DEFAULT_SORT
+  const sortBy         = parseSortParam(searchParams.get('sortBy'))
   const selectedGenres    = parseCsvParam(searchParams.get('genres'))
   const selectedProviders = parseCsvParam(searchParams.get('providers'))
 
@@ -290,8 +232,8 @@ const MyList = () => {
       list = list.filter((m) => types.includes(m.type))
     }
 
-    if (watchedList.length < WATCHED_ALL.length) {
-      list = list.filter((m) => watchedList.includes(String(Boolean(m.watched))))
+    if (watchedList.length < WATCHED_VALUES.length) {
+      list = list.filter((m) => matchesWatched(m, watchedList))
     }
 
     if (selectedGenres.length > 0) {
@@ -438,44 +380,43 @@ const MyList = () => {
   }
 
   const desktopFilters = (
-    <div className="mylist-sort-filters">
-      <SortSegmented fields={SORT_FIELDS} value={sortBy} onChange={setSortBy} />
+    <>
+      <Segmented
+        iconOnly
+        selection="multiple"
+        label="Status"
+        options={WATCHED_OPTIONS}
+        isActive={(option) => watchedList.includes(option.value)}
+        onChange={toggleWatched}
+      />
 
-      <div className="mylist-filter-group">
-        <Segmented
-          iconOnly
-          label="Status"
-          options={WATCHED_OPTIONS}
-          isActive={(option) => watchedList.includes(option.value)}
-          onChange={toggleWatched}
+      {availableGenres.length > 0 && (
+        <Dropdown
+          multi
+          trigger="button"
+          align="right"
+          label="Gênero"
+          options={availableGenres}
+          value={selectedGenres}
+          onChange={setGenres}
         />
+      )}
 
-        {availableGenres.length > 0 && (
-          <Dropdown
-            multi
-            trigger="button"
-            align="right"
-            label="Gênero"
-            options={availableGenres}
-            value={selectedGenres}
-            onChange={setGenres}
-          />
-        )}
-
-        {streamingOptions.length > 0 && (
-          <Dropdown
-            multi
-            trigger="button"
-            align="right"
-            label="Streaming"
-            options={streamingOptions}
-            value={selectedProviders}
-            onChange={setProviders}
-          />
-        )}
-      </div>
-    </div>
+      {streamingOptions.length > 0 && (
+        <Dropdown
+          multi
+          trigger="button"
+          align="right"
+          label="Streaming"
+          options={streamingOptions}
+          value={selectedProviders}
+          onChange={setProviders}
+        />
+      )}
+    </>
   )
+
+  const pendingWatched = parseWatchedParam(filterSheet.pending.watched)
 
   const sheetFilters = (
     <>
@@ -488,22 +429,19 @@ const MyList = () => {
       <section className="filter-section">
         <span className="filter-section-label">Status</span>
         <div className="filter-chip-group">
-          {WATCHED_OPTIONS.map(({ value, label, Icon }) => {
-            const pendingList = parseWatchedParam(filterSheet.pending.watched)
-            return (
-              <Button
-                key={value}
-                variant="filter"
-                size="sm"
-                pill
-                icon={<Icon size={16} />}
-                active={pendingList.includes(value)}
-                onClick={() => filterSheet.setField('watched', encodeWatched(toggleInList(pendingList, value)))}
-              >
-                {label}
-              </Button>
-            )
-          })}
+          {WATCHED_OPTIONS.map(({ value, label, Icon }) => (
+            <Button
+              key={value}
+              variant="filter"
+              size="sm"
+              pill
+              icon={<Icon size={16} />}
+              active={pendingWatched.includes(value)}
+              onClick={() => filterSheet.setField('watched', encodeWatched(toggleInList(pendingWatched, value)))}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
       </section>
 
@@ -544,29 +482,30 @@ const MyList = () => {
   return (
     <div className="mylist-page">
       <div className="mylist-container">
-        <div className="mylist-controls">
-          <div className="mylist-search">
-            <SearchInput
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar na lista..."
+        <Toolbar
+          className="mylist-controls"
+          search={
+            <>
+              <SearchInput
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar na lista..."
+              />
+              <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            </>
+          }
+          scope={<TypeFilterPills value={types} onChange={setTypes} />}
+          sort={<SortSegmented fields={SORT_FIELDS} value={sortBy} onChange={setSortBy} />}
+          filters={desktopFilters}
+          sheetTrigger={
+            <FilterSheetTrigger
+              count={activeFilterCount}
+              onClick={() => filterSheet.openWith({
+                sortBy, watched, genres: selectedGenres, providers: selectedProviders,
+              })}
             />
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
-          </div>
-
-          <div className="mylist-types">
-            <TypeFilterPills value={types} onChange={setTypes} />
-          </div>
-
-          {desktopFilters}
-
-          <FilterSheetTrigger
-            count={activeFilterCount}
-            onClick={() => filterSheet.openWith({
-              sortBy, watched, genres: selectedGenres, providers: selectedProviders,
-            })}
-          />
-        </div>
+          }
+        />
 
         {!isLoading && counts.total > 0 && (
           <div className="mylist-count">

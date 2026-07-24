@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp } from 'lucide-react'
+import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { useMovieActions } from '../hooks/useMovieActions.js'
 import CardModal from '../components/CardModal.jsx'
@@ -13,6 +13,7 @@ import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills from '../components/TypeFilterPills.jsx'
 import SearchInput from '../components/SearchInput.jsx'
 import SortSegmented from '../components/SortSegmented.jsx'
+import Segmented from '../components/Segmented.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import StatPills from '../components/StatPills.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -28,7 +29,7 @@ import { ROUTES } from '../constants/routes.js'
 import { SEARCH_DEBOUNCE_MS, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/ui.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import { TYPE_LABEL, ALL_TYPES } from '../utils/content.js'
-import { parseCsvParam } from '../utils/queryParams.js'
+import { parseCsvParam, toggleInList } from '../utils/queryParams.js'
 import './MyList.css'
 
 const PAGE_SIZE = 20
@@ -88,10 +89,26 @@ const SORT_CATEGORIES = [
 ]
 
 const WATCHED_OPTIONS = [
-  { value: '',      label: 'Todos' },
-  { value: 'false', label: 'Não assistidos' },
-  { value: 'true',  label: 'Assistidos' },
+  { value: 'false', label: 'Não assistidos', Icon: EyeOff },
+  { value: 'true',  label: 'Assistidos',     Icon: Eye    },
 ]
+
+const WATCHED_ALL  = WATCHED_OPTIONS.map(({ value }) => value)
+const WATCHED_NONE = 'none'
+
+// Param ausente = ambos ligados. Só o estado "nenhum" precisa de valor próprio,
+// senão seria indistinguível do default.
+const parseWatchedParam = (value) => {
+  if (WATCHED_ALL.includes(value)) return [value]
+  if (value === WATCHED_NONE) return []
+  return WATCHED_ALL
+}
+
+const encodeWatched = (list) => {
+  if (list.length === 0) return WATCHED_NONE
+  if (list.length === 1) return list[0]
+  return ''
+}
 
 const SORT_FIELDS = [
   { field: 'added',    label: 'Adicionado',  Icon: Calendar },
@@ -160,6 +177,7 @@ const MyList = () => {
 
   const types          = parseTypesParam(searchParams.get('types'))
   const watched        = searchParams.get('watched') ?? ''
+  const watchedList    = parseWatchedParam(watched)
   const sortBy         = parseSortParam(searchParams.get('sortBy')) ?? DEFAULT_SORT
   const selectedGenres    = parseCsvParam(searchParams.get('genres'))
   const selectedProviders = parseCsvParam(searchParams.get('providers'))
@@ -230,9 +248,10 @@ const MyList = () => {
     else next.set('sortBy', value)
   })
 
-  const setWatchedFilter = (value) => updateParams((next) => {
-    if (!value) next.delete('watched')
-    else next.set('watched', value)
+  const toggleWatched = (value) => updateParams((next) => {
+    const encoded = encodeWatched(toggleInList(watchedList, value))
+    if (!encoded) next.delete('watched')
+    else next.set('watched', encoded)
   })
 
   const setGenres = (arr) => updateParams((next) => {
@@ -271,9 +290,8 @@ const MyList = () => {
       list = list.filter((m) => types.includes(m.type))
     }
 
-    if (watched) {
-      const want = watched === 'true'
-      list = list.filter((m) => Boolean(m.watched) === want)
+    if (watchedList.length < WATCHED_ALL.length) {
+      list = list.filter((m) => watchedList.includes(String(Boolean(m.watched))))
     }
 
     if (selectedGenres.length > 0) {
@@ -351,6 +369,7 @@ const MyList = () => {
 
   const emptyMessage = (() => {
     if (!isFiltered) return null
+    if (watched === WATCHED_NONE) return 'Selecione ao menos um status para ver seus itens.'
     if (debouncedQuery.trim()) return `Nenhum item encontrado para "${debouncedQuery.trim()}".`
     if (watched === 'true')  return 'Você ainda não marcou nenhum item como assistido.'
     if (watched === 'false') return 'Nenhum item pendente para assistir.'
@@ -423,13 +442,12 @@ const MyList = () => {
       <SortSegmented fields={SORT_FIELDS} value={sortBy} onChange={setSortBy} />
 
       <div className="mylist-filter-group">
-        <Dropdown
-          trigger="button"
-          align="right"
+        <Segmented
+          iconOnly
           label="Status"
           options={WATCHED_OPTIONS}
-          value={watched || null}
-          onChange={setWatchedFilter}
+          isActive={(option) => watchedList.includes(option.value)}
+          onChange={toggleWatched}
         />
 
         {availableGenres.length > 0 && (
@@ -470,18 +488,22 @@ const MyList = () => {
       <section className="filter-section">
         <span className="filter-section-label">Status</span>
         <div className="filter-chip-group">
-          {WATCHED_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value || 'all'}
-              variant="filter"
-              size="sm"
-              pill
-              active={filterSheet.pending.watched === opt.value}
-              onClick={() => filterSheet.setField('watched', opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
+          {WATCHED_OPTIONS.map(({ value, label, Icon }) => {
+            const pendingList = parseWatchedParam(filterSheet.pending.watched)
+            return (
+              <Button
+                key={value}
+                variant="filter"
+                size="sm"
+                pill
+                icon={<Icon size={16} />}
+                active={pendingList.includes(value)}
+                onClick={() => filterSheet.setField('watched', encodeWatched(toggleInList(pendingList, value)))}
+              >
+                {label}
+              </Button>
+            )
+          })}
         </div>
       </section>
 

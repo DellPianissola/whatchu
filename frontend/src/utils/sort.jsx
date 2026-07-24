@@ -1,11 +1,5 @@
 import { ArrowUp, ArrowDown } from 'lucide-react'
 
-export const cycleSort = (current) => {
-  if (current === null)   return 'desc'
-  if (current === 'desc') return 'asc'
-  return null
-}
-
 export const getSortIcon = (dir, size = 14) => {
   if (dir === 'asc')  return <ArrowUp size={size} />
   if (dir === 'desc') return <ArrowDown size={size} />
@@ -17,12 +11,16 @@ export const splitSort = (sortBy) => {
   return { field: field || null, dir: dir || null }
 }
 
-export const toggleSortField = (sortBy, field) => {
+// Sem estado nulo: a lista sempre tem uma ordem, então desligar a ordenação
+// deixaria um campo ativo de fato sem nenhum botão aceso.
+export const toggleSortField = (sortBy, field, directionless = false) => {
+  if (directionless) return field
   const { field: activeField, dir } = splitSort(sortBy)
   if (field !== activeField) return `${field}_desc`
-  const next = cycleSort(dir)
-  return next === null ? null : `${field}_${next}`
+  return `${field}_${dir === 'desc' ? 'asc' : 'desc'}`
 }
 
 export const buildSortValues = (fields) =>
-  fields.flatMap(({ field }) => [`${field}_asc`, `${field}_desc`])
+  fields.flatMap(({ field, directionless }) =>
+    directionless ? [field] : [`${field}_asc`, `${field}_desc`]
+  )

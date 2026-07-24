@@ -1,5 +1,6 @@
 import { Film, Tv } from 'lucide-react'
 import { TYPE_LABEL } from '../utils/content.js'
+import { toggleInList } from '../utils/queryParams.js'
 import './TypeFilterPills.css'
 
 const TYPE_OPTIONS = [
@@ -15,7 +16,7 @@ const TypeFilterPills = ({ value, onChange, multi = true, options = TYPE_OPTIONS
       onChange(type)
       return
     }
-    onChange(value.includes(type) ? value.filter(t => t !== type) : [...value, type])
+    onChange(toggleInList(value, type))
   }
 
   return (

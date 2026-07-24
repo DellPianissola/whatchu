@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
+import { Film, Tv, Tv2, Calendar, Star, Flame, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
 import { TYPE_LABEL_PLURAL } from '../utils/content.js'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
@@ -41,39 +41,36 @@ import './Search.css'
 
 const MODE = { PAGE: 'page', ONBOARDING: 'onboarding' }
 
-// ↓ = ascendente (menor primeiro), ↑ = descendente (maior primeiro)
-const SORT_CATEGORIES = [
-  {
-    Icon: Calendar,
-    label: 'Por data',
-    options: [
-      { value: 'date_asc',  ariaLabel: 'Mais antigos primeiro',  Icon: ArrowDown },
-      { value: 'date_desc', ariaLabel: 'Mais recentes primeiro', Icon: ArrowUp   },
-    ],
-  },
-  {
-    Icon: Star,
-    label: 'Por nota',
-    options: [
-      { value: 'rating_asc',  ariaLabel: 'Menor nota primeiro', Icon: ArrowDown },
-      { value: 'rating_desc', ariaLabel: 'Maior nota primeiro', Icon: ArrowUp   },
-    ],
-  },
-]
-
 // TMDB usa `movie`/`series` minúsculo no param — não é o enum interno de TYPE_LABEL.
 const TYPE_OPTIONS = [
   { value: 'movie',  label: TYPE_LABEL_PLURAL.MOVIE,  Icon: Film },
   { value: 'series', label: TYPE_LABEL_PLURAL.SERIES, Icon: Tv   },
 ]
 
+// `popularity` não tem direção no contrato do TMDB — popularidade crescente
+// só devolveria conteúdo irrelevante.
 const SORT_FIELDS = [
-  { field: 'date',   label: 'Data', Icon: Calendar },
-  { field: 'rating', label: 'Nota', Icon: Star     },
+  { field: 'popularity', label: 'Em alta', Icon: Flame, directionless: true, sheetLabel: 'Populares primeiro' },
+  { field: 'date',   label: 'Data', Icon: Calendar, ascLabel: 'Mais antigos primeiro', descLabel: 'Mais recentes primeiro' },
+  { field: 'rating', label: 'Nota', Icon: Star,     ascLabel: 'Menor nota primeiro',   descLabel: 'Maior nota primeiro'   },
 ]
+
+const DEFAULT_SORT = 'popularity'
 
 const VALID_TYPES = TYPE_OPTIONS.map(({ value }) => value)
 const VALID_SORTS = buildSortValues(SORT_FIELDS)
+
+// ↓ = ascendente (menor primeiro), ↑ = descendente (maior primeiro)
+const SORT_CATEGORIES = SORT_FIELDS.map(({ field, label, Icon, directionless, sheetLabel, ascLabel, descLabel }) => ({
+  Icon,
+  label,
+  options: directionless
+    ? [{ value: field, ariaLabel: sheetLabel, Icon }]
+    : [
+        { value: `${field}_asc`,  ariaLabel: ascLabel,  Icon: ArrowDown },
+        { value: `${field}_desc`, ariaLabel: descLabel, Icon: ArrowUp   },
+      ],
+}))
 
 // TMDB repete itens entre páginas — sem dedupe o append quebra a key do React.
 const dedupeById = (items) => {
@@ -86,7 +83,7 @@ const dedupeById = (items) => {
 }
 
 const parseTypeParam   = (value) => VALID_TYPES.includes(value) ? value : 'movie'
-const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : null
+const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : DEFAULT_SORT
 
 const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const { profile } = useAuth()
@@ -136,7 +133,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
 
   const setSortBy = (value) => {
     updateParams((next) => {
-      if (!value) next.delete('sortBy')
+      if (!value || value === DEFAULT_SORT) next.delete('sortBy')
       else next.set('sortBy', value)
     })
   }
@@ -169,15 +166,15 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   // Texto + sort/gênero/streaming são mutuamente exclusivos (TMDB /search não suporta).
   // Ao iniciar busca por texto, limpa os filtros.
   useEffect(() => {
-    if (debouncedQuery.trim() && (sortBy || selectedGenres.length > 0 || selectedProviders.length > 0)) {
-      commitFiltersToUrl(null, [], [])
+    if (debouncedQuery.trim() && (sortBy !== DEFAULT_SORT || selectedGenres.length > 0 || selectedProviders.length > 0)) {
+      commitFiltersToUrl(DEFAULT_SORT, [], [])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery])
 
   const genresKey = selectedGenres.join(',')
   const providersKey = selectedProviders.join(',')
-  const filterKey = [debouncedQuery.trim(), type, sortBy || '', genresKey, providersKey].join('|')
+  const filterKey = [debouncedQuery.trim(), type, sortBy, genresKey, providersKey].join('|')
   const [activeFilterKey, setActiveFilterKey] = useState(filterKey)
 
   // Ajuste de estado durante o render (padrão do React pra estado derivado): zera
@@ -202,7 +199,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
         const data = q
           ? await searchExternal(q, type, page)
           : await (type === 'series' ? getPopularSeries : getPopularMovies)(page, {
-              sortBy: sortBy || undefined,
+              sortBy,
               genres: selectedGenres,
               providers: selectedProviders,
             })
@@ -265,13 +262,13 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     e.preventDefault()
   }
 
-  const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length + selectedProviders.length
+  const activeFilterCount = (sortBy !== DEFAULT_SORT ? 1 : 0) + selectedGenres.length + selectedProviders.length
 
   // Batchar sortBy + genres + providers numa única setSearchParams pra evitar que a segunda
   // chamada sobrescreva a primeira (cada setSearchParams lê searchParams stale).
   const commitFiltersToUrl = (sortByValue, genresArr, providersArr) => {
     const next = new URLSearchParams(searchParams)
-    if (!sortByValue) next.delete('sortBy')
+    if (!sortByValue || sortByValue === DEFAULT_SORT) next.delete('sortBy')
     else next.set('sortBy', sortByValue)
     if (!genresArr || genresArr.length === 0) next.delete('genres')
     else next.set('genres', genresArr.join(','))
@@ -281,7 +278,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   }
 
   const filterSheet = useFilterSheet({
-    defaults: { sortBy: null, genres: [], providers: [] },
+    defaults: { sortBy: DEFAULT_SORT, genres: [], providers: [] },
     onCommit: ({ sortBy: s, genres: g, providers: p }) => commitFiltersToUrl(s, g, p),
   })
 
@@ -292,7 +289,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
         value={filterSheet.pending.sortBy}
         onChange={(val) => filterSheet.setField('sortBy', val)}
         disabled={sortAndGenreDisabled}
-        deselectable
       />
 
       <section className="filter-section">

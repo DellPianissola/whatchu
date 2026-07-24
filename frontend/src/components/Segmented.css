@@ -1,4 +1,4 @@
-.ui-sort-segmented {
+.ui-segmented {
   display: inline-flex;
   height: var(--control-height);
   background: var(--surface);
@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 
-.ui-sort-seg-btn {
+.ui-segmented-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -23,33 +23,44 @@
   white-space: nowrap;
 }
 
-.ui-sort-seg-btn:last-child {
+.ui-segmented-btn--icon {
+  width: var(--control-height);
+  padding: 0;
+  justify-content: center;
+}
+
+.ui-segmented-btn:last-child {
   border-right: none;
 }
 
-.ui-sort-seg-btn:hover:not(.active):not(:disabled) {
+.ui-segmented-btn:hover:not(.active):not(:disabled) {
   background: var(--surface-light);
 }
 
-.ui-sort-seg-btn.active {
+.ui-segmented-btn.active {
   background: rgba(var(--primary-rgb), 0.15);
   color: var(--primary-light);
 }
 
-.ui-sort-seg-btn:disabled {
+.ui-segmented-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.ui-sort-seg-btn svg {
+.ui-segmented-btn svg {
   flex-shrink: 0;
 }
 
-.ui-sort-seg-arrow {
+.ui-segmented-extra {
   width: 14px;
   height: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.ui-segmented-extra.is-idle {
+  color: var(--text-muted);
+  opacity: 0.5;
 }

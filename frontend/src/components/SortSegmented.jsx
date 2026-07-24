@@ -1,5 +1,6 @@
+import { Minus } from 'lucide-react'
+import Segmented from './Segmented.jsx'
 import { splitSort, toggleSortField, getSortIcon } from '../utils/sort.jsx'
-import './SortSegmented.css'
 
 const SortSegmented = ({
   fields,
@@ -12,29 +13,25 @@ const SortSegmented = ({
 }) => {
   const { field: activeField, dir } = splitSort(value)
 
+  const options = fields.map(({ field, label: fieldLabel, Icon, directionless }) => ({
+    value: field, label: fieldLabel, Icon, directionless,
+  }))
+
   return (
-    <div className={`ui-sort-segmented ${className}`.trim()} role="group" aria-label={label}>
-      {fields.map(({ field, label: fieldLabel, Icon }) => {
-        const active = activeField === field
-        return (
-          <button
-            key={field}
-            type="button"
-            className={`ui-sort-seg-btn ${active ? 'active' : ''}`}
-            onClick={() => onChange(toggleSortField(value, field))}
-            disabled={disabled}
-            title={disabled ? disabledTitle : ''}
-            aria-pressed={active}
-          >
-            <Icon size={14} />
-            <span>{fieldLabel}</span>
-            <span className="ui-sort-seg-arrow" aria-hidden>
-              {active ? getSortIcon(dir) : null}
-            </span>
-          </button>
-        )
-      })}
-    </div>
+    <Segmented
+      className={className}
+      label={label}
+      disabled={disabled}
+      disabledTitle={disabledTitle}
+      options={options}
+      isActive={(option) => option.value === activeField}
+      onChange={(field, option) => onChange(toggleSortField(value, field, option.directionless))}
+      renderExtra={(option, active) => option.directionless ? null : (
+        <span className={`ui-segmented-extra ${active ? '' : 'is-idle'}`.trim()} aria-hidden>
+          {active ? getSortIcon(dir) : <Minus size={14} />}
+        </span>
+      )}
+    />
   )
 }
 

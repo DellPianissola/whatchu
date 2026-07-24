@@ -6,13 +6,7 @@ const SortCategoriesSection = ({
   value,
   onChange,
   disabled = false,
-  deselectable = false,
 }) => {
-  const handleClick = (optionValue) => {
-    if (deselectable && value === optionValue) onChange(null)
-    else onChange(optionValue)
-  }
-
   return (
     <section className="filter-section">
       <span className="filter-section-label">{label}</span>
@@ -30,7 +24,7 @@ const SortCategoriesSection = ({
                 pill
                 active={value === optValue}
                 disabled={disabled}
-                onClick={() => handleClick(optValue)}
+                onClick={() => onChange(optValue)}
                 aria-label={ariaLabel}
                 title={ariaLabel}
               >

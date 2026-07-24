@@ -28,7 +28,7 @@
 .ui-btn--md { padding: 0.55rem 1rem;  font-size: 0.85rem; }
 
 /* ── Slots ── */
-.ui-btn-icon { font-size: 1em; line-height: 1; }
+.ui-btn-icon { display: inline-flex; align-items: center; font-size: 1em; line-height: 1; }
 .ui-btn-text { line-height: 1; }
 
 /* ── Variant: filter (toggle pill) ── */

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
+import { TYPE_LABEL_PLURAL } from '../utils/content.js'
 import {
   searchExternal, getPopularMovies, getPopularSeries, getExternalGenres,
   mapUpstreamError,
@@ -12,6 +13,9 @@ import { useMovieActions } from '../hooks/useMovieActions.js'
 import OnboardingHeader from '../components/OnboardingHeader.jsx'
 import CardModal from '../components/CardModal.jsx'
 import Dropdown from '../components/Dropdown.jsx'
+import TypeFilterPills from '../components/TypeFilterPills.jsx'
+import SearchInput from '../components/SearchInput.jsx'
+import SortSegmented from '../components/SortSegmented.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
@@ -30,7 +34,7 @@ import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js'
 import { parseCsvParam } from '../utils/queryParams.js'
-import { cycleSort, getSortIcon } from '../utils/sort.jsx'
+import { buildSortValues } from '../utils/sort.jsx'
 import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT, VIEW_MODES, DEFAULT_VIEW_MODE, TMDB_MAX_PAGE } from '../constants/ui.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import './Search.css'
@@ -57,8 +61,19 @@ const SORT_CATEGORIES = [
   },
 ]
 
-const VALID_TYPES = ['movie', 'series']
-const VALID_SORTS = ['date_asc', 'date_desc', 'rating_asc', 'rating_desc']
+// TMDB usa `movie`/`series` minúsculo no param — não é o enum interno de TYPE_LABEL.
+const TYPE_OPTIONS = [
+  { value: 'movie',  label: TYPE_LABEL_PLURAL.MOVIE,  Icon: Film },
+  { value: 'series', label: TYPE_LABEL_PLURAL.SERIES, Icon: Tv   },
+]
+
+const SORT_FIELDS = [
+  { field: 'date',   label: 'Data', Icon: Calendar },
+  { field: 'rating', label: 'Nota', Icon: Star     },
+]
+
+const VALID_TYPES = TYPE_OPTIONS.map(({ value }) => value)
+const VALID_SORTS = buildSortValues(SORT_FIELDS)
 
 // TMDB repete itens entre páginas — sem dedupe o append quebra a key do React.
 const dedupeById = (items) => {
@@ -72,13 +87,6 @@ const dedupeById = (items) => {
 
 const parseTypeParam   = (value) => VALID_TYPES.includes(value) ? value : 'movie'
 const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : null
-const splitSort = (sortBy) => {
-  if (sortBy === 'date_asc')    return { sortDate: 'asc',  sortRating: null  }
-  if (sortBy === 'date_desc')   return { sortDate: 'desc', sortRating: null  }
-  if (sortBy === 'rating_asc')  return { sortDate: null,   sortRating: 'asc' }
-  if (sortBy === 'rating_desc') return { sortDate: null,   sortRating: 'desc' }
-  return { sortDate: null, sortRating: null }
-}
 
 const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const { profile } = useAuth()
@@ -107,7 +115,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const sortBy         = parseSortParam(searchParams.get('sortBy'))
   const selectedGenres = parseCsvParam(searchParams.get('genres'))
   const selectedProviders = parseCsvParam(searchParams.get('providers'))
-  const { sortDate, sortRating } = splitSort(sortBy)
 
   // TMDB /search não suporta sort/gênero — UI desabilitada durante busca textual
   const textSearchActive    = debouncedQuery.trim().length > 0
@@ -258,16 +265,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     e.preventDefault()
   }
 
-  const toggleSortDate = () => {
-    const next = cycleSort(sortDate)
-    setSortBy(next === null ? null : `date_${next}`)
-  }
-
-  const toggleSortRating = () => {
-    const next = cycleSort(sortRating)
-    setSortBy(next === null ? null : `rating_${next}`)
-  }
-
   const activeFilterCount = (sortBy ? 1 : 0) + selectedGenres.length + selectedProviders.length
 
   // Batchar sortBy + genres + providers numa única setSearchParams pra evitar que a segunda
@@ -350,85 +347,65 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       <div className="search-container">
         <form onSubmit={handleSearchSubmit} className="search-form">
           <div className="search-header">
-            <div className="search-type-filters">
-              <button
-                type="button"
-                onClick={() => setType('movie')}
-                className={`filter-btn ${type === 'movie' ? 'active' : ''}`}
-              >
-                <Film size={18} /> Filmes
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('series')}
-                className={`filter-btn ${type === 'series' ? 'active' : ''}`}
-              >
-                <Tv size={18} /> Séries
-              </button>
-            </div>
-
-            <div className="search-input-group">
-              <input
-                type="text"
+            <div className="search-query-group">
+              <SearchInput
+                className="search-query"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Digite o nome do filme ou série..."
-                className="ui-search-input"
               />
               <ViewModeToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            <div className="search-sort-filters">
-              <div className="sort-buttons">
-                <button
-                  type="button"
-                  onClick={toggleSortDate}
-                  disabled={sortAndGenreDisabled}
-                  title={sortAndGenreDisabled ? 'Indisponível durante busca por texto' : ''}
-                  className={`sort-btn ${sortDate ? 'active' : ''}`}
-                >
-                  <Calendar size={14} /> Data {getSortIcon(sortDate)}
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleSortRating}
-                  disabled={sortAndGenreDisabled}
-                  title={sortAndGenreDisabled ? 'Indisponível durante busca por texto' : ''}
-                  className={`sort-btn ${sortRating ? 'active' : ''}`}
-                >
-                  <Star size={14} /> Nota {getSortIcon(sortRating)}
-                </button>
-              </div>
+            <div className="search-scope">
+              <TypeFilterPills
+                multi={false}
+                options={TYPE_OPTIONS}
+                value={type}
+                onChange={setType}
+              />
+            </div>
 
-              <Dropdown
-                multi
-                trigger="button"
-                align="right"
-                icon={<Tags size={14} />}
-                label="Gêneros"
-                options={availableGenres}
-                value={selectedGenres}
-                onChange={setSelectedGenres}
+            <div className="search-sort-filters">
+              <SortSegmented
+                fields={SORT_FIELDS}
+                value={sortBy}
+                onChange={setSortBy}
                 disabled={sortAndGenreDisabled}
                 disabledTitle="Indisponível durante busca por texto"
-                emptyMessage="Nenhum gênero disponível"
               />
 
-              {streamingOptions.length > 0 && (
+              <div className="search-filters">
                 <Dropdown
                   multi
                   trigger="button"
                   align="right"
-                  icon={<Tv2 size={14} />}
-                  label="Streaming"
-                  options={streamingOptions}
-                  value={selectedProviders}
-                  onChange={setSelectedProviders}
+                  icon={<Tags size={14} />}
+                  label="Gêneros"
+                  options={availableGenres}
+                  value={selectedGenres}
+                  onChange={setSelectedGenres}
                   disabled={sortAndGenreDisabled}
                   disabledTitle="Indisponível durante busca por texto"
-                  emptyMessage="Nenhum streaming disponível"
+                  emptyMessage="Nenhum gênero disponível"
                 />
-              )}
+
+                {streamingOptions.length > 0 && (
+                  <Dropdown
+                    multi
+                    trigger="button"
+                    align="right"
+                    icon={<Tv2 size={14} />}
+                    label="Streaming"
+                    options={streamingOptions}
+                    value={selectedProviders}
+                    onChange={setSelectedProviders}
+                    disabled={sortAndGenreDisabled}
+                    disabledTitle="Indisponível durante busca por texto"
+                    emptyMessage="Nenhum streaming disponível"
+                  />
+                )}
+              </div>
             </div>
 
             <FilterSheetTrigger

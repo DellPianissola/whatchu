@@ -1,38 +1,33 @@
 .filter-btn {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .filter-btn svg {
   flex-shrink: 0;
 }
 
-.filter-btn:hover {
+.filter-btn:hover:not(.active) {
   border-color: var(--primary);
   background: var(--surface-light);
-  transform: translateY(-2px);
 }
 
 .filter-btn.active {
   background: var(--gradient-1);
   border-color: transparent;
   color: var(--text-on-media);
-  box-shadow: 0 4px 12px rgba(var(--shadow-rgb), 0.2);
-}
-
-.filter-btn.active:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(var(--shadow-rgb), 0.3);
 }
 
 @media (max-width: 768px) {

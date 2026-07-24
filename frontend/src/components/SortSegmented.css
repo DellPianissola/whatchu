@@ -1,0 +1,55 @@
+.ui-sort-segmented {
+  display: inline-flex;
+  height: var(--control-height);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ui-sort-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.ui-sort-seg-btn:last-child {
+  border-right: none;
+}
+
+.ui-sort-seg-btn:hover:not(.active):not(:disabled) {
+  background: var(--surface-light);
+}
+
+.ui-sort-seg-btn.active {
+  background: rgba(var(--primary-rgb), 0.15);
+  color: var(--primary-light);
+}
+
+.ui-sort-seg-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-sort-seg-btn svg {
+  flex-shrink: 0;
+}
+
+.ui-sort-seg-arrow {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

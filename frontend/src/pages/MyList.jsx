@@ -11,6 +11,8 @@ import PosterDetailsButton from '../components/PosterDetailsButton.jsx'
 import AddToListButton from '../components/AddToListButton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import TypeFilterPills from '../components/TypeFilterPills.jsx'
+import SearchInput from '../components/SearchInput.jsx'
+import SortSegmented from '../components/SortSegmented.jsx'
 import Dropdown from '../components/Dropdown.jsx'
 import StatPills from '../components/StatPills.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -27,7 +29,6 @@ import { SEARCH_DEBOUNCE_MS, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import { TYPE_LABEL, ALL_TYPES } from '../utils/content.js'
 import { parseCsvParam } from '../utils/queryParams.js'
-import { cycleSort, getSortIcon } from '../utils/sort.jsx'
 import './MyList.css'
 
 const PAGE_SIZE = 20
@@ -99,11 +100,6 @@ const SORT_FIELDS = [
   { field: 'rating',   label: 'Nota',        Icon: Star },
   { field: 'title',    label: 'Título',      Icon: Type },
 ]
-
-const splitSort = (sortBy) => {
-  const [field, dir] = (sortBy || '').split('_')
-  return { field: field || null, dir: dir || null }
-}
 
 const parseTypesParam = (csv) => {
   if (csv === null) return ALL_TYPES
@@ -248,17 +244,6 @@ const MyList = () => {
     if (!arr || arr.length === 0) next.delete('providers')
     else next.set('providers', arr.join(','))
   })
-
-  const { field: activeSortField, dir: activeSortDir } = splitSort(sortBy)
-
-  const toggleSort = (field) => {
-    if (field !== activeSortField) {
-      setSortBy(`${field}_desc`)
-      return
-    }
-    const next = cycleSort(activeSortDir)
-    setSortBy(next === null ? null : `${field}_${next}`)
-  }
 
   const filterSheet = useFilterSheet({
     defaults: { sortBy: DEFAULT_SORT, watched: '', genres: [], providers: [] },
@@ -435,22 +420,7 @@ const MyList = () => {
 
   const desktopFilters = (
     <div className="mylist-sort-filters">
-      <div className="sort-segmented" role="group" aria-label="Ordenar por">
-        {SORT_FIELDS.map(({ field, label, Icon }) => (
-          <button
-            key={field}
-            type="button"
-            onClick={() => toggleSort(field)}
-            className={`sort-seg-btn ${activeSortField === field ? 'active' : ''}`}
-          >
-            <Icon size={14} />
-            <span>{label}</span>
-            <span className="sort-seg-arrow" aria-hidden>
-              {activeSortField === field ? getSortIcon(activeSortDir) : null}
-            </span>
-          </button>
-        ))}
-      </div>
+      <SortSegmented fields={SORT_FIELDS} value={sortBy} onChange={setSortBy} />
 
       <div className="mylist-filter-group">
         <Dropdown
@@ -554,9 +524,7 @@ const MyList = () => {
       <div className="mylist-container">
         <div className="mylist-controls">
           <div className="mylist-search">
-            <input
-              type="text"
-              className="ui-search-input"
+            <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar na lista..."

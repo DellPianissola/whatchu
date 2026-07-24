@@ -1,29 +1,14 @@
-.ui-search-input {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 1rem;
-}
-
-.ui-search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
 .ui-filter-sheet-trigger {
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 0.5rem 1rem;
-  min-height: 44px;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.15s;

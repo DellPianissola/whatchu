@@ -1,20 +1,22 @@
 .ui-view-toggle {
   display: inline-flex;
   gap: 2px;
+  height: var(--control-height);
   padding: 3px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
 }
 
 .ui-view-toggle-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 100%;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;

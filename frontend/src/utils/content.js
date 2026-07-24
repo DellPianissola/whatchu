@@ -3,6 +3,11 @@ export const TYPE_LABEL = {
   SERIES: 'Série',
 }
 
+export const TYPE_LABEL_PLURAL = {
+  MOVIE: 'Filmes',
+  SERIES: 'Séries',
+}
+
 export const ALL_TYPES = Object.keys(TYPE_LABEL)
 
 export const PRIORITY_VALUES = ['URGENT', 'HIGH', 'MEDIUM', 'LOW']

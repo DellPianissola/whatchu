@@ -1,4 +1,5 @@
 import { useState, useRef, useId } from 'react'
+import { ChevronDown } from 'lucide-react'
 import Button from './Button.jsx'
 import { useClickOutside } from '../hooks/useClickOutside.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
@@ -80,7 +81,7 @@ const Dropdown = ({
   }
 
   return (
-    <div className={`dropdown-wrapper ${className}`} ref={wrapperRef}>
+    <div className={`dropdown-wrapper ${className}`.trim()} ref={wrapperRef}>
       {trigger === 'pill' ? (
         <Button
           variant="filter"
@@ -93,7 +94,7 @@ const Dropdown = ({
           title={disabled ? disabledTitle : ''}
           {...triggerAria}
         >
-          {triggerLabel} <span className="dropdown-trigger-caret" aria-hidden>▾</span>
+          {triggerLabel} <ChevronDown className="dropdown-trigger-caret" size={14} aria-hidden />
         </Button>
       ) : (
         <button
@@ -106,7 +107,7 @@ const Dropdown = ({
         >
           {icon && <span className="dropdown-trigger-icon">{icon}</span>}
           <span className="dropdown-trigger-label">{triggerLabel}</span>
-          <span className="dropdown-trigger-caret" aria-hidden>▾</span>
+          <ChevronDown className="dropdown-trigger-caret" size={14} aria-hidden />
         </button>
       )}
 

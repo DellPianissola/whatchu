@@ -11,7 +11,7 @@
 
 .mylist-controls {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-4);
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
@@ -21,7 +21,7 @@
   flex: 1 1 280px;
   min-width: 0;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-3);
   align-items: center;
 }
 
@@ -32,32 +32,16 @@
 
 .mylist-types {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
-/* Padroniza altura dos controles do toolbar (44px) */
-.mylist-page .filter-btn,
-.mylist-page .dropdown-trigger-btn {
-  padding: 0.6rem 1rem;
-  font-size: 0.9rem;
-  border-radius: 12px;
-  min-height: 44px;
-}
-
-.mylist-page .filter-btn {
-  font-weight: 500;
-}
-
-.mylist-page .dropdown-trigger-btn {
-  min-width: 140px;
-}
-
-/* Linha 2: ordenação (segmented control à esquerda) + filtros (pills à direita) */
+/* Linha 2: ordenação à esquerda, filtros à direita — as duas pontas encostam
+   nas bordas do grid de resultados. */
 .mylist-sort-filters {
   display: flex;
   flex: 1 1 100%;
-  gap: 1.5rem;
+  gap: var(--space-4);
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -65,61 +49,9 @@
 
 .mylist-filter-group {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
-}
-
-/* ── Sort segmented control ───────────────────────── */
-.sort-segmented {
-  display: inline-flex;
-  border: 2px solid var(--surface-light);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--surface);
-}
-
-.sort-seg-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0 1rem;
-  min-height: 40px;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--surface-light);
-  color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.sort-seg-btn:last-child {
-  border-right: none;
-}
-
-.sort-seg-btn:hover:not(.active) {
-  background: var(--surface-light);
-}
-
-.sort-seg-btn.active {
-  background: var(--gradient-2);
-  color: var(--text-on-media);
-}
-
-.sort-seg-btn svg {
-  flex-shrink: 0;
-}
-
-.sort-seg-arrow {
-  width: 14px;
-  height: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 }
 
 .mylist-count {
@@ -156,7 +88,7 @@
 .movies-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: stretch;
 }
 
@@ -231,7 +163,7 @@
   .mylist-controls {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.65rem;
+    gap: var(--space-2);
   }
 
   .mylist-search {
@@ -259,7 +191,7 @@
     grid-template-areas:
       "search  search"
       "types   filtros";
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .mylist-search   { grid-area: search; }
@@ -269,13 +201,8 @@
     margin-left: 0;
   }
 
-  .ui-search-input {
-    padding: 0.7rem 0.85rem;
-    font-size: 0.95rem;
-  }
-
   .movies-grid {
     grid-template-columns: 1fr;
-    gap: 0.65rem;
+    gap: var(--space-2);
   }
 }

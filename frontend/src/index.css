@@ -70,6 +70,7 @@
   /* layout */
   --navbar-height: 56px;
   --bottom-nav-height: 0px;
+  --control-height: 44px;
 
   /* radius */
   --radius-sm: 4px;

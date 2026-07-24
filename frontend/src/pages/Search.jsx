@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Film, Tv, Tv2, Calendar, Star, Tags, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
 import {
@@ -17,8 +17,8 @@ import WatchedToggle from '../components/WatchedToggle.jsx'
 import ViewModeToggle from '../components/ViewModeToggle.jsx'
 import PosterDetailsButton from '../components/PosterDetailsButton.jsx'
 import Spinner from '../components/Spinner.jsx'
+import Button from '../components/Button.jsx'
 import MovieCard from '../components/MovieCard.jsx'
-import Pagination from '../components/Pagination.jsx'
 import { SkeletonCard } from '../components/Skeleton.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -28,9 +28,10 @@ import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js'
 import { parseCsvParam } from '../utils/queryParams.js'
 import { cycleSort, getSortIcon } from '../utils/sort.jsx'
-import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/ui.js'
+import { ONBOARDING_TARGET, SEARCH_DEBOUNCE_MS, SKELETON_COUNT, VIEW_MODES, DEFAULT_VIEW_MODE, TMDB_MAX_PAGE } from '../constants/ui.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 import './Search.css'
 
@@ -59,10 +60,16 @@ const SORT_CATEGORIES = [
 const VALID_TYPES = ['movie', 'series']
 const VALID_SORTS = ['date_asc', 'date_desc', 'rating_asc', 'rating_desc']
 
-const parsePageParam = (value) => {
-  const parsed = parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+// TMDB repete itens entre páginas — sem dedupe o append quebra a key do React.
+const dedupeById = (items) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
 }
+
 const parseTypeParam   = (value) => VALID_TYPES.includes(value) ? value : 'movie'
 const parseSortParam   = (value) => VALID_SORTS.includes(value) ? value : null
 const splitSort = (sortBy) => {
@@ -85,6 +92,9 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage] = useState(1)
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false)
+  const [retryToken, setRetryToken] = useState(0)
   const [availableGenres, setAvailableGenres] = useState([])
   const { options: streamingOptions } = useStreamingProviders()
   const [expandedItem, setExpandedItem] = useState(null)
@@ -92,9 +102,8 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
 
-  // URL é fonte de verdade — type/page/sortBy/genres nunca em useState
+  // URL é fonte de verdade — type/sortBy/genres nunca em useState
   const type           = parseTypeParam(searchParams.get('type'))
-  const currentPage    = parsePageParam(searchParams.get('page'))
   const sortBy         = parseSortParam(searchParams.get('sortBy'))
   const selectedGenres = parseCsvParam(searchParams.get('genres'))
   const selectedProviders = parseCsvParam(searchParams.get('providers'))
@@ -104,10 +113,9 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const textSearchActive    = debouncedQuery.trim().length > 0
   const sortAndGenreDisabled = textSearchActive
 
-  const updateParams = (mutate, { resetPage = false } = {}) => {
+  const updateParams = (mutate) => {
     const next = new URLSearchParams(searchParams)
     mutate(next)
-    if (resetPage) next.delete('page')
     setSearchParams(next)
   }
 
@@ -116,13 +124,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       if (newType === 'movie') next.delete('type')
       else next.set('type', newType)
       next.delete('genres')
-    }, { resetPage: true })
-  }
-
-  const setCurrentPage = (newPage) => {
-    updateParams((next) => {
-      if (newPage === 1) next.delete('page')
-      else next.set('page', String(newPage))
     })
   }
 
@@ -130,21 +131,21 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     updateParams((next) => {
       if (!value) next.delete('sortBy')
       else next.set('sortBy', value)
-    }, { resetPage: true })
+    })
   }
 
   const setSelectedGenres = (arr) => {
     updateParams((next) => {
       if (!arr || arr.length === 0) next.delete('genres')
       else next.set('genres', arr.join(','))
-    }, { resetPage: true })
+    })
   }
 
   const setSelectedProviders = (arr) => {
     updateParams((next) => {
       if (!arr || arr.length === 0) next.delete('providers')
       else next.set('providers', arr.join(','))
-    }, { resetPage: true })
+    })
   }
 
   useEffect(() => {
@@ -159,18 +160,32 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   }, [type])
 
   // Texto + sort/gênero/streaming são mutuamente exclusivos (TMDB /search não suporta).
-  // Ao iniciar busca por texto, limpa filtros e reseta página juntos.
+  // Ao iniciar busca por texto, limpa os filtros.
   useEffect(() => {
     if (debouncedQuery.trim() && (sortBy || selectedGenres.length > 0 || selectedProviders.length > 0)) {
       commitFiltersToUrl(null, [], [])
-      return
     }
-    if (currentPage !== 1) setCurrentPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery])
 
   const genresKey = selectedGenres.join(',')
   const providersKey = selectedProviders.join(',')
+  const filterKey = [debouncedQuery.trim(), type, sortBy || '', genresKey, providersKey].join('|')
+  const [activeFilterKey, setActiveFilterKey] = useState(filterKey)
+
+  // Ajuste de estado durante o render (padrão do React pra estado derivado): zera
+  // paginação e resultados junto com a troca de filtro, pro fetch abaixo já rodar
+  // na página 1. Com useEffect sairia um request extra da página antiga.
+  // O loading entra aqui junto: sem ele haveria um frame pintado com a lista já
+  // vazia e loading false, piscando o EmptyState antes dos skeletons.
+  if (filterKey !== activeFilterKey) {
+    setActiveFilterKey(filterKey)
+    setPage(1)
+    setResults([])
+    setLoading(true)
+    setLoadMoreFailed(false)
+  }
+
   useEffect(() => {
     let cancelled = false
     const doFetch = async () => {
@@ -178,20 +193,27 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
       try {
         const q = debouncedQuery.trim()
         const data = q
-          ? await searchExternal(q, type, currentPage)
-          : await (type === 'series' ? getPopularSeries : getPopularMovies)(currentPage, {
+          ? await searchExternal(q, type, page)
+          : await (type === 'series' ? getPopularSeries : getPopularMovies)(page, {
               sortBy: sortBy || undefined,
               genres: selectedGenres,
               providers: selectedProviders,
             })
         if (cancelled) return
-        setResults(data.results || [])
+        const incoming = data.results || []
+        setResults((prev) => (page === 1 ? incoming : dedupeById([...prev, ...incoming])))
         setTotalPages(data.totalPages || 1)
       } catch (error) {
         if (cancelled) return
         console.error('Erro ao buscar:', error)
-        setResults([])
-        setTotalPages(1)
+        if (page === 1) {
+          setResults([])
+          setTotalPages(1)
+        } else {
+          // Trava o auto-load: sem isso o sentinel continua visível e dispara a
+          // página seguinte em loop, um toast por tentativa, com o upstream fora.
+          setLoadMoreFailed(true)
+        }
         notifyExternalError(error)
       } finally {
         if (!cancelled) setLoading(false)
@@ -200,7 +222,27 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     doFetch()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, type, currentPage, sortBy, genresKey, providersKey])
+  }, [filterKey, page, retryToken])
+
+  const hasMore = page < Math.min(totalPages, TMDB_MAX_PAGE)
+  const sentinelRef = useInfiniteScroll(() => setPage((p) => p + 1), {
+    enabled: !loading && hasMore && !loadMoreFailed && results.length > 0,
+  })
+
+  // Refaz a mesma página que falhou (page não muda, o token é que destrava o efeito).
+  const retryLoadMore = () => {
+    setLoadMoreFailed(false)
+    setRetryToken((t) => t + 1)
+  }
+
+  // Compara o valor anterior (não um boolean de mount) pra não rolar no remonte
+  // do StrictMode nem na primeira carga, só quando o filtro realmente muda.
+  const prevFilterKey = useRef(filterKey)
+  useEffect(() => {
+    if (prevFilterKey.current === filterKey) return
+    prevFilterKey.current = filterKey
+    window.scrollTo({ top: 0 })
+  }, [filterKey])
 
   const notifyExternalError = (error) => {
     if (!error.response) {
@@ -214,11 +256,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
   const handleSearchSubmit = (e) => {
     // busca é automática via useEffect; form existe pra UX (Enter, mobile submit)
     e.preventDefault()
-  }
-
-  const goToPage = (page) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const toggleSortDate = () => {
@@ -243,7 +280,6 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
     else next.set('genres', genresArr.join(','))
     if (!providersArr || providersArr.length === 0) next.delete('providers')
     else next.set('providers', providersArr.join(','))
-    next.delete('page')
     setSearchParams(next)
   }
 
@@ -402,7 +438,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           </div>
         </form>
 
-        {loading && (
+        {loading && results.length === 0 && (
           <div className="results-grid">
             {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
               <SkeletonCard key={i} />
@@ -410,7 +446,7 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           </div>
         )}
 
-        {!loading && results.length > 0 && (
+        {results.length > 0 && (
           <div className={viewMode === VIEW_MODES.POSTERS ? 'ui-poster-grid' : 'results-grid'}>
             {results.map((item) => {
               const userMovie = findByItem(item)
@@ -473,8 +509,12 @@ const Search = ({ mode = MODE.PAGE, onComplete, onSkip }) => {
           </div>
         )}
 
-        {!loading && totalPages > 0 && (
-          <Pagination current={currentPage} total={totalPages} onChange={goToPage} />
+        {results.length > 0 && hasMore && (
+          <div ref={sentinelRef} className="ui-infinite-sentinel">
+            {loadMoreFailed
+              ? <Button size="sm" pill onClick={retryLoadMore}>Tentar de novo</Button>
+              : loading && <Spinner />}
+          </div>
         )}
 
         {!loading && results.length === 0 && (

@@ -254,3 +254,11 @@ code {
 .age-rating--tier-5 { background: var(--age-rating-tier-5); }
 .age-rating--tier-6 { background: var(--age-rating-tier-6); }
 
+.ui-infinite-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-4) 0;
+}
+

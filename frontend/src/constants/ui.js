@@ -18,6 +18,9 @@ export const RECENT_FRIENDS_LIMIT = 20
 
 export const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp'
 
+// TMDB não serve além da página 500
+export const TMDB_MAX_PAGE = 500
+
 export const VIEW_MODES = { LIST: 'list', POSTERS: 'posters' }
 
 export const DEFAULT_VIEW_MODE = VIEW_MODES.LIST

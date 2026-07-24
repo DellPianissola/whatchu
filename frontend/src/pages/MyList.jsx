@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, Calendar, Clapperboard, Flame, Star, Type, ArrowDown, ArrowUp } from 'lucide-react'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
@@ -17,11 +17,11 @@ import FilterSheet from '../components/FilterSheet.jsx'
 import FilterSheetTrigger from '../components/FilterSheetTrigger.jsx'
 import SortCategoriesSection from '../components/SortCategoriesSection.jsx'
 import Button from '../components/Button.jsx'
-import Pagination from '../components/Pagination.jsx'
 import { useDebounce } from '../hooks/useDebounce.js'
 import { useFilterSheet } from '../hooks/useFilterSheet.js'
 import { useStreamingProviders } from '../hooks/useStreamingProviders.js'
 import { useLocalStorageState } from '../hooks/useLocalStorageState.js'
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js'
 import { ROUTES } from '../constants/routes.js'
 import { SEARCH_DEBOUNCE_MS, VIEW_MODES, DEFAULT_VIEW_MODE } from '../constants/ui.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
@@ -114,11 +114,6 @@ const parseTypesParam = (csv) => {
 
 const parseSortParam = (value) => VALID_SORTS.includes(value) ? value : null
 
-const parsePageParam = (value) => {
-  const n = parseInt(value, 10)
-  return Number.isFinite(n) && n > 0 ? n : 1
-}
-
 const sortMovies = (list, sortBy) => {
   const [field, direction] = (sortBy || DEFAULT_SORT).split('_')
   const dir = direction === 'asc' ? 1 : -1
@@ -172,7 +167,6 @@ const MyList = () => {
   const sortBy         = parseSortParam(searchParams.get('sortBy')) ?? DEFAULT_SORT
   const selectedGenres    = parseCsvParam(searchParams.get('genres'))
   const selectedProviders = parseCsvParam(searchParams.get('providers'))
-  const currentPage    = parsePageParam(searchParams.get('page'))
 
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
@@ -181,6 +175,7 @@ const MyList = () => {
 
   const [expandedItemId, setExpandedItemId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [viewMode, setViewMode] = useLocalStorageState(STORAGE_KEYS.VIEW_MODE, DEFAULT_VIEW_MODE)
 
   const expandedLive = userMovies.find((m) => m.id === expandedItemId) ?? null
@@ -209,7 +204,6 @@ const MyList = () => {
   const updateParams = (mutate) => {
     const next = new URLSearchParams(searchParams)
     mutate(next)
-    next.delete('page')
     setSearchParams(next, { replace: true })
   }
 
@@ -222,14 +216,6 @@ const MyList = () => {
     })
   }
 
-  const setCurrentPage = (page) => {
-    const next = new URLSearchParams(searchParams)
-    if (page === 1) next.delete('page')
-    else next.set('page', String(page))
-    setSearchParams(next, { replace: true })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   const commitSheetFiltersToUrl = ({ sortBy: sortByValue, watched: watchedValue, genres: genresArr, providers: providersArr }) => {
     const next = new URLSearchParams(searchParams)
     if (!sortByValue || sortByValue === DEFAULT_SORT) next.delete('sortBy')
@@ -240,7 +226,6 @@ const MyList = () => {
     else next.set('genres', genresArr.join(','))
     if (!providersArr || providersArr.length === 0) next.delete('providers')
     else next.set('providers', providersArr.join(','))
-    next.delete('page')
     setSearchParams(next, { replace: true })
   }
 
@@ -279,11 +264,6 @@ const MyList = () => {
     defaults: { sortBy: DEFAULT_SORT, watched: '', genres: [], providers: [] },
     onCommit: commitSheetFiltersToUrl,
   })
-
-  useEffect(() => {
-    if (currentPage !== 1) setCurrentPage(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery])
 
   const availableGenres = useMemo(() => {
     const set = new Set()
@@ -334,12 +314,35 @@ const MyList = () => {
     return sortMovies(list, sortBy)
   }, [userMovies, types, watched, selectedGenres, selectedProviders, providerTmdbIdsByKey, debouncedQuery, sortBy])
 
-  const totalPages = Math.max(1, Math.ceil(filteredMovies.length / PAGE_SIZE))
-  const safePage   = Math.min(currentPage, totalPages)
-  const pagedMovies = useMemo(
-    () => filteredMovies.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
-    [filteredMovies, safePage]
+  const listKey = [
+    types.join(','), watched, selectedGenres.join(','),
+    selectedProviders.join(','), debouncedQuery.trim(), sortBy,
+  ].join('|')
+  const [activeListKey, setActiveListKey] = useState(listKey)
+
+  // Ajuste de estado durante o render (padrão do React pra estado derivado):
+  // reseta a janela junto com a troca de filtro. Com useEffect haveria um frame
+  // exibindo a lista nova ainda fatiada pela contagem antiga.
+  if (listKey !== activeListKey) {
+    setActiveListKey(listKey)
+    setVisibleCount(PAGE_SIZE)
+  }
+
+  const visibleMovies = filteredMovies.slice(0, visibleCount)
+  const hasMore = visibleCount < filteredMovies.length
+  const sentinelRef = useInfiniteScroll(
+    () => setVisibleCount((c) => c + PAGE_SIZE),
+    { enabled: hasMore }
   )
+
+  // Compara o valor anterior (não um boolean de mount) pra não rolar no remonte
+  // do StrictMode nem na primeira carga, só quando o filtro realmente muda.
+  const prevListKey = useRef(listKey)
+  useEffect(() => {
+    if (prevListKey.current === listKey) return
+    prevListKey.current = listKey
+    window.scrollTo({ top: 0 })
+  }, [listKey])
 
   const counts = useMemo(() => ({
     total:  filteredMovies.length,
@@ -600,11 +603,9 @@ const MyList = () => {
         ) : (
           <>
             <div className={viewMode === VIEW_MODES.POSTERS ? 'ui-poster-grid' : 'movies-grid'}>
-              {pagedMovies.map(renderMovieCard)}
+              {visibleMovies.map(renderMovieCard)}
             </div>
-            {totalPages > 1 && (
-              <Pagination current={safePage} total={totalPages} onChange={setCurrentPage} />
-            )}
+            {hasMore && <div ref={sentinelRef} className="ui-infinite-sentinel" />}
           </>
         )}
       </div>

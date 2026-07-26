@@ -50,3 +50,35 @@ describe('formatSeriesDetails', () => {
     expect(details.seasonList).toEqual([])
   })
 })
+
+describe('cast', () => {
+  const withCast = (cast) => ({ id: 1, name: 'Série', credits: { cast } })
+
+  it('devolve nome e papel de cada pessoa', () => {
+    const { cast } = tmdbService.formatSeriesDetails(withCast([
+      { name: 'Ella Bright',    character: 'Rosie' },
+      { name: 'Belmont Cameli', character: 'Cooper' },
+    ]))
+
+    expect(cast).toEqual([
+      { name: 'Ella Bright',    character: 'Rosie' },
+      { name: 'Belmont Cameli', character: 'Cooper' },
+    ])
+  })
+
+  it('normaliza papel vazio para null', () => {
+    const { cast } = tmdbService.formatSeriesDetails(withCast([{ name: 'Sem Papel', character: '' }]))
+
+    expect(cast[0].character).toBeNull()
+  })
+
+  it('limita a 12 pessoas', () => {
+    const muitos = Array.from({ length: 30 }, (_, i) => ({ name: `Pessoa ${i}`, character: `Papel ${i}` }))
+
+    expect(tmdbService.formatSeriesDetails(withCast(muitos)).cast).toHaveLength(12)
+  })
+
+  it('devolve lista vazia sem credits', () => {
+    expect(tmdbService.formatSeriesDetails({ id: 1, name: 'Série' }).cast).toEqual([])
+  })
+})

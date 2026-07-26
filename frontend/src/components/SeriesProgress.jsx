@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import IconButton from './IconButton.jsx'
+import { useState, useRef, useEffect } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
+import ScrollStrip from './ScrollStrip.jsx'
 import { pluralize } from '../utils/content.js'
 import {
   watchableSeasons,
@@ -11,117 +11,64 @@ import {
 import './SeriesProgress.css'
 
 const EpisodeStrip = ({ season, pointer, lastAired, onPick }) => {
-  const stripRef = useRef(null)
-  const currentRef = useRef(null)
-  const [edges, setEdges] = useState({ left: false, right: false })
+  const tabStopRef = useRef(null)
   const [focused, setFocused] = useState(null)
 
   const aired   = airedInSeason(season, lastAired)
   const watched = watchedInSeason(season, pointer)
   const current = pointer?.season === season.number ? pointer.episode : null
 
-  const measure = useCallback(() => {
-    const strip = stripRef.current
-    if (!strip) return
-    const max = strip.scrollWidth - strip.clientWidth
-    setEdges({ left: strip.scrollLeft > 1, right: strip.scrollLeft < max - 1 })
-  }, [])
-
-  useEffect(() => {
-    const strip = stripRef.current
-    if (!strip) return
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(strip)
-    return () => observer.disconnect()
-  }, [measure])
-
-  useEffect(() => {
-    const strip = stripRef.current
-    if (!strip) return
-    const chip = currentRef.current
-    // scrollIntoView arrastaria o modal na vertical junto — posiciona só a faixa.
-    strip.scrollLeft = chip
-      ? chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2
-      : 0
-  }, [current])
-
-  const scrollBy = (direction) => {
-    const strip = stripRef.current
-    if (strip) strip.scrollBy({ left: direction * strip.clientWidth, behavior: 'smooth' })
-  }
-
   // Roving tabindex: a faixa é uma parada de tab só, senão 300 episódios viram
-  // 300 paradas. Setinha anda entre os chips.
+  // 300 paradas.
   const tabStop = focused ?? current ?? 1
+
+  useEffect(() => {
+    if (focused !== null) tabStopRef.current?.focus()
+  }, [focused])
+
   const handleKeyDown = (event) => {
     const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
     if (!delta) return
     event.preventDefault()
-    const last = aired || 1
-    const next = Math.min(last, Math.max(1, tabStop + delta))
-    setFocused(next)
-    stripRef.current?.querySelector(`[data-episode="${next}"]`)?.focus()
+    setFocused(Math.min(aired || 1, Math.max(1, tabStop + delta)))
   }
 
   const episodes = Array.from({ length: season.episodeCount }, (_, i) => i + 1)
 
   return (
-    <div className="ui-series-progress-strip-wrap">
-      <IconButton
-        icon={<ChevronLeft size={16} />}
-        label="Episódios anteriores"
-        size="sm"
-        className="ui-series-progress-arrow"
-        onClick={() => scrollBy(-1)}
-        disabled={!edges.left}
-        tabIndex={-1}
-      />
+    <ScrollStrip
+      prevLabel="Episódios anteriores"
+      nextLabel="Próximos episódios"
+      activeRef={tabStopRef}
+      activeKey={`${season.number}:${tabStop}`}
+      onKeyDown={handleKeyDown}
+    >
+      {episodes.map(episode => {
+        const isCurrent = episode === current
+        const unaired   = episode > aired
+        const state     = isCurrent ? 'current'
+          : episode <= watched ? 'watched'
+          : unaired ? 'unaired'
+          : 'pending'
 
-      <div
-        className="ui-series-progress-strip"
-        ref={stripRef}
-        onScroll={measure}
-        onKeyDown={handleKeyDown}
-      >
-        {episodes.map(episode => {
-          const isCurrent = episode === current
-          const unaired   = episode > aired
-          const state     = isCurrent ? 'current'
-            : episode <= watched ? 'watched'
-            : unaired ? 'unaired'
-            : 'pending'
-
-          return (
-            <button
-              key={episode}
-              ref={isCurrent ? currentRef : null}
-              type="button"
-              data-episode={episode}
-              className={`ui-series-progress-chip is-${state}`}
-              aria-pressed={isCurrent}
-              aria-label={`Temporada ${season.number}, episódio ${episode}${unaired ? ' (não lançado)' : ''}`}
-              disabled={unaired}
-              title={unaired ? 'Episódio ainda não lançado' : ''}
-              tabIndex={episode === tabStop ? 0 : -1}
-              onClick={() => onPick(season.number, episode)}
-            >
-              {episode}
-            </button>
-          )
-        })}
-      </div>
-
-      <IconButton
-        icon={<ChevronRight size={16} />}
-        label="Próximos episódios"
-        size="sm"
-        className="ui-series-progress-arrow"
-        onClick={() => scrollBy(1)}
-        disabled={!edges.right}
-        tabIndex={-1}
-      />
-    </div>
+        return (
+          <button
+            key={episode}
+            ref={episode === tabStop ? tabStopRef : null}
+            type="button"
+            className={`ui-series-progress-chip is-${state}`}
+            aria-pressed={isCurrent}
+            aria-label={`Temporada ${season.number}, episódio ${episode}${unaired ? ' (não lançado)' : ''}`}
+            disabled={unaired}
+            title={unaired ? 'Episódio ainda não lançado' : ''}
+            tabIndex={episode === tabStop ? 0 : -1}
+            onClick={() => onPick(season.number, episode)}
+          >
+            {episode}
+          </button>
+        )
+      })}
+    </ScrollStrip>
   )
 }
 

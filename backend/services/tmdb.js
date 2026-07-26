@@ -32,8 +32,11 @@ const yearFromDate = (d) => (d ? new Date(d).getFullYear() : null)
 const trailerKey = (videos) =>
   videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key || null
 
-const castNames = (credits, limit = 5) =>
-  credits?.cast?.slice(0, limit).map(a => a.name) || []
+const castMembers = (credits, limit = 12) =>
+  credits?.cast?.slice(0, limit).map(a => ({
+    name:      a.name,
+    character: a.character || null,
+  })) || []
 
 const seasonList = (seasons) =>
   (seasons || [])
@@ -290,7 +293,7 @@ class TMDBService {
       rating: roundRating(data.vote_average),
       externalId: data.id.toString(),
       source: 'TMDB',
-      cast: castNames(data.credits),
+      cast: castMembers(data.credits),
       trailer: trailerKey(data.videos),
       watchProviders: this._formatWatchProviders(data['watch/providers']),
       ageRating: this._formatAgeRating(data),

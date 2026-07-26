@@ -13,7 +13,7 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
 import { useHistoryBackClose } from '../hooks/useHistoryBackClose.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
 import { useMovieActions } from '../hooks/useMovieActions.js'
-import { watchableSeasons, completesSeries } from '../utils/seriesProgress.js'
+import { watchableSeasons, isCaughtUp, watchedCorrection } from '../utils/seriesProgress.js'
 import Tooltip from './Tooltip.jsx'
 import SeriesProgress from './SeriesProgress.jsx'
 import './CardModal.css'
@@ -66,6 +66,27 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [descriptionOverflows, setDescriptionOverflows] = useState(false)
   const descriptionRef = useRef(null)
+  const progressSyncRef = useRef(null)
+  const listed = findByItem(item)
+
+  // Único ponto do app com o ponteiro e o catálogo na mão ao mesmo tempo — a
+  // MyList não busca TMDB, então episódio novo não derruba a flag em lugar nenhum.
+  useEffect(() => {
+    if (!richDetails) return
+    const correction = watchedCorrection({
+      movie:      listed,
+      seasonList: richDetails.seasonList,
+      lastAired:  richDetails.lastAired,
+    })
+    if (!correction) return
+
+    // Chave com o alvo, não um booleano: se o ponteiro mudar, a correção roda de novo.
+    const attempt = `${listed.id}:${correction.pointer.season}:${correction.pointer.episode}:${correction.watched}`
+    if (progressSyncRef.current === attempt) return
+    progressSyncRef.current = attempt
+
+    setEpisodeProgress(listed, correction.pointer, correction.watched, { silent: true })
+  }, [listed, richDetails, setEpisodeProgress])
 
   useEffect(() => {
     const el = descriptionRef.current
@@ -96,7 +117,6 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   const description = item.description?.trim()
   const canExpandDescription = description && descriptionOverflows
 
-  const listed = findByItem(item)
   // Com o progresso na tela, contagem de temporada/episódio viraria informação repetida.
   const showProgress = item.type === 'SERIES' && !!listed
   const pointer = listed?.lastSeason && listed?.lastEpisode
@@ -104,11 +124,10 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
     : null
 
   const handleProgress = (next) => {
-    setEpisodeProgress(listed, next, completesSeries({
+    setEpisodeProgress(listed, next, isCaughtUp({
       seasons:   watchableSeasons(richDetails?.seasonList),
       pointer:   next,
       lastAired: richDetails?.lastAired,
-      hasEnded:  richDetails?.hasEnded,
     }))
   }
   const hasSeries = !showProgress && (richDetails?.seasons > 0 || richDetails?.episodes > 0)

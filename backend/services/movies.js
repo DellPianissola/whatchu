@@ -143,13 +143,15 @@ const buildUpdateData = (payload, movie) => {
 
   // `watched` toggle: marcar como assistido seta watchedAt automaticamente;
   // desmarcar limpa watchedAt. watchedAt explícito no payload sobrescreve.
+  //
+  // Progresso é a exceção: ele nunca mexe numa data que já existe, só preenche
+  // quando está vazia. Sem isso o ciclo de rewatch (desmarcar no T1E1, remarcar
+  // no fim) perderia o registro de quando o usuário terminou a série.
   if (payload.watched !== undefined) {
     data.watched = Boolean(payload.watched)
     if (payload.watched && !payload.watchedAt) {
-      data.watchedAt = new Date()
+      if (!progress || !movie.watchedAt) data.watchedAt = new Date()
     } else if (!payload.watched && !progress) {
-      // Rewatch move o ponteiro pro começo e desmarca watched — apagar a data
-      // perderia o registro de quando o usuário terminou a série de fato.
       data.watchedAt = null
     }
   }

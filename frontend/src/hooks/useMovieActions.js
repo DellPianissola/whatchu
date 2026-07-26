@@ -76,14 +76,16 @@ export const useMovieActions = () => {
     }
   }, [toggleWatched, toast])
 
-  const setEpisodeProgress = useCallback(async (movie, pointer, watched) => {
+  // `silent` é pra correção automática de watched: o usuário só abriu o modal,
+  // então toast de erro seria sobre uma ação que ele não pediu.
+  const setEpisodeProgress = useCallback(async (movie, pointer, watched, { silent = false } = {}) => {
     const userMovie = findByItem(movie) || movie
     if (!userMovie?.id) return
     try {
       await setProgress(userMovie, pointer, watched)
     } catch (error) {
       console.error('Erro ao salvar progresso:', error)
-      toast.error(apiErrorMessage(error, 'Erro ao salvar progresso'))
+      if (!silent) toast.error(apiErrorMessage(error, 'Erro ao salvar progresso'))
     }
   }, [setProgress, findByItem, toast])
 

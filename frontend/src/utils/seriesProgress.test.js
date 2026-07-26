@@ -5,7 +5,8 @@ import {
   airedInSeason,
   percentWatched,
   summarizeProgress,
-  completesSeries,
+  isCaughtUp,
+  watchedCorrection,
 } from './seriesProgress.js'
 
 const season = (number, episodeCount) => ({ number, episodeCount })
@@ -91,24 +92,87 @@ describe('summarizeProgress', () => {
   })
 })
 
-describe('completesSeries', () => {
+describe('isCaughtUp', () => {
   const seasons = [season(1, 10), season(2, 12)]
   const finale = { season: 2, episode: 12 }
 
-  it('reconhece o fim de série encerrada', () => {
-    expect(completesSeries({ seasons, pointer: finale, lastAired: finale, hasEnded: true })).toBe(true)
+  it('reconhece quem está no último episódio exibido', () => {
+    expect(isCaughtUp({ seasons, pointer: finale, lastAired: finale })).toBe(true)
   })
 
-  it('não conclui série em produção, mesmo em dia', () => {
-    expect(completesSeries({ seasons, pointer: finale, lastAired: finale, hasEnded: false })).toBe(false)
+  it('vale para série em produção, no fim do que já saiu', () => {
+    const parcial = { season: 2, episode: 5 }
+    expect(isCaughtUp({ seasons, pointer: parcial, lastAired: parcial })).toBe(true)
   })
 
-  it('não conclui com episódio faltando', () => {
+  it('deixa de valer quando um episódio novo estreia', () => {
+    const parado = { season: 2, episode: 5 }
+    expect(isCaughtUp({ seasons, pointer: parado, lastAired: { season: 2, episode: 6 } })).toBe(false)
+  })
+
+  it('não vale com episódio faltando', () => {
     const pointer = { season: 2, episode: 11 }
-    expect(completesSeries({ seasons, pointer, lastAired: finale, hasEnded: true })).toBe(false)
+    expect(isCaughtUp({ seasons, pointer, lastAired: finale })).toBe(false)
   })
 
-  it('não conclui sem ponteiro', () => {
-    expect(completesSeries({ seasons, pointer: null, lastAired: finale, hasEnded: true })).toBe(false)
+  it('não vale sem ponteiro', () => {
+    expect(isCaughtUp({ seasons, pointer: null, lastAired: finale })).toBe(false)
+  })
+
+  it('não vale em série sem estreia', () => {
+    expect(isCaughtUp({ seasons, pointer: finale, lastAired: null })).toBe(false)
+  })
+})
+
+describe('watchedCorrection', () => {
+  const seasonList = [season(1, 10), season(2, 12)]
+  const serie = (overrides) => ({
+    id: 'm1',
+    type: 'SERIES',
+    lastSeason: 2,
+    lastEpisode: 5,
+    watched: false,
+    ...overrides,
+  })
+
+  it('corrige para true quem está em dia e consta como não assistido', () => {
+    const result = watchedCorrection({
+      movie: serie({ watched: false }),
+      seasonList,
+      lastAired: { season: 2, episode: 5 },
+    })
+
+    expect(result).toEqual({ pointer: { season: 2, episode: 5 }, watched: true })
+  })
+
+  it('corrige para false quando estreou episódio novo', () => {
+    const result = watchedCorrection({
+      movie: serie({ watched: true }),
+      seasonList,
+      lastAired: { season: 2, episode: 6 },
+    })
+
+    expect(result).toEqual({ pointer: { season: 2, episode: 5 }, watched: false })
+  })
+
+  it('não corrige quando a flag já bate', () => {
+    expect(watchedCorrection({
+      movie: serie({ watched: true }),
+      seasonList,
+      lastAired: { season: 2, episode: 5 },
+    })).toBeNull()
+  })
+
+  it('ignora série sem ponteiro', () => {
+    expect(watchedCorrection({
+      movie: serie({ lastSeason: null, lastEpisode: null }),
+      seasonList,
+      lastAired: { season: 2, episode: 5 },
+    })).toBeNull()
+  })
+
+  it('ignora filme e movie ausente', () => {
+    expect(watchedCorrection({ movie: serie({ type: 'MOVIE' }), seasonList, lastAired: null })).toBeNull()
+    expect(watchedCorrection({ movie: null, seasonList, lastAired: null })).toBeNull()
   })
 })

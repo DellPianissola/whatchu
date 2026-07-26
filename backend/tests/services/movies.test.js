@@ -238,6 +238,47 @@ describe('movies service', () => {
       expect(updated.watchedAt).toEqual(terminadaEm)
     })
 
+    it('remarcar watched junto com progresso preserva a data original', async () => {
+      const terminadaEm = new Date('2026-03-10T12:00:00Z')
+      const serie = await createMovieFactory(profile.id, {
+        type: 'SERIES',
+        watched: false,
+        watchedAt: terminadaEm,
+        lastSeason: 1,
+        lastEpisode: 1,
+      })
+
+      const updated = await updateMovie(user.id, serie.id, {
+        lastSeason: 2,
+        lastEpisode: 12,
+        watched: true,
+      })
+
+      expect(updated.watched).toBe(true)
+      expect(updated.watchedAt).toEqual(terminadaEm)
+    })
+
+    it('progresso preenche watchedAt quando ainda não havia data', async () => {
+      const serie = await createMovieFactory(profile.id, { type: 'SERIES', watched: false })
+
+      const updated = await updateMovie(user.id, serie.id, {
+        lastSeason: 1,
+        lastEpisode: 10,
+        watched: true,
+      })
+
+      expect(updated.watchedAt).toBeInstanceOf(Date)
+    })
+
+    it('marcar watched pelo toggle restampa a data', async () => {
+      const antiga = new Date('2020-01-01T00:00:00Z')
+      const serie  = await createMovieFactory(profile.id, { type: 'SERIES', watchedAt: antiga })
+
+      const updated = await updateMovie(user.id, serie.id, { watched: true })
+
+      expect(updated.watchedAt).not.toEqual(antiga)
+    })
+
     it('desmarcar watched sem progresso continua limpando watchedAt', async () => {
       const serie = await createMovieFactory(profile.id, {
         type: 'SERIES',

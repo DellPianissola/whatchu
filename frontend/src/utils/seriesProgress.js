@@ -36,10 +36,22 @@ export const summarizeProgress = (seasons, pointer, lastAired) => {
   return { aired, watched, percent: percentWatched(watched, aired) }
 }
 
-// Série em produção pode estar 100% em dia sem ter acabado — só `hasEnded`
-// autoriza tratar o ponteiro no fim como "assisti a série".
-export const completesSeries = ({ seasons, pointer, lastAired, hasEnded }) => {
-  if (!hasEnded || !pointer) return false
+export const isCaughtUp = ({ seasons, pointer, lastAired }) => {
+  if (!pointer) return false
   const { watched, aired } = summarizeProgress(seasons, pointer, lastAired)
   return aired > 0 && watched >= aired
+}
+
+export const watchedCorrection = ({ movie, seasonList, lastAired }) => {
+  if (!movie || movie.type !== 'SERIES') return null
+  if (!movie.lastSeason || !movie.lastEpisode) return null
+
+  const pointer = { season: movie.lastSeason, episode: movie.lastEpisode }
+  const watched = isCaughtUp({
+    seasons: watchableSeasons(seasonList),
+    pointer,
+    lastAired,
+  })
+
+  return watched === movie.watched ? null : { pointer, watched }
 }

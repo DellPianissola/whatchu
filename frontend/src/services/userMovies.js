@@ -17,12 +17,13 @@ export const buildMoviePayload = (externalItem, priority = DEFAULT_PRIORITY) => 
 
 export const findUserMovie = (userMovies, item) => {
   if (!item) return null
+  const type = String(item.type).toUpperCase()
   const externalId = item.externalId
+  // IDs do TMDB colidem entre movie e tv — sem o type, um filme casaria com a série homônima.
   if (externalId) {
-    const byExternal = userMovies.find((m) => m.externalId === externalId)
+    const byExternal = userMovies.find((m) => m.externalId === externalId && m.type === type)
     if (byExternal) return byExternal
   }
-  const type = String(item.type).toUpperCase()
   return userMovies.find((m) => m.title === item.title && m.type === type) || null
 }
 

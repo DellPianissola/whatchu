@@ -1,15 +1,17 @@
 import { defineConfig } from 'vitest/config'
+import { INTEGRATION_TESTS } from './tests/helpers/integrationTests.js'
 
 export default defineConfig({
   test: {
-    // Testes unitários (lib, middleware, external com mocks).
-    // Testes de serviço com DB real ficam em vitest.integration.config.js.
-    include: [
-      'tests/lib/**/*.test.js',
-      'tests/middleware/**/*.test.js',
-      'tests/routes/**/*.test.js',
-      'tests/services/external.test.js',
-      'tests/services/externalLottery.test.js',
+    // Pega tudo e exclui os que precisam de DB real — arquivo novo entra no unit
+    // sozinho, em vez de ficar fora da suíte em silêncio por falta de cadastro.
+    // tests/manual/ fica fora: dispara email real quando RESEND_API_KEY existe.
+    include: ['tests/**/*.test.js'],
+    exclude: [
+      '**/node_modules/**',
+      '**/.git/**',
+      'tests/manual/**',
+      ...INTEGRATION_TESTS,
     ],
 
     // Ambiente Node — não DOM

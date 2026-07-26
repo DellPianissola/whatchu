@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { INTEGRATION_TESTS } from './tests/helpers/integrationTests.js'
 
 // URL do banco de testes. Default aponta pro postgres-test exposto em localhost:5433
 // (workflow dev do host). Quando rodando dentro da network do docker compose,
@@ -10,15 +11,7 @@ const TEST_DATABASE_URL =
 
 export default defineConfig({
   test: {
-    // Só os testes de serviço que precisam de banco real
-    include: [
-      'tests/services/lottery.test.js',
-      'tests/services/profiles.test.js',
-      'tests/services/auth.test.js',
-      'tests/services/movies.test.js',
-      'tests/services/storage.test.js',
-      'tests/services/friends.test.js',
-    ],
+    include: INTEGRATION_TESTS,
 
     environment: 'node',
     globals: true,

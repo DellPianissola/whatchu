@@ -35,6 +35,16 @@ const trailerKey = (videos) =>
 const castNames = (credits, limit = 5) =>
   credits?.cast?.slice(0, limit).map(a => a.name) || []
 
+const seasonList = (seasons) =>
+  (seasons || [])
+    .filter(s => s.episode_count > 0)
+    .map(s => ({
+      number:       s.season_number,
+      episodeCount: s.episode_count,
+      airDate:      s.air_date || null,
+    }))
+    .sort((a, b) => a.number - b.number)
+
 const paginated = (data, results) => ({
   results,
   totalPages:   Math.min(data.total_pages || 1, TMDB_MAX_PAGES),
@@ -311,6 +321,10 @@ class TMDBService {
       duration: data.episode_run_time?.[0] || null,
       seasons: data.number_of_seasons,
       episodes: data.number_of_episodes,
+      seasonList: seasonList(data.seasons),
+      lastAired: data.last_episode_to_air
+        ? { season: data.last_episode_to_air.season_number, episode: data.last_episode_to_air.episode_number }
+        : null,
     }
   }
 }

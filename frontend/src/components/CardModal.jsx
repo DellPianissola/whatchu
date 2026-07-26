@@ -12,7 +12,9 @@ import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
 import { useHistoryBackClose } from '../hooks/useHistoryBackClose.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
+import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import Tooltip from './Tooltip.jsx'
+import SeriesProgress from './SeriesProgress.jsx'
 import './CardModal.css'
 
 const TITLE_ID = 'card-modal-title'
@@ -59,9 +61,13 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   useBodyScrollLock(!!item)
   useHistoryBackClose(!!item, onClose)
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(item)
+  const { findByItem } = useUserMovies()
   const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [descriptionOverflows, setDescriptionOverflows] = useState(false)
+  const [progress, setProgress] = useState(null)
   const descriptionRef = useRef(null)
+
+  useEffect(() => setProgress(null), [item?.externalId, item?.type])
 
   useEffect(() => {
     const el = descriptionRef.current
@@ -92,7 +98,9 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   const description = item.description?.trim()
   const canExpandDescription = description && descriptionOverflows
 
-  const hasSeries = richDetails?.seasons || richDetails?.episodes
+  // Com o progresso na tela, contagem de temporada/episódio viraria informação repetida.
+  const showProgress = item.type === 'SERIES' && !!findByItem(item)
+  const hasSeries = !showProgress && (richDetails?.seasons > 0 || richDetails?.episodes > 0)
   const hasCrew   = richDetails?.director || richDetails?.cast?.length > 0 || richDetails?.studios?.length > 0
   const hasMeta   = richDetails?.status || hasSeries
 
@@ -225,12 +233,21 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             <section className="ui-detail-section">
               <span className="ui-detail-section-label">Sobre</span>
               <div className="ui-detail-stats">
-                {richDetails.seasons && <Stat label="Temporadas" value={richDetails.seasons} />}
-                {richDetails.episodes && <Stat label="Episódios" value={richDetails.episodes} />}
+                {hasSeries && richDetails.seasons > 0 && <Stat label="Temporadas" value={richDetails.seasons} />}
+                {hasSeries && richDetails.episodes > 0 && <Stat label="Episódios" value={richDetails.episodes} />}
                 {item.type === 'MOVIE' && duration && <Stat label="Duração" value={formatDuration(duration)} />}
                 {richDetails.status && <Stat label="Status" value={richDetails.status} />}
               </div>
             </section>
+          )}
+
+          {!richDetailsLoading && showProgress && (
+            <SeriesProgress
+              seasonList={richDetails?.seasonList}
+              lastAired={richDetails?.lastAired}
+              value={progress}
+              onChange={setProgress}
+            />
           )}
 
           {!richDetailsLoading && hasCrew && (

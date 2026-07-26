@@ -1,0 +1,199 @@
+.ui-series-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ui-series-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ui-series-progress-mark {
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ui-series-progress-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-series-progress-bar {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  background: var(--surface-deep);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.ui-series-progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+  transition: width 0.2s;
+}
+
+.ui-series-progress-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ui-series-progress-seasons {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-1);
+}
+
+.ui-series-progress-season {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-series-progress-season:last-child { border-bottom: none; }
+
+.ui-series-progress-season-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ui-series-progress-season-header:hover { color: var(--text); }
+
+.ui-series-progress-season-header.is-open { color: var(--text); }
+
+.ui-series-progress-season-caret {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.15s;
+}
+
+.ui-series-progress-season-header.is-open .ui-series-progress-season-caret {
+  transform: rotate(0deg);
+}
+
+.ui-series-progress-season-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-series-progress-season-meta,
+.ui-series-progress-season-done {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ui-series-progress-season-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--success);
+}
+
+.ui-series-progress-strip-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ui-series-progress-strip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.ui-series-progress-strip::-webkit-scrollbar { display: none; }
+
+.ui-series-progress-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  min-width: 32px;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  font-family: inherit;
+  text-align: center;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.ui-series-progress-chip:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.ui-series-progress-chip:active { transform: scale(0.94); }
+
+.ui-series-progress-chip.is-watched {
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  border-color: transparent;
+  color: var(--success);
+}
+
+.ui-series-progress-chip.is-current {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-on-media);
+  font-weight: 600;
+}
+
+.ui-series-progress-chip.is-unaired {
+  border-style: dashed;
+  color: var(--text-muted);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ui-series-progress-chip.is-unaired:hover {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.ui-series-progress-arrow {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.ui-series-progress-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.ui-series-progress-arrow:disabled:hover { background: transparent; }
+
+/* Setas são atalho de mouse — no touch o swipe já resolve e elas cobrem chips. */
+@media (max-width: 768px) {
+  .ui-series-progress-arrow { display: none; }
+}

@@ -6,6 +6,7 @@ import {
   removeUserMovie,
   changeUserMoviePriority,
   toggleUserMovieWatched,
+  setUserMovieProgress,
   findUserMovie,
 } from '../services/userMovies'
 
@@ -67,6 +68,30 @@ export const UserMoviesProvider = ({ children }) => {
     return updated
   }, [])
 
+  // Otimista e sem mesclar a resposta: cliques rápidos em chips vizinhos disparam
+  // PUTs concorrentes, e aplicar o que responder por último gravaria na tela um
+  // episódio diferente do que foi clicado.
+  const setProgress = useCallback(async (movie, pointer, watched) => {
+    const patch = {
+      lastSeason:  pointer?.season ?? null,
+      lastEpisode: pointer?.episode ?? null,
+      watched,
+    }
+    const previous = {
+      lastSeason:  movie.lastSeason ?? null,
+      lastEpisode: movie.lastEpisode ?? null,
+      watched:     movie.watched,
+    }
+
+    setUserMovies((prev) => prev.map((m) => m.id === movie.id ? { ...m, ...patch } : m))
+    try {
+      await setUserMovieProgress(movie.id, pointer, watched)
+    } catch (error) {
+      setUserMovies((prev) => prev.map((m) => m.id === movie.id ? { ...m, ...previous } : m))
+      throw error
+    }
+  }, [])
+
   const findByItem = useCallback((item) => findUserMovie(userMovies, item), [userMovies])
 
   const value = useMemo(() => ({
@@ -78,8 +103,9 @@ export const UserMoviesProvider = ({ children }) => {
     removeFromList,
     changePriority,
     toggleWatched,
+    setProgress,
     findByItem,
-  }), [userMovies, isLoading, error, refresh, addToList, removeFromList, changePriority, toggleWatched, findByItem])
+  }), [userMovies, isLoading, error, refresh, addToList, removeFromList, changePriority, toggleWatched, setProgress, findByItem])
 
   return (
     <UserMoviesContext.Provider value={value}>

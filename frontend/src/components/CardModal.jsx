@@ -12,7 +12,8 @@ import { useEscapeKey } from '../hooks/useEscapeKey.js'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock.js'
 import { useHistoryBackClose } from '../hooks/useHistoryBackClose.js'
 import { useRichDetails } from '../hooks/useRichDetails.js'
-import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
+import { useMovieActions } from '../hooks/useMovieActions.js'
+import { watchableSeasons, completesSeries } from '../utils/seriesProgress.js'
 import Tooltip from './Tooltip.jsx'
 import SeriesProgress from './SeriesProgress.jsx'
 import './CardModal.css'
@@ -61,13 +62,10 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   useBodyScrollLock(!!item)
   useHistoryBackClose(!!item, onClose)
   const { richDetails, richDetailsLoading, richDetailsError } = useRichDetails(item)
-  const { findByItem } = useUserMovies()
+  const { findByItem, setEpisodeProgress } = useMovieActions()
   const [descriptionOpen, setDescriptionOpen] = useState(false)
   const [descriptionOverflows, setDescriptionOverflows] = useState(false)
-  const [progress, setProgress] = useState(null)
   const descriptionRef = useRef(null)
-
-  useEffect(() => setProgress(null), [item?.externalId, item?.type])
 
   useEffect(() => {
     const el = descriptionRef.current
@@ -98,8 +96,21 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
   const description = item.description?.trim()
   const canExpandDescription = description && descriptionOverflows
 
+  const listed = findByItem(item)
   // Com o progresso na tela, contagem de temporada/episódio viraria informação repetida.
-  const showProgress = item.type === 'SERIES' && !!findByItem(item)
+  const showProgress = item.type === 'SERIES' && !!listed
+  const pointer = listed?.lastSeason && listed?.lastEpisode
+    ? { season: listed.lastSeason, episode: listed.lastEpisode }
+    : null
+
+  const handleProgress = (next) => {
+    setEpisodeProgress(listed, next, completesSeries({
+      seasons:   watchableSeasons(richDetails?.seasonList),
+      pointer:   next,
+      lastAired: richDetails?.lastAired,
+      hasEnded:  richDetails?.hasEnded,
+    }))
+  }
   const hasSeries = !showProgress && (richDetails?.seasons > 0 || richDetails?.episodes > 0)
   const hasCrew   = richDetails?.director || richDetails?.cast?.length > 0 || richDetails?.studios?.length > 0
   const hasMeta   = richDetails?.status || hasSeries
@@ -245,8 +256,8 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             <SeriesProgress
               seasonList={richDetails?.seasonList}
               lastAired={richDetails?.lastAired}
-              value={progress}
-              onChange={setProgress}
+              value={pointer}
+              onChange={handleProgress}
             />
           )}
 

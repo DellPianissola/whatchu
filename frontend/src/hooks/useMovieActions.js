@@ -8,7 +8,7 @@ import { PRIORITY_LABEL } from '../utils/content.js'
 export const useMovieActions = () => {
   const { profile } = useAuth()
   const { toast } = useNotify()
-  const { addToList, removeFromList, changePriority, toggleWatched, findByItem } = useUserMovies()
+  const { addToList, removeFromList, changePriority, toggleWatched, setProgress, findByItem } = useUserMovies()
   const [processingId, setProcessingId] = useState(null)
   // Guarda síncrona: processingId é state e atrasa um render, deixando dois
   // toques rápidos passarem. O Set bloqueia a reentrância no mesmo id na hora.
@@ -76,5 +76,16 @@ export const useMovieActions = () => {
     }
   }, [toggleWatched, toast])
 
-  return { processingId, addMovie, removeMovie, setPriority, setWatched, findByItem }
+  const setEpisodeProgress = useCallback(async (movie, pointer, watched) => {
+    const userMovie = findByItem(movie) || movie
+    if (!userMovie?.id) return
+    try {
+      await setProgress(userMovie, pointer, watched)
+    } catch (error) {
+      console.error('Erro ao salvar progresso:', error)
+      toast.error(apiErrorMessage(error, 'Erro ao salvar progresso'))
+    }
+  }, [setProgress, findByItem, toast])
+
+  return { processingId, addMovie, removeMovie, setPriority, setWatched, setEpisodeProgress, findByItem }
 }

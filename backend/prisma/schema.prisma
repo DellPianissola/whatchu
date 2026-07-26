@@ -96,6 +96,8 @@ model Movie {
   priority    Priority @default(MEDIUM)
   watched     Boolean  @default(false)
   watchedAt   DateTime?
+  lastSeason  Int?
+  lastEpisode Int?
   externalId  String?
   providers           Int[]     @default([])
   providersUpdatedAt  DateTime?

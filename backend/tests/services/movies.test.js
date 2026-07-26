@@ -189,6 +189,66 @@ describe('movies service', () => {
       const filmeAlheio = await createMovieFactory(outroPerfil.id)
       await expect(updateMovie(user.id, filmeAlheio.id, { title: 'X' })).rejects.toThrow(NotFoundError)
     })
+
+    it('grava o ponteiro de episódio em série', async () => {
+      const serie   = await createMovieFactory(profile.id, { type: 'SERIES' })
+      const updated = await updateMovie(user.id, serie.id, { lastSeason: 3, lastEpisode: 7 })
+      expect(updated.lastSeason).toBe(3)
+      expect(updated.lastEpisode).toBe(7)
+    })
+
+    it('limpa o ponteiro quando os dois campos vêm nulos', async () => {
+      const serie = await createMovieFactory(profile.id, { type: 'SERIES', lastSeason: 2, lastEpisode: 4 })
+      const updated = await updateMovie(user.id, serie.id, { lastSeason: null, lastEpisode: null })
+      expect(updated.lastSeason).toBeNull()
+      expect(updated.lastEpisode).toBeNull()
+    })
+
+    it('recusa temporada sem episódio', async () => {
+      const serie = await createMovieFactory(profile.id, { type: 'SERIES' })
+      await expect(updateMovie(user.id, serie.id, { lastSeason: 3 })).rejects.toThrow(ValidationError)
+    })
+
+    it('recusa temporada ou episódio menor que 1', async () => {
+      const serie = await createMovieFactory(profile.id, { type: 'SERIES' })
+      await expect(updateMovie(user.id, serie.id, { lastSeason: 0, lastEpisode: 1 })).rejects.toThrow(ValidationError)
+      await expect(updateMovie(user.id, serie.id, { lastSeason: 1, lastEpisode: 0 })).rejects.toThrow(ValidationError)
+    })
+
+    it('recusa ponteiro de episódio em filme', async () => {
+      const filme = await createMovieFactory(profile.id, { type: 'MOVIE' })
+      await expect(updateMovie(user.id, filme.id, { lastSeason: 1, lastEpisode: 1 })).rejects.toThrow(ValidationError)
+    })
+
+    it('desmarcar watched junto com progresso preserva watchedAt', async () => {
+      const terminadaEm = new Date('2026-03-10T12:00:00Z')
+      const serie = await createMovieFactory(profile.id, {
+        type: 'SERIES',
+        watched: true,
+        watchedAt: terminadaEm,
+      })
+
+      const updated = await updateMovie(user.id, serie.id, {
+        lastSeason: 1,
+        lastEpisode: 1,
+        watched: false,
+      })
+
+      expect(updated.watched).toBe(false)
+      expect(updated.watchedAt).toEqual(terminadaEm)
+    })
+
+    it('desmarcar watched sem progresso continua limpando watchedAt', async () => {
+      const serie = await createMovieFactory(profile.id, {
+        type: 'SERIES',
+        watched: true,
+        watchedAt: new Date(),
+      })
+
+      const updated = await updateMovie(user.id, serie.id, { watched: false })
+
+      expect(updated.watchedAt).toBeNull()
+    })
   })
 
   // ─── deleteMovie ──────────────────────────────────────────────────────────

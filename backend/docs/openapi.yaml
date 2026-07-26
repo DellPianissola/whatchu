@@ -143,6 +143,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Success'
+        '400':
+          description: |
+            Payload inválido. Nos campos de progresso: `lastSeason` e `lastEpisode`
+            devem vir juntos, ser maiores que zero, e só são aceitos em `SERIES`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Conteúdo não encontrado
           content:
@@ -358,6 +366,18 @@ components:
           format: date-time
           description: Data que foi assistido
           nullable: true
+        lastSeason:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Temporada onde o usuário parou. Só em séries; sempre acompanha lastEpisode
+          example: 3
+        lastEpisode:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Episódio onde o usuário parou. Só em séries; sempre acompanha lastSeason
+          example: 7
         externalId:
           type: string
           description: ID da API externa (TMDB, etc.)

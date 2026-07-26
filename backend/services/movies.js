@@ -95,9 +95,35 @@ const requireOwnedMovie = async (movieId, profileId) => {
   return movie
 }
 
+// Valida o ponteiro "onde parei". Só formato: conferir se o episódio existe de
+// verdade exigiria chamar o TMDB em cada save.
+const normalizeProgress = (payload, movie) => {
+  const touched = ['lastSeason', 'lastEpisode'].some((f) => payload[f] !== undefined)
+  if (!touched) return null
+
+  if (movie.type !== MovieType.SERIES) {
+    throw new ValidationError('Progresso de episódio só existe em séries')
+  }
+
+  const season  = toIntOrNull(payload.lastSeason)
+  const episode = toIntOrNull(payload.lastEpisode)
+
+  if (season === null && episode === null) {
+    return { lastSeason: null, lastEpisode: null }
+  }
+  if (season === null || episode === null) {
+    throw new ValidationError('Temporada e episódio devem vir juntos')
+  }
+  if (season < 1 || episode < 1) {
+    throw new ValidationError('Temporada e episódio devem ser maiores que zero')
+  }
+
+  return { lastSeason: season, lastEpisode: episode }
+}
+
 // Constrói o objeto de update a partir do payload, ignorando campos undefined.
 // Campos que aceitam null explícito (rating, year, duration) são tratados aqui.
-const buildUpdateData = (payload) => {
+const buildUpdateData = (payload, movie) => {
   const data = {}
 
   if (payload.title !== undefined) data.title = payload.title
@@ -112,13 +138,18 @@ const buildUpdateData = (payload) => {
   if (payload.rating !== undefined) data.rating = normalizeRating(payload.rating)
   if (payload.priority !== undefined) data.priority = normalizePriority(payload.priority)
 
+  const progress = normalizeProgress(payload, movie)
+  if (progress) Object.assign(data, progress)
+
   // `watched` toggle: marcar como assistido seta watchedAt automaticamente;
   // desmarcar limpa watchedAt. watchedAt explícito no payload sobrescreve.
   if (payload.watched !== undefined) {
     data.watched = Boolean(payload.watched)
     if (payload.watched && !payload.watchedAt) {
       data.watchedAt = new Date()
-    } else if (!payload.watched) {
+    } else if (!payload.watched && !progress) {
+      // Rewatch move o ponteiro pro começo e desmarca watched — apagar a data
+      // perderia o registro de quando o usuário terminou a série de fato.
       data.watchedAt = null
     }
   }
@@ -207,9 +238,9 @@ export const createMovie = async (userId, payload) => {
 
 export const updateMovie = async (userId, movieId, payload) => {
   const profile = await requireUserProfile(userId)
-  await requireOwnedMovie(movieId, profile.id)
+  const movie = await requireOwnedMovie(movieId, profile.id)
 
-  const data = buildUpdateData(payload)
+  const data = buildUpdateData(payload, movie)
 
   return prisma.movie.update({
     where: { id: movieId },

@@ -37,3 +37,10 @@ export const changeUserMoviePriority = (id, priority) =>
 
 export const toggleUserMovieWatched = (movie) =>
   updateMovie(movie.id, { watched: !movie.watched })
+
+export const setUserMovieProgress = (id, pointer, watched) =>
+  updateMovie(id, {
+    lastSeason:  pointer?.season ?? null,
+    lastEpisode: pointer?.episode ?? null,
+    watched,
+  })

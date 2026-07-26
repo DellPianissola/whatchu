@@ -5,6 +5,7 @@ import {
   airedInSeason,
   percentWatched,
   summarizeProgress,
+  completesSeries,
 } from './seriesProgress.js'
 
 const season = (number, episodeCount) => ({ number, episodeCount })
@@ -87,5 +88,27 @@ describe('summarizeProgress', () => {
 
   it('zera tudo em série sem estreia', () => {
     expect(summarizeProgress(seasons, null, null)).toEqual({ aired: 0, watched: 0, percent: 0 })
+  })
+})
+
+describe('completesSeries', () => {
+  const seasons = [season(1, 10), season(2, 12)]
+  const finale = { season: 2, episode: 12 }
+
+  it('reconhece o fim de série encerrada', () => {
+    expect(completesSeries({ seasons, pointer: finale, lastAired: finale, hasEnded: true })).toBe(true)
+  })
+
+  it('não conclui série em produção, mesmo em dia', () => {
+    expect(completesSeries({ seasons, pointer: finale, lastAired: finale, hasEnded: false })).toBe(false)
+  })
+
+  it('não conclui com episódio faltando', () => {
+    const pointer = { season: 2, episode: 11 }
+    expect(completesSeries({ seasons, pointer, lastAired: finale, hasEnded: true })).toBe(false)
+  })
+
+  it('não conclui sem ponteiro', () => {
+    expect(completesSeries({ seasons, pointer: null, lastAired: finale, hasEnded: true })).toBe(false)
   })
 })

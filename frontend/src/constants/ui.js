@@ -19,6 +19,9 @@ export const AVATAR_ACCEPT = 'image/jpeg,image/png,image/webp'
 // TMDB não serve além da página 500
 export const TMDB_MAX_PAGE = 500
 
+// Janela pra desfazer a exclusão: o DELETE só vai ao backend quando ela expira.
+export const UNDO_DELETE_MS = 6000
+
 export const VIEW_MODES = { LIST: 'list', POSTERS: 'posters' }
 
 export const DEFAULT_VIEW_MODE = VIEW_MODES.LIST

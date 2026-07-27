@@ -16,7 +16,7 @@ export const NotificationProvider = ({ children }) => {
   const push = useCallback((variant, message, options = {}) => {
     const id = ++idRef.current
     const duration = options.duration ?? DEFAULT_DURATION
-    const toast = { id, variant, message, duration }
+    const toast = { id, variant, message, duration, action: options.action }
     setToasts((prev) => [...prev, toast])
 
     if (duration > 0) {

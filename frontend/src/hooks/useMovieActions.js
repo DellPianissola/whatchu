@@ -4,11 +4,12 @@ import { useNotify } from '../contexts/NotificationContext.jsx'
 import { useUserMovies } from '../contexts/UserMoviesContext.jsx'
 import { apiErrorMessage } from '../services/api.js'
 import { PRIORITY_LABEL } from '../utils/content.js'
+import { UNDO_DELETE_MS } from '../constants/ui.js'
 
 export const useMovieActions = () => {
   const { profile } = useAuth()
   const { toast } = useNotify()
-  const { addToList, removeFromList, changePriority, toggleWatched, setProgress, findByItem } = useUserMovies()
+  const { addToList, scheduleRemoval, cancelRemoval, cancelRemovalForItem, changePriority, toggleWatched, setProgress, findByItem } = useUserMovies()
   const [processingId, setProcessingId] = useState(null)
   // Guarda síncrona: processingId é state e atrasa um render, deixando dois
   // toques rápidos passarem. O Set bloqueia a reentrância no mesmo id na hora.
@@ -20,6 +21,11 @@ export const useMovieActions = () => {
       return null
     }
     if (findByItem(movie)) return null
+    const restored = cancelRemovalForItem(movie)
+    if (restored) {
+      toast.success(`"${movie.title}" continua na lista`)
+      return restored
+    }
     if (inFlight.current.has(movie.id)) return null
     inFlight.current.add(movie.id)
     setProcessingId(movie.id)
@@ -35,25 +41,33 @@ export const useMovieActions = () => {
       inFlight.current.delete(movie.id)
       setProcessingId(null)
     }
-  }, [profile, addToList, findByItem, toast])
+  }, [profile, addToList, cancelRemovalForItem, findByItem, toast])
 
-  const removeMovie = useCallback(async (movie) => {
+  const removeMovie = useCallback((movie) => {
     const userMovie = findByItem(movie) || movie
     if (!userMovie?.id) return
-    if (inFlight.current.has(movie.id)) return
-    inFlight.current.add(movie.id)
-    setProcessingId(movie.id)
-    try {
-      await removeFromList(userMovie.id)
-      toast.success(`"${movie.title}" removido da lista`)
-    } catch (error) {
-      console.error('Erro ao remover filme:', error)
-      toast.error(apiErrorMessage(error, 'Erro ao remover filme'))
-    } finally {
-      inFlight.current.delete(movie.id)
-      setProcessingId(null)
-    }
-  }, [removeFromList, findByItem, toast])
+    const scheduled = scheduleRemoval(userMovie.id, {
+      delayMs: UNDO_DELETE_MS,
+      onError: (error) => {
+        console.error('Erro ao remover filme:', error)
+        toast.error(apiErrorMessage(error, 'Erro ao remover filme'))
+      },
+    })
+    if (!scheduled) return
+    toast.success(`"${movie.title}" removido da lista`, {
+      duration: UNDO_DELETE_MS,
+      action: {
+        label: 'Desfazer',
+        // O DELETE em voo não volta atrás: sem esse aviso o toast fecharia
+        // normalmente e o usuário acharia que desfez.
+        onClick: () => {
+          if (!cancelRemoval(userMovie.id)) {
+            toast.error(`Não deu tempo — "${movie.title}" já foi removido`)
+          }
+        },
+      },
+    })
+  }, [scheduleRemoval, cancelRemoval, findByItem, toast])
 
   const setPriority = useCallback(async (movie, priority) => {
     const userMovie = findByItem(movie) || movie

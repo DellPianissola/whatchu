@@ -12,6 +12,8 @@
 
 .toast {
   pointer-events: auto;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -50,6 +52,24 @@
   word-wrap: break-word;
 }
 
+.toast-action {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  color: var(--primary-light);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toast-action:hover {
+  background: var(--surface-light);
+  color: var(--primary);
+}
+
 .toast-close {
   background: transparent;
   border: none;
@@ -73,11 +93,38 @@
   background: var(--surface-light);
 }
 
+.toast-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--primary);
+  /* animation-duration vem inline, do duration do toast */
+  animation-name: toast-progress-shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  transform-origin: left;
+}
+
+@keyframes toast-progress-shrink {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Sem animação a barra não comunica tempo nenhum — vira só um traço fixo. */
+@media (prefers-reduced-motion: reduce) {
+  .toast-progress { display: none; }
+}
+
 /* Variantes */
 .toast-success {
   border-left-color: var(--success);
 }
 .toast-success .toast-icon {
+  background: var(--success);
+}
+.toast-success .toast-progress {
   background: var(--success);
 }
 
@@ -87,6 +134,9 @@
 .toast-error .toast-icon {
   background: var(--danger);
 }
+.toast-error .toast-progress {
+  background: var(--danger);
+}
 
 .toast-warning {
   border-left-color: var(--secondary);
@@ -94,11 +144,17 @@
 .toast-warning .toast-icon {
   background: var(--secondary);
 }
+.toast-warning .toast-progress {
+  background: var(--secondary);
+}
 
 .toast-info {
   border-left-color: var(--primary);
 }
 .toast-info .toast-icon {
+  background: var(--primary);
+}
+.toast-info .toast-progress {
   background: var(--primary);
 }
 

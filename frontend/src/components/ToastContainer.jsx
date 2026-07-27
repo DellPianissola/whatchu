@@ -12,6 +12,8 @@ const ToastContainer = ({ toasts, onDismiss }) => {
           id={t.id}
           variant={t.variant}
           message={t.message}
+          action={t.action}
+          duration={t.duration}
           onDismiss={onDismiss}
         />
       ))}

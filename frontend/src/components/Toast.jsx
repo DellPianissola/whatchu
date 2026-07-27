@@ -15,7 +15,7 @@ const ROLES = {
   error: 'alert',
 }
 
-const Toast = ({ id, variant, message, onDismiss }) => {
+const Toast = ({ id, variant, message, action, duration, onDismiss }) => {
   const [leaving, setLeaving] = useState(false)
 
   // anima saída antes de remover do DOM
@@ -34,6 +34,15 @@ const Toast = ({ id, variant, message, onDismiss }) => {
     >
       <span className="toast-icon" aria-hidden="true">{Icon && <Icon size={20} />}</span>
       <span className="toast-message">{message}</span>
+      {action && (
+        <button
+          type="button"
+          className="toast-action"
+          onClick={() => { action.onClick(); handleDismiss() }}
+        >
+          {action.label}
+        </button>
+      )}
       <button
         type="button"
         className="toast-close"
@@ -42,6 +51,13 @@ const Toast = ({ id, variant, message, onDismiss }) => {
       >
         <X size={18} />
       </button>
+      {duration > 0 && !leaving && (
+        <span
+          className="toast-progress"
+          style={{ animationDuration: `${duration}ms` }}
+          aria-hidden="true"
+        />
+      )}
     </div>
   )
 }

@@ -31,6 +31,16 @@
 .ui-btn-icon { display: inline-flex; align-items: center; font-size: 1em; line-height: 1; }
 .ui-btn-text { line-height: 1; }
 
+.ui-btn--primary {
+  background: var(--primary);
+  color: var(--text-on-media);
+  border-color: var(--primary);
+}
+
+.ui-btn--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(1.1);
+}
+
 /* ── Variant: filter (toggle pill) ── */
 .ui-btn--filter {
   background: var(--primary);

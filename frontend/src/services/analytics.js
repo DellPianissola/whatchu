@@ -37,3 +37,8 @@ export const trackPageView = (path) => {
   if (!isLoaded()) return
   window.gtag('event', 'page_view', { page_path: path })
 }
+
+export const trackException = (description) => {
+  if (!isLoaded()) return
+  window.gtag('event', 'exception', { description, fatal: true })
+}

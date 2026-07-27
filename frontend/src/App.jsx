@@ -5,6 +5,7 @@ import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import { UserMoviesProvider } from './contexts/UserMoviesContext.jsx'
 import { FriendInvitesProvider } from './contexts/FriendInvitesContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Landing from './pages/Landing'
 import Draw from './pages/Draw'
 import Home from './pages/Home'
@@ -34,6 +35,13 @@ const PageViewTracker = () => {
   return null
 }
 
+// Remonta a cada rota: sem a key, navegar pra fora da tela quebrada continuaria
+// mostrando o erro, porque o boundary não se recupera sozinho.
+const RouteErrorBoundary = ({ children }) => {
+  const location = useLocation()
+  return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>
+}
+
 const protect = (element, opts = {}) => (
   <ProtectedRoute {...opts}>{element}</ProtectedRoute>
 )
@@ -48,6 +56,7 @@ function App() {
             <PageViewTracker />
             <NavBar />
             <CookieBanner />
+            <RouteErrorBoundary>
             <Routes>
               <Route path={ROUTES.LANDING}         element={<Landing />} />
               <Route path={ROUTES.DRAW}            element={<Draw />} />
@@ -69,6 +78,7 @@ function App() {
               <Route path="/onboarding" element={<Navigate to={ROUTES.ONBOARDING} replace />} />
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
             </Routes>
+            </RouteErrorBoundary>
             <BottomNav />
           </Router>
           </FriendInvitesProvider>

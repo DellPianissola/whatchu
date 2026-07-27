@@ -5,7 +5,7 @@ import GeoPlaceholder from './GeoPlaceholder.jsx'
 import IconButton from './IconButton.jsx'
 import { Skeleton } from './Skeleton.jsx'
 import { trailerUrl } from '../utils/detailsCache.js'
-import { TYPE_LABEL, formatDuration, displayRating } from '../utils/content.js'
+import { TYPE_LABEL, formatDuration, displayRating, teamMembers } from '../utils/content.js'
 import { providerUrl } from '../utils/providers.js'
 import { ageRatingTier } from '../utils/ageRating.js'
 import { useEscapeKey } from '../hooks/useEscapeKey.js'
@@ -50,11 +50,6 @@ const buildYearLabel = (item, richDetails) => {
   if (richDetails.hasEnded) return end && end !== item.year ? `${item.year} – ${end}` : String(item.year)
   return `${item.year} – ...`
 }
-
-// O detailsCache é de sessão: aba aberta antes do deploy ainda serve o `cast`
-// como array de strings, sem papel.
-const castEntries = (cast) =>
-  (cast ?? []).map(c => (typeof c === 'string' ? { name: c, character: null } : c))
 
 const Stat = ({ label, value }) => (
   <div className="ui-detail-stat">
@@ -137,8 +132,8 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
     }))
   }
   const hasSeries = !showProgress && (richDetails?.seasons > 0 || richDetails?.episodes > 0)
-  const cast      = castEntries(richDetails?.cast)
-  const hasCrew   = richDetails?.director || cast.length > 0 || richDetails?.studios?.length > 0
+  const team      = teamMembers(richDetails)
+  const hasCrew   = team.length > 0 || richDetails?.studios?.length > 0
   const hasMeta   = richDetails?.status || hasSeries
 
   const titleBlock = (
@@ -319,10 +314,10 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
             <section className="ui-detail-section">
               <span className="ui-detail-section-label">Equipe</span>
 
-              {cast.length > 0 && (
-                <ScrollStrip prevLabel="Elenco anterior" nextLabel="Mais do elenco">
-                  {cast.map(({ name, character }) => (
-                    <div key={name} className="ui-detail-cast-card">
+              {team.length > 0 && (
+                <ScrollStrip prevLabel="Equipe anterior" nextLabel="Mais da equipe">
+                  {team.map(({ name, character }, index) => (
+                    <div key={`${index}:${name}`} className="ui-detail-cast-card">
                       <span className="ui-detail-cast-name">{name}</span>
                       {character && <span className="ui-detail-cast-role">{character}</span>}
                     </div>
@@ -330,20 +325,14 @@ const CardModal = ({ item, onClose, actions, posterOverlay }) => {
                 </ScrollStrip>
               )}
 
-              <div className="ui-detail-rows">
-                {richDetails.director && (
-                  <div className="ui-detail-row">
-                    <span className="ui-detail-row-label">Direção</span>
-                    <span className="ui-detail-row-value">{richDetails.director}</span>
-                  </div>
-                )}
-                {richDetails.studios?.length > 0 && (
+              {richDetails.studios?.length > 0 && (
+                <div className="ui-detail-rows">
                   <div className="ui-detail-row">
                     <span className="ui-detail-row-label">Estúdio</span>
                     <span className="ui-detail-row-value">{richDetails.studios.join(', ')}</span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </section>
           )}
 

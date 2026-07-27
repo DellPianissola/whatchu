@@ -52,3 +52,16 @@ export const pluralize = (n, singular, plural) =>
   n === 1 ? singular : plural
 
 export const todayISODate = () => new Date().toISOString().split('T')[0]
+
+export const teamMembers = (details) => {
+  const { director, cast } = details ?? {}
+  // O detailsCache é de sessão: aba aberta antes do deploy ainda serve o `cast`
+  // como array de strings, sem papel.
+  const people = (cast ?? []).map(c => (typeof c === 'string' ? { name: c, character: null } : c))
+  if (!director) return people
+
+  return [
+    { name: director, character: 'Diretor' },
+    ...people.filter(p => p.name !== director),
+  ]
+}

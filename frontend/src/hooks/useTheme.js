@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 
-const readTheme = () => document.documentElement.getAttribute('data-theme') || 'dark'
+const readTheme = () =>
+  (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'dark'
 
 // O primeiro paint do meta theme-color é responsabilidade do script inline
 // do index.html; aqui só acompanhamos o toggle em runtime

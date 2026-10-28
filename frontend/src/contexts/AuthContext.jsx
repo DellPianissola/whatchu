@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import api, { apiErrorMessage } from '../services/api.js'
 import { STORAGE_KEYS } from '../constants/storageKeys.js'
 
-const AuthContext = createContext({})
+export const AuthContext = createContext({})
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -25,7 +25,8 @@ const clearStoredTokens = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  // Sem token não há o que checar: começar em loading trocaria a landing pré-renderizada pelo LoadingScreen.
+  const [loading, setLoading] = useState(() => !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN))
 
   const logout = () => {
     setUser(null)

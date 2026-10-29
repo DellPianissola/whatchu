@@ -14,7 +14,7 @@ import CardModal from './CardModal.jsx'
 import { ROUTES } from '../constants/routes.js'
 import './PublicDrawWidget.css'
 
-const PublicDrawWidget = () => {
+const PublicDrawWidget = ({ layout = 'stack', intro = null }) => {
   const { toast } = useNotify()
   const {
     filterTypes, selectTypes,
@@ -56,34 +56,37 @@ const PublicDrawWidget = () => {
   )
 
   return (
-    <div className="public-draw-widget">
-      <div className="public-draw-filters">
-        <div className="public-draw-types">
-          <TypeFilterPills
-            value={filterTypes}
-            onChange={selectTypes}
+    <div className={`public-draw-widget public-draw-widget--${layout}`}>
+      <div className="public-draw-controls">
+        {intro}
+        <div className="public-draw-filters">
+          <div className="public-draw-types">
+            <TypeFilterPills
+              value={filterTypes}
+              onChange={selectTypes}
+            />
+          </div>
+          <div className="public-draw-dropdowns">
+            {filterDropdowns('pills', filterGenres, setFilterGenres, filterProviders, setFilterProviders)}
+          </div>
+          <FilterSheetTrigger
+            count={activeFilterCount}
+            className="public-draw-sheet-trigger"
+            onClick={() => filterSheet.openWith({ genres: filterGenres, providers: filterProviders })}
           />
         </div>
-        <div className="public-draw-dropdowns">
-          {filterDropdowns('pills', filterGenres, setFilterGenres, filterProviders, setFilterProviders)}
-        </div>
-        <FilterSheetTrigger
-          count={activeFilterCount}
-          className="public-draw-sheet-trigger"
-          onClick={() => filterSheet.openWith({ genres: filterGenres, providers: filterProviders })}
-        />
-      </div>
 
-      <button
-        type="button"
-        className="public-draw-btn"
-        onClick={handleLucky}
-        disabled={drawDisabled}
-        title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
-      >
-        <Sparkles size={24} />
-        {isDrawing ? 'Sorteando...' : 'Sortear'}
-      </button>
+        <button
+          type="button"
+          className="public-draw-btn"
+          onClick={handleLucky}
+          disabled={drawDisabled}
+          title={noTypeSelected ? 'Selecione ao menos um tipo (Filme ou Série)' : undefined}
+        >
+          <Sparkles size={24} />
+          {isDrawing ? 'Sorteando...' : 'Sortear'}
+        </button>
+      </div>
 
       <div className="public-draw-result">
         <DrawResultPanel

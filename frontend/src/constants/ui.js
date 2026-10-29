@@ -25,3 +25,5 @@ export const UNDO_DELETE_MS = 6000
 export const VIEW_MODES = { LIST: 'list', POSTERS: 'posters' }
 
 export const DEFAULT_VIEW_MODE = VIEW_MODES.LIST
+
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'

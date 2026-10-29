@@ -1,0 +1,181 @@
+.faq {
+  --muted-ink: color-mix(in srgb, var(--fi) 72%, var(--fc));
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+  background: var(--fc);
+  color: var(--fi);
+}
+
+.faq-lead {
+  margin: 16px 0 0;
+  font-size: var(--lp-lead);
+}
+
+.faq-group {
+  margin-top: 28px;
+}
+
+.faq-topic {
+  margin: 0 0 10px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--lp-body);
+  font-weight: 600;
+  color: var(--muted-ink);
+}
+
+.faq-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.faq-chip {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--fi) 8%, var(--fc));
+  color: var(--fi);
+  font-family: inherit;
+  font-size: var(--lp-body);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease-out),
+    color 0.3s var(--ease-out),
+    transform 0.45s var(--ease-spring);
+}
+
+.faq-chip:hover {
+  background: color-mix(in srgb, var(--fi) 16%, var(--fc));
+  transform: translateY(-2px);
+}
+
+.faq-chip:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+}
+
+.faq-chip[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.faq-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 380px;
+  padding: clamp(24px, 3vw, 36px);
+  border-radius: var(--radius-3xl);
+  background: var(--surface);
+  color: var(--text);
+  scroll-margin: calc(var(--navbar-height) + 16px) 0 16px;
+}
+
+.faq-bubble {
+  max-width: 88%;
+  margin: 0;
+  padding: 14px 18px;
+  font-size: var(--lp-body);
+  line-height: 1.5;
+}
+
+.faq-bubble--you {
+  align-self: flex-end;
+  border-radius: var(--radius-2xl) var(--radius-2xl) var(--radius-sm) var(--radius-2xl);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--lp-lead);
+  font-weight: 600;
+}
+
+.faq-reply {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.faq-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-light);
+}
+
+.faq-bubble--us {
+  border-radius: var(--radius-2xl) var(--radius-2xl) var(--radius-2xl) var(--radius-sm);
+  background: var(--surface-light);
+}
+
+.faq-bubble--typing {
+  display: inline-flex;
+  gap: 6px;
+  border-radius: var(--radius-2xl) var(--radius-2xl) var(--radius-2xl) var(--radius-sm);
+  background: var(--surface-light);
+}
+
+.faq-bubble--typing span[aria-hidden] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.faq-chat-cta {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq-bubble--you,
+  .faq-bubble--us {
+    animation: faq-bubble-in 0.5s var(--ease-spring) both;
+  }
+
+  .faq-bubble--you { transform-origin: bottom right; }
+  .faq-bubble--us { transform-origin: bottom left; }
+
+  .faq-bubble--typing span[aria-hidden] {
+    animation: faq-typing 0.9s ease-in-out infinite;
+  }
+
+  .faq-bubble--typing span[aria-hidden]:nth-child(2) { animation-delay: 0.15s; }
+  .faq-bubble--typing span[aria-hidden]:nth-child(3) { animation-delay: 0.3s; }
+}
+
+@keyframes faq-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+}
+
+@keyframes faq-typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+@media (max-width: 768px) {
+  .faq {
+    display: block;
+  }
+
+  .faq-chat {
+    min-height: 0;
+    margin-top: 32px;
+  }
+
+  .faq-chip {
+    padding: 10px 16px;
+  }
+}

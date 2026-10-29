@@ -1,0 +1,235 @@
+.group-showcase {
+  --muted-ink: color-mix(in srgb, var(--fi) 78%, var(--fc));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+  background: var(--fc);
+  color: var(--fi);
+}
+
+.group-plate {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+}
+
+.group-ticket {
+  --cut: 64%;
+  --notch: 18px;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--cut) 1fr;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-2xl);
+  background: var(--paper);
+  color: var(--paper-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.group-ticket::before,
+.group-ticket::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--cut) - var(--notch));
+  width: calc(var(--notch) * 2);
+  height: calc(var(--notch) * 2);
+  border-radius: 50%;
+  background: var(--fc);
+}
+
+.group-ticket::before { top: calc(var(--notch) * -1); }
+.group-ticket::after { bottom: calc(var(--notch) * -1); }
+
+.group-ticket.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.group-ticket-frame {
+  display: block;
+  overflow: hidden;
+}
+
+.group-ticket-poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.group-ticket-poster.is-shuffling {
+  transform: scale(1.04);
+}
+
+.group-ticket-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 32px 24px;
+  border-left: 6px dotted color-mix(in srgb, var(--paper-ink) 30%, var(--paper));
+  font-size: var(--lp-small);
+  line-height: 1.4;
+}
+
+.group-ticket-title {
+  margin-bottom: auto;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--lp-sub);
+  line-height: 1.05;
+}
+
+.group-ticket-from {
+  font-weight: 700;
+}
+
+.group-ticket-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-ticket-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--lp-body);
+  font-weight: 700;
+}
+
+.group-ticket-verdict {
+  margin-top: 12px;
+}
+
+.group-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  align-self: stretch;
+}
+
+.group-lead {
+  max-width: 38ch;
+  margin: 28px 0 0;
+  font-size: var(--lp-lead);
+  line-height: 1.5;
+}
+
+.group-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.group-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+  width: 100%;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: var(--radius-2xl);
+  background: transparent;
+  color: var(--muted-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease-out),
+    color 0.3s var(--ease-out),
+    transform 0.45s var(--ease-spring);
+}
+
+.group-mode:hover {
+  color: var(--fi);
+}
+
+.group-mode[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--fi) 12%, var(--fc));
+  color: var(--fi);
+}
+
+.group-mode:active {
+  transform: scale(0.98);
+}
+
+.group-mode-label {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--lp-sub);
+  font-weight: 700;
+}
+
+.group-mode-note {
+  font-size: var(--lp-small);
+  font-weight: 700;
+}
+
+.group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .group-ticket.is-active {
+    animation: group-ticket-land 0.6s var(--ease-spring) both;
+  }
+
+  .group-ticket-poster {
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .group-ticket.is-active .group-ticket-poster:not(.is-shuffling) {
+    animation: group-drift 14s ease-in-out 0.6s infinite alternate;
+  }
+}
+
+@keyframes group-ticket-land {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-3deg) scale(0.96);
+  }
+}
+
+@keyframes group-drift {
+  to { transform: scale(1.06) translateY(-1.5%); }
+}
+
+@media (max-width: 768px) {
+  .group-showcase {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-actions .landing-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .group-ticket {
+    --cut: 58%;
+    --notch: 14px;
+  }
+
+  .group-ticket-stub {
+    padding: 20px 14px;
+  }
+
+  .group-ticket-source {
+    font-size: var(--lp-small);
+  }
+
+  .group-mode {
+    padding: 12px 16px;
+  }
+}

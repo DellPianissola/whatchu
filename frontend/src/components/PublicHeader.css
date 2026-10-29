@@ -8,10 +8,7 @@
   gap: 1rem;
   height: var(--navbar-height);
   padding: 0 2rem;
-  background: rgba(var(--background-rgb), 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  background: var(--background);
 }
 
 .public-header-logo {
@@ -25,8 +22,8 @@
 }
 
 .public-header-link {
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  color: var(--text);
+  font-size: 1rem;
   font-weight: 600;
   white-space: nowrap;
   text-decoration: none;
@@ -36,25 +33,29 @@
 }
 
 .public-header-link:hover {
-  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .public-header-cta {
-  color: var(--text-on-media);
-  font-size: 0.9rem;
-  font-weight: 700;
+  color: var(--accent-ink);
+  font-size: 1rem;
+  font-weight: 800;
   white-space: nowrap;
   text-decoration: none;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-md);
-  background: var(--gradient-wordmark);
-  box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3);
-  transition: transform 0.15s, box-shadow 0.15s;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  transition: transform 0.45s var(--ease-spring);
 }
 
 .public-header-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.45);
+  transform: translateY(-2px) scale(1.04);
+}
+
+.public-header-cta:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
 }
 
 @media (max-width: 640px) {
